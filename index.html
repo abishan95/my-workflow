@@ -34,8 +34,12 @@
     <div id="root"></div>
 
     <script type="text/babel">
+        const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzg0o4r0RboJGr75shmuf-6fglCaa3xoBTsf6CHUmqe_nNUu5WXAutbCdNJSmgNDlGe/exec";
+
         function App() {
             const [activeTab, setActiveTab] = React.useState('dashboard');
+            const [isLoading, setIsLoading] = React.useState(false);
+            const [syncStatus, setSyncStatus] = React.useState('Connected');
             
             // To-Do List State with morning reminder & auto-rollover
             const [todos, setTodos] = React.useState([
@@ -45,56 +49,94 @@
             const [newTodo, setNewTodo] = React.useState('');
             const [showAlert, setShowAlert] = React.useState(true);
 
-            // Sourced Profiles State (All mandatory HR fields)
-            const [profiles, setProfiles] = React.useState([
-                {
-                    id: 1,
-                    name: 'Rahul Sharma',
-                    source: 'Naukri',
-                    location: 'Bangalore',
-                    role: 'Sales Manager',
-                    department: 'Sales',
-                    businessUnit: 'AWP & MEWP',
-                    candidateName: 'Rahul Sharma',
-                    contactNumber: '+91 98765 43210',
-                    preferredLocation: 'Bangalore',
-                    currentCompany: 'Apex Elevators',
-                    designation: 'Senior Sales Exec',
-                    totalExp: '6 Years',
-                    currentCtc: '8 LPA',
-                    expectedCtc: '11 LPA',
-                    noticePeriod: '30 Days',
-                    emailId: 'rahul.sharma@example.com',
-                    status: 'Sourced'
-                }
-            ]);
-
+            // Candidate Profiles State
+            const [profiles, setProfiles] = React.useState([]);
             const [joiners, setJoiners] = React.useState([]);
 
-            // Form state for adding candidates
+            // Form state for adding candidates (17 fields)
             const [form, setForm] = React.useState({
-                name: '', source: 'Naukri', location: '', role: '', department: '',
-                businessUnit: '', candidateName: '', contactNumber: '', preferredLocation: '',
+                candidateName: '', source: 'Naukri', location: '', role: '', department: '',
+                businessUnit: '', contactNumber: '', preferredLocation: '',
                 currentCompany: '', designation: '', totalExp: '', currentCtc: '',
                 expectedCtc: '', noticePeriod: '', emailId: '', status: 'Sourced'
             });
 
+            // Fetch data from Google Sheet on page load
+            const fetchSheetData = React.useCallback(() => {
+                setIsLoading(true);
+                fetch(WEBHOOK_URL)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (Array.isArray(data)) {
+                            const sourced = data.filter(item => item.status !== 'Joined');
+                            const joined = data.filter(item => item.status === 'Joined');
+                            setProfiles(sourced);
+                            setJoiners(joined);
+                            setSyncStatus('Synced');
+                        }
+                        setIsLoading(false);
+                    })
+                    .catch(err => {
+                        console.error('Error fetching sheet data:', err);
+                        setSyncStatus('Offline / Local Cache');
+                        setIsLoading(false);
+                    });
+            }, []);
+
+            React.useEffect(() => {
+                fetchSheetData();
+            }, [fetchSheetData]);
+
+            // Add Profile & Push to Google Sheet Webhook
             const handleAddProfile = (e) => {
                 e.preventDefault();
-                setProfiles([...profiles, { ...form, id: Date.now() }]);
-                setForm({
-                    name: '', source: 'Naukri', location: '', role: '', department: '',
-                    businessUnit: '', candidateName: '', contactNumber: '', preferredLocation: '',
-                    currentCompany: '', designation: '', totalExp: '', currentCtc: '',
-                    expectedCtc: '', noticePeriod: '', emailId: '', status: 'Sourced'
+                setIsLoading(true);
+                setSyncStatus('Syncing to Sheet...');
+
+                const newCandidate = { ...form, id: Date.now() };
+
+                // Optimistic UI update
+                setProfiles(prev => [...prev, newCandidate]);
+
+                // Send POST to Google Sheet Apps Script Webhook
+                fetch(WEBHOOK_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newCandidate)
+                })
+                .then(() => {
+                    setSyncStatus('Saved to Sheet!');
+                    setIsLoading(false);
+                    alert('Candidate profile added & synced to Google Sheet!');
+                    setForm({
+                        candidateName: '', source: 'Naukri', location: '', role: '', department: '',
+                        businessUnit: '', contactNumber: '', preferredLocation: '',
+                        currentCompany: '', designation: '', totalExp: '', currentCtc: '',
+                        expectedCtc: '', noticePeriod: '', emailId: '', status: 'Sourced'
+                    });
+                })
+                .catch(err => {
+                    console.error('Webhook error:', err);
+                    alert('Profile saved locally. Check sheet webhook connection.');
+                    setIsLoading(false);
                 });
-                alert('Candidate profile added successfully!');
             };
 
             const moveToJoiner = (profile) => {
-                setProfiles(profiles.filter(p => p.id !== profile.id));
-                setJoiners([...joiners, { ...profile, status: 'Joined', joinDate: new Date().toLocaleDateString() }]);
-                alert(`${profile.candidateName} moved to Joiners!`);
+                const updated = { ...profile, status: 'Joined', joinDate: new Date().toLocaleDateString() };
+                setProfiles(profiles.filter(p => p.candidateName !== profile.candidateName));
+                setJoiners([...joiners, updated]);
+
+                // Update status in sheet via Webhook
+                fetch(WEBHOOK_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updated)
+                });
+
+                alert(`${profile.candidateName} status updated to Joined!`);
             };
 
             return (
@@ -133,8 +175,9 @@
                                 ))}
                             </nav>
                         </div>
-                        <div className="text-xs text-slate-400 p-2 text-center shadow-neuInset rounded-xl">
-                            Connected to Office Sheet
+                        <div className="text-xs text-slate-500 p-3 text-center shadow-neuInset rounded-xl flex items-center justify-center gap-2">
+                            <span className={`w-2 h-2 rounded-full ${syncStatus.includes('Saved') || syncStatus.includes('Synced') ? 'bg-emerald-500 animate-pulse' : 'bg-blue-500'}`}></span>
+                            {syncStatus}
                         </div>
                     </div>
 
@@ -159,7 +202,12 @@
                         {/* DASHBOARD TAB */}
                         {activeTab === 'dashboard' && (
                             <div className="space-y-6">
-                                <h2 className="text-2xl font-bold text-slate-700">HR Dashboard Overview</h2>
+                                <div className="flex justify-between items-center">
+                                    <h2 className="text-2xl font-bold text-slate-700">HR Dashboard Overview</h2>
+                                    <button onClick={fetchSheetData} className="px-4 py-2 rounded-xl shadow-neu hover:shadow-neuInset text-xs font-bold text-blue-600">
+                                        {isLoading ? 'Syncing...' : '↻ Refresh Sheet'}
+                                    </button>
+                                </div>
                                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                                     <div className="p-6 rounded-2xl shadow-neu bg-neuBg">
                                         <p className="text-xs text-slate-400 font-bold uppercase">Total Sourced</p>
@@ -174,8 +222,8 @@
                                         <h3 className="text-3xl font-extrabold text-blue-600 mt-2">{todos.filter(t => !t.completed).length}</h3>
                                     </div>
                                     <div className="p-6 rounded-2xl shadow-neu bg-neuBg">
-                                        <p className="text-xs text-slate-400 font-bold uppercase">Active Sources</p>
-                                        <h3 className="text-3xl font-extrabold text-indigo-600 mt-2">Naukri / Vendor</h3>
+                                        <p className="text-xs text-slate-400 font-bold uppercase">Sheet Webhook</p>
+                                        <h3 className="text-sm font-bold text-emerald-600 mt-2 truncate">Connected</h3>
                                     </div>
                                 </div>
                             </div>
@@ -186,21 +234,29 @@
                             <div className="space-y-6">
                                 <div className="flex justify-between items-center">
                                     <h2 className="text-2xl font-bold text-slate-700">Sourced Candidates Manager</h2>
+                                    <button onClick={fetchSheetData} className="px-4 py-2 rounded-xl shadow-neu hover:shadow-neuInset text-xs font-bold text-blue-600">
+                                        {isLoading ? 'Fetching Data...' : '↻ Sync Data'}
+                                    </button>
                                 </div>
 
                                 {/* Add Form */}
                                 <form onSubmit={handleAddProfile} className="p-6 rounded-2xl shadow-neu bg-neuBg grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <input type="text" placeholder="Candidate Name" value={form.candidateName} onChange={e => setForm({...form, candidateName: e.target.value, name: e.target.value})} className="p-3 rounded-xl shadow-neuInset bg-neuBg outline-none text-sm" required />
+                                    <input type="text" placeholder="Candidate Name *" value={form.candidateName} onChange={e => setForm({...form, candidateName: e.target.value})} className="p-3 rounded-xl shadow-neuInset bg-neuBg outline-none text-sm" required />
                                     <select value={form.source} onChange={e => setForm({...form, source: e.target.value})} className="p-3 rounded-xl shadow-neuInset bg-neuBg outline-none text-sm">
                                         <option value="Naukri">Naukri</option>
                                         <option value="Vendor">Vendor</option>
                                         <option value="Reference">Reference</option>
                                     </select>
-                                    <input type="text" placeholder="Role / Designation" value={form.role} onChange={e => setForm({...form, role: e.target.value})} className="p-3 rounded-xl shadow-neuInset bg-neuBg outline-none text-sm" required />
+                                    <input type="text" placeholder="Role / Designation *" value={form.role} onChange={e => setForm({...form, role: e.target.value})} className="p-3 rounded-xl shadow-neuInset bg-neuBg outline-none text-sm" required />
                                     <input type="text" placeholder="Department" value={form.department} onChange={e => setForm({...form, department: e.target.value})} className="p-3 rounded-xl shadow-neuInset bg-neuBg outline-none text-sm" />
+                                    <input type="text" placeholder="Business Unit" value={form.businessUnit} onChange={e => setForm({...form, businessUnit: e.target.value})} className="p-3 rounded-xl shadow-neuInset bg-neuBg outline-none text-sm" />
                                     <input type="text" placeholder="Contact Number" value={form.contactNumber} onChange={e => setForm({...form, contactNumber: e.target.value})} className="p-3 rounded-xl shadow-neuInset bg-neuBg outline-none text-sm" />
                                     <input type="email" placeholder="Email ID" value={form.emailId} onChange={e => setForm({...form, emailId: e.target.value})} className="p-3 rounded-xl shadow-neuInset bg-neuBg outline-none text-sm" />
-                                    <button type="submit" className="md:col-span-3 py-3 rounded-xl shadow-neu hover:shadow-neuInset text-blue-600 font-bold transition">Add Sourced Profile</button>
+                                    <input type="text" placeholder="Location" value={form.location} onChange={e => setForm({...form, location: e.target.value})} className="p-3 rounded-xl shadow-neuInset bg-neuBg outline-none text-sm" />
+                                    <input type="text" placeholder="Total Experience" value={form.totalExp} onChange={e => setForm({...form, totalExp: e.target.value})} className="p-3 rounded-xl shadow-neuInset bg-neuBg outline-none text-sm" />
+                                    <button type="submit" disabled={isLoading} className="md:col-span-3 py-3 rounded-xl shadow-neu hover:shadow-neuInset text-blue-600 font-bold transition">
+                                        {isLoading ? 'Sending to Webhook...' : '➕ Add Sourced Profile & Sync Sheet'}
+                                    </button>
                                 </form>
 
                                 {/* Profiles Table */}
@@ -217,20 +273,28 @@
                                             </tr>
                                         </thead>
                                         <tbody className="text-sm">
-                                            {profiles.map(p => (
-                                                <tr key={p.id} className="border-b border-slate-200 hover:bg-white/50">
-                                                    <td className="p-3 font-semibold">{p.candidateName}</td>
-                                                    <td className="p-3"><span className="px-2 py-1 rounded-lg shadow-neuSm text-xs">{p.source}</span></td>
-                                                    <td className="p-3">{p.role}</td>
-                                                    <td className="p-3">{p.department || 'N/A'}</td>
-                                                    <td className="p-3">{p.contactNumber}</td>
-                                                    <td className="p-3">
-                                                        <button onClick={() => moveToJoiner(p)} className="px-3 py-1 rounded-xl shadow-neu hover:shadow-neuInset text-xs font-bold text-emerald-600 transition">
-                                                            Mark Joined
-                                                        </button>
+                                            {profiles.length === 0 ? (
+                                                <tr>
+                                                    <td colSpan="6" className="text-center p-6 text-slate-400">
+                                                        {isLoading ? 'Loading candidates from Google Sheet...' : 'No sourced profiles found. Add one above!'}
                                                     </td>
                                                 </tr>
-                                            ))}
+                                            ) : (
+                                                profiles.map((p, idx) => (
+                                                    <tr key={idx} className="border-b border-slate-200 hover:bg-white/50">
+                                                        <td className="p-3 font-semibold">{p.candidateName || p.NAME || 'N/A'}</td>
+                                                        <td className="p-3"><span className="px-2 py-1 rounded-lg shadow-neuSm text-xs">{p.source || p['CV SOURCED FROM'] || 'Naukri'}</span></td>
+                                                        <td className="p-3">{p.role || p.Role || 'N/A'}</td>
+                                                        <td className="p-3">{p.department || p.department || 'N/A'}</td>
+                                                        <td className="p-3">{p.contactNumber || p['contact number'] || 'N/A'}</td>
+                                                        <td className="p-3">
+                                                            <button onClick={() => moveToJoiner(p)} className="px-3 py-1 rounded-xl shadow-neu hover:shadow-neuInset text-xs font-bold text-emerald-600 transition">
+                                                                Mark Joined
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            )}
                                         </tbody>
                                     </table>
                                 </div>
@@ -246,11 +310,11 @@
                                         <p className="text-slate-400 text-center py-6">No joiners recorded yet. Convert profiles from the Sourced tab.</p>
                                     ) : (
                                         <div className="space-y-4">
-                                            {joiners.map(j => (
-                                                <div key={j.id} className="p-4 rounded-xl shadow-neu bg-neuBg flex justify-between items-center">
+                                            {joiners.map((j, idx) => (
+                                                <div key={idx} className="p-4 rounded-xl shadow-neu bg-neuBg flex justify-between items-center">
                                                     <div>
-                                                        <h4 className="font-bold text-slate-700">{j.candidateName}</h4>
-                                                        <p className="text-xs text-slate-500">{j.role} • Joined on {j.joinDate}</p>
+                                                        <h4 className="font-bold text-slate-700">{j.candidateName || j.NAME}</h4>
+                                                        <p className="text-xs text-slate-500">{j.role || j.Role} • Joined</p>
                                                     </div>
                                                     <span className="px-3 py-1 rounded-full shadow-neuInset text-xs text-emerald-600 font-bold">Active Employee</span>
                                                 </div>
@@ -315,16 +379,21 @@
                             <div className="space-y-6">
                                 <h2 className="text-2xl font-bold text-slate-700">Google Sheet & Webhook Synchronization</h2>
                                 <div className="p-6 rounded-2xl shadow-neu bg-neuBg space-y-4">
-                                    <p className="text-sm text-slate-600">Your live office spreadsheet is connected securely:</p>
+                                    <p className="text-sm text-slate-600">Active Google Apps Script Webhook Endpoint:</p>
                                     <div className="p-3 rounded-xl shadow-neuInset bg-neuBg font-mono text-xs text-blue-600 break-all">
-                                        https://docs.google.com/spreadsheets/d/1GFPHBeRsFN4z1B6wN3RQn4vaDxyiIarYHojLY5bcHec/edit
+                                        {WEBHOOK_URL}
                                     </div>
-                                    <div className="p-4 rounded-xl shadow-neu bg-neuBg">
-                                        <h4 className="font-bold text-slate-700 mb-2">Webhook Status</h4>
-                                        <p className="text-xs text-emerald-600 font-semibold flex items-center gap-2">
-                                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
-                                            Active and Listening for Vercel Serverless triggers
-                                        </p>
+                                    <div className="p-4 rounded-xl shadow-neu bg-neuBg flex justify-between items-center">
+                                        <div>
+                                            <h4 className="font-bold text-slate-700">Live Backend Status</h4>
+                                            <p className="text-xs text-emerald-600 font-semibold flex items-center gap-2 mt-1">
+                                                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
+                                                Connected to Office Google Sheet
+                                            </p>
+                                        </div>
+                                        <button onClick={fetchSheetData} className="px-4 py-2 rounded-xl shadow-neu hover:shadow-neuInset text-xs font-bold text-blue-600">
+                                            Test Sync Now
+                                        </button>
                                     </div>
                                 </div>
                             </div>
