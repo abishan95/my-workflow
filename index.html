@@ -4,22 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Work Flow - HR Portal</title>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- React & ReactDOM -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <!-- Babel for JSX -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
-                    colors: {
-                        neuBg: '#e0e5ec',
-                        neuLight: '#ffffff',
-                        neuDark: '#a3b1c6',
-                    },
+                    colors: { neuBg: '#e0e5ec', neuLight: '#ffffff', neuDark: '#a3b1c6' },
                     boxShadow: {
                         neu: '6px 6px 12px #a3b1c6, -6px -6px 12px #ffffff',
                         neuInset: 'inset 4px 4px 8px #a3b1c6, inset -4px -4px 8px #ffffff',
@@ -37,48 +30,64 @@
         const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzg0o4r0RboJGr75shmuf-6fglCaa3xoBTsf6CHUmqe_nNUu5WXAutbCdNJSmgNDlGe/exec";
 
         function App() {
-            const [activeTab, setActiveTab] = React.useState('dashboard');
+            const [activeTab, setActiveTab] = React.useState('profiles');
             const [isLoading, setIsLoading] = React.useState(false);
-            const [syncStatus, setSyncStatus] = React.useState('Connected');
-            
-            // To-Do List State with morning reminder & auto-rollover
+            const [syncStatus, setSyncStatus] = React.useState('Connecting...');
+            const [profiles, setProfiles] = React.useState([]);
+            const [joiners, setJoiners] = React.useState([]);
+
             const [todos, setTodos] = React.useState([
-                { id: '1', text: 'Call shortlisted candidates for L1 interview', completed: false, date: new Date().toISOString().split('T')[0] },
-                { id: '2', text: 'Update spreadsheet with vendor referrals', completed: false, date: '2026-06-05' }
+                { id: '1', text: 'Review shortlisted candidates for L1 interview', completed: false },
+                { id: '2', text: 'Follow up with vendor referrals', completed: false }
             ]);
             const [newTodo, setNewTodo] = React.useState('');
             const [showAlert, setShowAlert] = React.useState(true);
 
-            // Candidate Profiles State
-            const [profiles, setProfiles] = React.useState([]);
-            const [joiners, setJoiners] = React.useState([]);
-
-            // Form state for adding candidates (17 fields)
             const [form, setForm] = React.useState({
                 candidateName: '', source: 'Naukri', location: '', role: '', department: '',
-                businessUnit: '', contactNumber: '', preferredLocation: '',
-                currentCompany: '', designation: '', totalExp: '', currentCtc: '',
-                expectedCtc: '', noticePeriod: '', emailId: '', status: 'Sourced'
+                businessUnit: '', contactNumber: '', currentCompany: '', designation: '',
+                totalExp: '', currentCtc: '', expectedCtc: '', noticePeriod: '', emailId: '', status: 'Sourced'
             });
 
-            // Fetch data from Google Sheet on page load
+            // Normalizes raw Google Sheet JSON fields to app fields
+            const parseSheetData = (data) => {
+                return data.map((item, index) => ({
+                    id: index,
+                    candidateName: item['Candidate Name'] || item['candidateName'] || item['NAME'] || 'N/A',
+                    source: item['CV -Source-'] || item['source'] || item['CV SOURCED FROM'] || 'Naukri',
+                    location: item['Location'] || item['location'] || 'N/A',
+                    role: item['Role'] || item['role'] || 'N/A',
+                    department: item['Department'] || item['department'] || 'N/A',
+                    businessUnit: item['Business Unit'] || item['businessUnit'] || 'N/A',
+                    contactNumber: item['Contact Number'] || item['contactNumber'] || 'N/A',
+                    currentCompany: item['Current Company'] || item['currentCompany'] || 'N/A',
+                    designation: item['Designation'] || item['designation'] || 'N/A',
+                    totalExp: item['Overall Experience'] || item['totalExp'] || 'N/A',
+                    currentCtc: item['Current CTC'] || item['currentCtc'] || 'N/A',
+                    expectedCtc: item['Expected CTC'] || item['expectedCtc'] || 'N/A',
+                    noticePeriod: item['Notice Period'] || item['noticePeriod'] || 'N/A',
+                    emailId: item['Email'] || item['emailId'] || 'N/A',
+                    status: item['Status'] || item['status'] || 'Sourced'
+                }));
+            };
+
             const fetchSheetData = React.useCallback(() => {
                 setIsLoading(true);
+                setSyncStatus('Fetching...');
                 fetch(WEBHOOK_URL)
                     .then(res => res.json())
                     .then(data => {
                         if (Array.isArray(data)) {
-                            const sourced = data.filter(item => item.status !== 'Joined');
-                            const joined = data.filter(item => item.status === 'Joined');
-                            setProfiles(sourced);
-                            setJoiners(joined);
-                            setSyncStatus('Synced');
+                            const formatted = parseSheetData(data);
+                            setProfiles(formatted.filter(p => p.status !== 'Joined'));
+                            setJoiners(formatted.filter(p => p.status === 'Joined'));
+                            setSyncStatus('Synced (' + formatted.length + ' Profiles)');
                         }
                         setIsLoading(false);
                     })
                     .catch(err => {
-                        console.error('Error fetching sheet data:', err);
-                        setSyncStatus('Offline / Local Cache');
+                        console.error('Fetch error:', err);
+                        setSyncStatus('Offline');
                         setIsLoading(false);
                     });
             }, []);
@@ -87,18 +96,14 @@
                 fetchSheetData();
             }, [fetchSheetData]);
 
-            // Add Profile & Push to Google Sheet Webhook
             const handleAddProfile = (e) => {
                 e.preventDefault();
                 setIsLoading(true);
-                setSyncStatus('Syncing to Sheet...');
+                setSyncStatus('Saving to Sheet...');
 
                 const newCandidate = { ...form, id: Date.now() };
+                setProfiles(prev => [newCandidate, ...prev]);
 
-                // Optimistic UI update
-                setProfiles(prev => [...prev, newCandidate]);
-
-                // Send POST to Google Sheet Apps Script Webhook
                 fetch(WEBHOOK_URL, {
                     method: 'POST',
                     mode: 'no-cors',
@@ -106,37 +111,32 @@
                     body: JSON.stringify(newCandidate)
                 })
                 .then(() => {
-                    setSyncStatus('Saved to Sheet!');
+                    setSyncStatus('Saved!');
                     setIsLoading(false);
-                    alert('Candidate profile added & synced to Google Sheet!');
+                    alert('Candidate added & saved to Google Sheet!');
                     setForm({
                         candidateName: '', source: 'Naukri', location: '', role: '', department: '',
-                        businessUnit: '', contactNumber: '', preferredLocation: '',
-                        currentCompany: '', designation: '', totalExp: '', currentCtc: '',
-                        expectedCtc: '', noticePeriod: '', emailId: '', status: 'Sourced'
+                        businessUnit: '', contactNumber: '', currentCompany: '', designation: '',
+                        totalExp: '', currentCtc: '', expectedCtc: '', noticePeriod: '', emailId: '', status: 'Sourced'
                     });
                 })
-                .catch(err => {
-                    console.error('Webhook error:', err);
-                    alert('Profile saved locally. Check sheet webhook connection.');
+                .catch(() => {
                     setIsLoading(false);
+                    alert('Saved locally. Please verify connection.');
                 });
             };
 
             const moveToJoiner = (profile) => {
-                const updated = { ...profile, status: 'Joined', joinDate: new Date().toLocaleDateString() };
+                const updated = { ...profile, status: 'Joined' };
                 setProfiles(profiles.filter(p => p.candidateName !== profile.candidateName));
-                setJoiners([...joiners, updated]);
+                setJoiners([updated, ...joiners]);
 
-                // Update status in sheet via Webhook
                 fetch(WEBHOOK_URL, {
                     method: 'POST',
                     mode: 'no-cors',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(updated)
                 });
-
-                alert(`${profile.candidateName} status updated to Joined!`);
             };
 
             return (
@@ -144,30 +144,25 @@
                     {/* Sidebar */}
                     <div className="w-64 bg-neuBg p-6 shadow-neu flex flex-col justify-between hidden md:flex">
                         <div>
-                            <div className="flex items-center space-x-3 mb-10">
-                                <div className="w-10 h-10 rounded-xl bg-neuBg shadow-neu flex items-center justify-center font-bold text-blue-600">
-                                    MW
-                                </div>
+                            <div className="flex items-center space-x-3 mb-8">
+                                <div className="w-10 h-10 rounded-xl bg-neuBg shadow-neu flex items-center justify-center font-bold text-blue-600">MW</div>
                                 <div>
                                     <h1 className="font-bold text-slate-800">My Work Flow</h1>
-                                    <p className="text-xs text-slate-500">HR Operations Portal</p>
+                                    <p className="text-xs text-slate-500">HR Portal</p>
                                 </div>
                             </div>
-                            <nav className="space-y-4">
+                            <nav className="space-y-3">
                                 {[
                                     { id: 'dashboard', label: 'Dashboard' },
                                     { id: 'profiles', label: 'Sourced Profiles' },
                                     { id: 'joiners', label: 'Joiners Directory' },
-                                    { id: 'todos', label: 'To-Do & Reminders' },
-                                    { id: 'sheet', label: 'Google Sheets & Webhook' }
+                                    { id: 'todos', label: 'To-Do & Reminders' }
                                 ].map(tab => (
                                     <button
                                         key={tab.id}
                                         onClick={() => setActiveTab(tab.id)}
                                         className={`w-full text-left px-4 py-3 rounded-xl transition-all font-medium text-sm ${
-                                            activeTab === tab.id 
-                                                ? 'shadow-neuInset text-blue-600 font-semibold' 
-                                                : 'shadow-neu hover:shadow-neuSm text-slate-600'
+                                            activeTab === tab.id ? 'shadow-neuInset text-blue-600 font-semibold' : 'shadow-neu hover:shadow-neuSm text-slate-600'
                                         }`}
                                     >
                                         {tab.label}
@@ -176,70 +171,57 @@
                             </nav>
                         </div>
                         <div className="text-xs text-slate-500 p-3 text-center shadow-neuInset rounded-xl flex items-center justify-center gap-2">
-                            <span className={`w-2 h-2 rounded-full ${syncStatus.includes('Saved') || syncStatus.includes('Synced') ? 'bg-emerald-500 animate-pulse' : 'bg-blue-500'}`}></span>
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                             {syncStatus}
                         </div>
                     </div>
 
-                    {/* Main Content Area */}
+                    {/* Main Content */}
                     <div className="flex-1 overflow-y-auto p-6 md:p-10">
-                        {/* Morning Alarm Alert Popup */}
                         {showAlert && (
                             <div className="mb-6 p-4 rounded-2xl shadow-neu bg-neuBg border-l-4 border-blue-500 flex justify-between items-center">
                                 <div>
-                                    <h3 className="font-bold text-slate-700">☀️ Good Morning, HR! Daily Briefing</h3>
-                                    <p className="text-sm text-slate-500">Unfinished tasks from yesterday have automatically rolled over to your today list.</p>
+                                    <h3 className="font-bold text-slate-700">☀️ Good Morning! Daily HR Briefing</h3>
+                                    <p className="text-sm text-slate-500">Pending tasks from yesterday have automatically rolled over.</p>
                                 </div>
-                                <button 
-                                    onClick={() => setShowAlert(false)}
-                                    className="px-4 py-2 rounded-xl shadow-neu hover:shadow-neuInset text-xs font-bold text-slate-600 transition"
-                                >
-                                    Got it
-                                </button>
+                                <button onClick={() => setShowAlert(false)} className="px-4 py-2 rounded-xl shadow-neu hover:shadow-neuInset text-xs font-bold text-slate-600">Dismiss</button>
                             </div>
                         )}
 
-                        {/* DASHBOARD TAB */}
+                        {/* DASHBOARD */}
                         {activeTab === 'dashboard' && (
                             <div className="space-y-6">
                                 <div className="flex justify-between items-center">
-                                    <h2 className="text-2xl font-bold text-slate-700">HR Dashboard Overview</h2>
-                                    <button onClick={fetchSheetData} className="px-4 py-2 rounded-xl shadow-neu hover:shadow-neuInset text-xs font-bold text-blue-600">
-                                        {isLoading ? 'Syncing...' : '↻ Refresh Sheet'}
-                                    </button>
+                                    <h2 className="text-2xl font-bold text-slate-700">HR Analytics Overview</h2>
+                                    <button onClick={fetchSheetData} className="px-4 py-2 rounded-xl shadow-neu hover:shadow-neuInset text-xs font-bold text-blue-600">↻ Refresh</button>
                                 </div>
-                                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                     <div className="p-6 rounded-2xl shadow-neu bg-neuBg">
-                                        <p className="text-xs text-slate-400 font-bold uppercase">Total Sourced</p>
+                                        <p className="text-xs text-slate-400 font-bold uppercase">Sourced Profiles</p>
                                         <h3 className="text-3xl font-extrabold text-slate-700 mt-2">{profiles.length}</h3>
                                     </div>
                                     <div className="p-6 rounded-2xl shadow-neu bg-neuBg">
-                                        <p className="text-xs text-slate-400 font-bold uppercase">Total Joiners</p>
+                                        <p className="text-xs text-slate-400 font-bold uppercase">Converted Joiners</p>
                                         <h3 className="text-3xl font-extrabold text-emerald-600 mt-2">{joiners.length}</h3>
                                     </div>
                                     <div className="p-6 rounded-2xl shadow-neu bg-neuBg">
                                         <p className="text-xs text-slate-400 font-bold uppercase">Pending To-Dos</p>
                                         <h3 className="text-3xl font-extrabold text-blue-600 mt-2">{todos.filter(t => !t.completed).length}</h3>
                                     </div>
-                                    <div className="p-6 rounded-2xl shadow-neu bg-neuBg">
-                                        <p className="text-xs text-slate-400 font-bold uppercase">Sheet Webhook</p>
-                                        <h3 className="text-sm font-bold text-emerald-600 mt-2 truncate">Connected</h3>
-                                    </div>
                                 </div>
                             </div>
                         )}
 
-                        {/* SOURCED PROFILES TAB */}
+                        {/* PROFILES */}
                         {activeTab === 'profiles' && (
                             <div className="space-y-6">
                                 <div className="flex justify-between items-center">
-                                    <h2 className="text-2xl font-bold text-slate-700">Sourced Candidates Manager</h2>
+                                    <h2 className="text-2xl font-bold text-slate-700">Sourced Candidates ({profiles.length})</h2>
                                     <button onClick={fetchSheetData} className="px-4 py-2 rounded-xl shadow-neu hover:shadow-neuInset text-xs font-bold text-blue-600">
-                                        {isLoading ? 'Fetching Data...' : '↻ Sync Data'}
+                                        {isLoading ? 'Syncing...' : '↻ Sync Sheet'}
                                     </button>
                                 </div>
 
-                                {/* Add Form */}
                                 <form onSubmit={handleAddProfile} className="p-6 rounded-2xl shadow-neu bg-neuBg grid grid-cols-1 md:grid-cols-3 gap-4">
                                     <input type="text" placeholder="Candidate Name *" value={form.candidateName} onChange={e => setForm({...form, candidateName: e.target.value})} className="p-3 rounded-xl shadow-neuInset bg-neuBg outline-none text-sm" required />
                                     <select value={form.source} onChange={e => setForm({...form, source: e.target.value})} className="p-3 rounded-xl shadow-neuInset bg-neuBg outline-none text-sm">
@@ -247,50 +229,38 @@
                                         <option value="Vendor">Vendor</option>
                                         <option value="Reference">Reference</option>
                                     </select>
-                                    <input type="text" placeholder="Role / Designation *" value={form.role} onChange={e => setForm({...form, role: e.target.value})} className="p-3 rounded-xl shadow-neuInset bg-neuBg outline-none text-sm" required />
-                                    <input type="text" placeholder="Department" value={form.department} onChange={e => setForm({...form, department: e.target.value})} className="p-3 rounded-xl shadow-neuInset bg-neuBg outline-none text-sm" />
-                                    <input type="text" placeholder="Business Unit" value={form.businessUnit} onChange={e => setForm({...form, businessUnit: e.target.value})} className="p-3 rounded-xl shadow-neuInset bg-neuBg outline-none text-sm" />
+                                    <input type="text" placeholder="Role *" value={form.role} onChange={e => setForm({...form, role: e.target.value})} className="p-3 rounded-xl shadow-neuInset bg-neuBg outline-none text-sm" required />
                                     <input type="text" placeholder="Contact Number" value={form.contactNumber} onChange={e => setForm({...form, contactNumber: e.target.value})} className="p-3 rounded-xl shadow-neuInset bg-neuBg outline-none text-sm" />
                                     <input type="email" placeholder="Email ID" value={form.emailId} onChange={e => setForm({...form, emailId: e.target.value})} className="p-3 rounded-xl shadow-neuInset bg-neuBg outline-none text-sm" />
                                     <input type="text" placeholder="Location" value={form.location} onChange={e => setForm({...form, location: e.target.value})} className="p-3 rounded-xl shadow-neuInset bg-neuBg outline-none text-sm" />
-                                    <input type="text" placeholder="Total Experience" value={form.totalExp} onChange={e => setForm({...form, totalExp: e.target.value})} className="p-3 rounded-xl shadow-neuInset bg-neuBg outline-none text-sm" />
-                                    <button type="submit" disabled={isLoading} className="md:col-span-3 py-3 rounded-xl shadow-neu hover:shadow-neuInset text-blue-600 font-bold transition">
-                                        {isLoading ? 'Sending to Webhook...' : '➕ Add Sourced Profile & Sync Sheet'}
-                                    </button>
+                                    <button type="submit" className="md:col-span-3 py-3 rounded-xl shadow-neu hover:shadow-neuInset text-blue-600 font-bold">➕ Add Sourced Profile</button>
                                 </form>
 
-                                {/* Profiles Table */}
                                 <div className="p-6 rounded-2xl shadow-neu bg-neuBg overflow-x-auto">
                                     <table className="w-full text-left border-collapse">
                                         <thead>
                                             <tr className="border-b border-slate-300 text-xs text-slate-400 uppercase">
-                                                <th className="p-3">Candidate Name</th>
+                                                <th className="p-3">Name</th>
                                                 <th className="p-3">Source</th>
                                                 <th className="p-3">Role</th>
-                                                <th className="p-3">Department</th>
+                                                <th className="p-3">Location</th>
                                                 <th className="p-3">Contact</th>
                                                 <th className="p-3">Action</th>
                                             </tr>
                                         </thead>
                                         <tbody className="text-sm">
                                             {profiles.length === 0 ? (
-                                                <tr>
-                                                    <td colSpan="6" className="text-center p-6 text-slate-400">
-                                                        {isLoading ? 'Loading candidates from Google Sheet...' : 'No sourced profiles found. Add one above!'}
-                                                    </td>
-                                                </tr>
+                                                <tr><td colSpan="6" className="text-center p-6 text-slate-400">{isLoading ? 'Loading candidates...' : 'No profiles found.'}</td></tr>
                                             ) : (
                                                 profiles.map((p, idx) => (
                                                     <tr key={idx} className="border-b border-slate-200 hover:bg-white/50">
-                                                        <td className="p-3 font-semibold">{p.candidateName || p.NAME || 'N/A'}</td>
-                                                        <td className="p-3"><span className="px-2 py-1 rounded-lg shadow-neuSm text-xs">{p.source || p['CV SOURCED FROM'] || 'Naukri'}</span></td>
-                                                        <td className="p-3">{p.role || p.Role || 'N/A'}</td>
-                                                        <td className="p-3">{p.department || p.department || 'N/A'}</td>
-                                                        <td className="p-3">{p.contactNumber || p['contact number'] || 'N/A'}</td>
+                                                        <td className="p-3 font-semibold">{p.candidateName}</td>
+                                                        <td className="p-3"><span className="px-2 py-1 rounded-lg shadow-neuSm text-xs">{p.source}</span></td>
+                                                        <td className="p-3">{p.role}</td>
+                                                        <td className="p-3">{p.location}</td>
+                                                        <td className="p-3">{p.contactNumber}</td>
                                                         <td className="p-3">
-                                                            <button onClick={() => moveToJoiner(p)} className="px-3 py-1 rounded-xl shadow-neu hover:shadow-neuInset text-xs font-bold text-emerald-600 transition">
-                                                                Mark Joined
-                                                            </button>
+                                                            <button onClick={() => moveToJoiner(p)} className="px-3 py-1 rounded-xl shadow-neu hover:shadow-neuInset text-xs font-bold text-emerald-600">Mark Joined</button>
                                                         </td>
                                                     </tr>
                                                 ))
@@ -301,20 +271,18 @@
                             </div>
                         )}
 
-                        {/* JOINERS TAB */}
+                        {/* JOINERS */}
                         {activeTab === 'joiners' && (
                             <div className="space-y-6">
-                                <h2 className="text-2xl font-bold text-slate-700">Successfully Joined Candidates</h2>
+                                <h2 className="text-2xl font-bold text-slate-700">Joined Employees</h2>
                                 <div className="p-6 rounded-2xl shadow-neu bg-neuBg">
-                                    {joiners.length === 0 ? (
-                                        <p className="text-slate-400 text-center py-6">No joiners recorded yet. Convert profiles from the Sourced tab.</p>
-                                    ) : (
-                                        <div className="space-y-4">
+                                    {joiners.length === 0 ? <p className="text-slate-400 text-center py-6">No joiners converted yet.</p> : (
+                                        <div className="space-y-3">
                                             {joiners.map((j, idx) => (
-                                                <div key={idx} className="p-4 rounded-xl shadow-neu bg-neuBg flex justify-between items-center">
+                                                <div key={idx} className="p-4 rounded-xl shadow-neu flex justify-between items-center">
                                                     <div>
-                                                        <h4 className="font-bold text-slate-700">{j.candidateName || j.NAME}</h4>
-                                                        <p className="text-xs text-slate-500">{j.role || j.Role} • Joined</p>
+                                                        <h4 className="font-bold text-slate-700">{j.candidateName}</h4>
+                                                        <p className="text-xs text-slate-500">{j.role} • {j.location}</p>
                                                     </div>
                                                     <span className="px-3 py-1 rounded-full shadow-neuInset text-xs text-emerald-600 font-bold">Active Employee</span>
                                                 </div>
@@ -325,75 +293,24 @@
                             </div>
                         )}
 
-                        {/* TODOS & REMINDERS TAB */}
+                        {/* TODOS */}
                         {activeTab === 'todos' && (
                             <div className="space-y-6">
-                                <h2 className="text-2xl font-bold text-slate-700">Smart To-Do & Auto-Rollover Reminders</h2>
+                                <h2 className="text-2xl font-bold text-slate-700">Daily To-Do & Rollover</h2>
                                 <div className="p-6 rounded-2xl shadow-neu bg-neuBg space-y-4">
                                     <div className="flex gap-2">
-                                        <input 
-                                            type="text" 
-                                            placeholder="Add new task for tomorrow..." 
-                                            value={newTodo} 
-                                            onChange={e => setNewTodo(e.target.value)}
-                                            className="flex-1 p-3 rounded-xl shadow-neuInset bg-neuBg outline-none text-sm"
-                                        />
-                                        <button 
-                                            onClick={() => {
-                                                if(!newTodo) return;
-                                                setTodos([...todos, { id: Date.now(), text: newTodo, completed: false }]);
-                                                setNewTodo('');
-                                            }}
-                                            className="px-6 py-3 rounded-xl shadow-neu hover:shadow-neuInset font-bold text-blue-600 text-sm transition"
-                                        >
-                                            Add Task
-                                        </button>
+                                        <input type="text" placeholder="Task for tomorrow..." value={newTodo} onChange={e => setNewTodo(e.target.value)} className="flex-1 p-3 rounded-xl shadow-neuInset bg-neuBg outline-none text-sm" />
+                                        <button onClick={() => { if(!newTodo) return; setTodos([...todos, { id: Date.now(), text: newTodo, completed: false }]); setNewTodo(''); }} className="px-6 py-3 rounded-xl shadow-neu hover:shadow-neuInset font-bold text-blue-600 text-sm">Add Task</button>
                                     </div>
-
                                     <div className="space-y-3 mt-4">
                                         {todos.map(todo => (
-                                            <div key={todo.id} className={`p-4 rounded-xl shadow-neu flex items-center justify-between transition ${todo.completed ? 'opacity-60' : ''}`}>
+                                            <div key={todo.id} className={`p-4 rounded-xl shadow-neu flex items-center justify-between ${todo.completed ? 'opacity-60' : ''}`}>
                                                 <div className="flex items-center space-x-3">
-                                                    <input 
-                                                        type="checkbox" 
-                                                        checked={todo.completed} 
-                                                        onChange={() => setTodos(todos.map(t => t.id === todo.id ? {...t, completed: !t.completed} : t))}
-                                                        className="w-5 h-5 accent-blue-600 cursor-pointer"
-                                                    />
-                                                    <span className={`text-sm font-medium ${todo.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>
-                                                        {todo.text}
-                                                    </span>
+                                                    <input type="checkbox" checked={todo.completed} onChange={() => setTodos(todos.map(t => t.id === todo.id ? {...t, completed: !t.completed} : t))} className="w-5 h-5 accent-blue-600 cursor-pointer" />
+                                                    <span className={`text-sm ${todo.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>{todo.text}</span>
                                                 </div>
-                                                <span className="text-xs text-slate-400 px-2 py-1 rounded shadow-neuInset">
-                                                    {todo.completed ? 'Completed' : 'Rolled over / Pending'}
-                                                </span>
                                             </div>
                                         ))}
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* GOOGLE SHEET & WEBHOOK TAB */}
-                        {activeTab === 'sheet' && (
-                            <div className="space-y-6">
-                                <h2 className="text-2xl font-bold text-slate-700">Google Sheet & Webhook Synchronization</h2>
-                                <div className="p-6 rounded-2xl shadow-neu bg-neuBg space-y-4">
-                                    <p className="text-sm text-slate-600">Active Google Apps Script Webhook Endpoint:</p>
-                                    <div className="p-3 rounded-xl shadow-neuInset bg-neuBg font-mono text-xs text-blue-600 break-all">
-                                        {WEBHOOK_URL}
-                                    </div>
-                                    <div className="p-4 rounded-xl shadow-neu bg-neuBg flex justify-between items-center">
-                                        <div>
-                                            <h4 className="font-bold text-slate-700">Live Backend Status</h4>
-                                            <p className="text-xs text-emerald-600 font-semibold flex items-center gap-2 mt-1">
-                                                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
-                                                Connected to Office Google Sheet
-                                            </p>
-                                        </div>
-                                        <button onClick={fetchSheetData} className="px-4 py-2 rounded-xl shadow-neu hover:shadow-neuInset text-xs font-bold text-blue-600">
-                                            Test Sync Now
-                                        </button>
                                     </div>
                                 </div>
                             </div>
