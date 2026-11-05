@@ -30,26 +30,28 @@
         const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzg0o4r0RboJGr75shmuf-6fglCaa3xoBTsf6CHUmqe_nNUu5WXAutbCdNJSmgNDlGe/exec";
 
         function App() {
-            const [activeTab, setActiveTab] = React.useState('joiners');
+            const [activeTab, setActiveTab] = React.useState('todos');
             const [isLoading, setIsLoading] = React.useState(false);
             const [syncStatus, setSyncStatus] = React.useState('Connecting...');
             const [profiles, setProfiles] = React.useState([]);
             const [joiners, setJoiners] = React.useState([]);
 
-            // Search filter state
             const [searchTerm, setSearchTerm] = React.useState('');
-            
-            // Selected candidate state for popup modal
             const [selectedCandidate, setSelectedCandidate] = React.useState(null);
 
+            // Enhanced To-Do State with Categories
             const [todos, setTodos] = React.useState([
-                { id: '1', text: 'Review shortlisted candidates for L1 interview', completed: false },
-                { id: '2', text: 'Follow up on high-CTC profiles', completed: false }
+                { id: '1', text: 'Schedule L2 technical round for shortlisted engineers', category: 'Interview schedule', completed: false },
+                { id: '2', text: 'Collect previous employment payslips and ID proofs', category: 'Document collection', completed: false },
+                { id: '3', text: 'Dispatch laptop and company branded welcome kit', category: 'Welcome kit', completed: false },
+                { id: '4', text: 'Send reminder for document submission deadline', category: 'Reminders', completed: false }
             ]);
-            const [newTodo, setNewTodo] = React.useState('');
+            const [newTodoText, setNewTodoText] = React.useState('');
+            const [newTodoCategory, setNewTodoCategory] = React.useState('Interview schedule');
+            const [todoFilter, setTodoFilter] = React.useState('All');
+
             const [showAlert, setShowAlert] = React.useState(true);
 
-            // Comprehensive parser for sheet fields
             const parseSheetData = (data) => {
                 return data.map((item, index) => ({
                     id: index,
@@ -98,16 +100,12 @@
                 fetchSheetData();
             }, [fetchSheetData]);
 
-            // Handle status change for joiners (Joined, Offer Released, Revoked)
             const handleStatusChange = (candidate, newStatus) => {
                 const confirmed = window.confirm(`Change status of ${candidate.candidateName} to "${newStatus}"?`);
                 if (confirmed) {
                     const updated = { ...candidate, status: newStatus };
-                    
-                    // Update Joiners local state
                     setJoiners(prev => prev.map(item => item.candidateName === candidate.candidateName ? updated : item));
 
-                    // Send POST request to update Google Sheet
                     fetch(WEBHOOK_URL, {
                         method: 'POST',
                         mode: 'no-cors',
@@ -122,13 +120,24 @@
                 }
             };
 
-            // Confirmation alert before marking joined from Sourced
             const handleMarkJoined = (candidate) => {
-                handleStatusChange(candidate, 'Joined');
-                setProfiles(prev => prev.filter(p => p.candidateName !== candidate.candidateName));
+                const confirmed = window.confirm(`Are you sure you want to mark ${candidate.candidateName} as JOINED?`);
+                if (confirmed) {
+                    const updated = { ...candidate, status: 'Joined' };
+                    setProfiles(prev => prev.filter(p => p.candidateName !== candidate.candidateName));
+                    setJoiners(prev => [updated, ...prev]);
+
+                    fetch(WEBHOOK_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(updated)
+                    });
+
+                    alert(`${candidate.candidateName} has been moved to the Joiners Directory!`);
+                }
             };
 
-            // Filter profiles based on search input
             const filteredProfiles = profiles.filter(p => {
                 const term = searchTerm.toLowerCase();
                 return (
@@ -140,16 +149,6 @@
                     p.contactNumber.toString().includes(term)
                 );
             });
-
-            const getBreakdown = (key) => {
-                const allRecords = [...profiles, ...joiners];
-                const counts = {};
-                allRecords.forEach(item => {
-                    const val = item[key] && item[key].toString().trim() !== '' ? item[key] : 'Unspecified';
-                    counts[val] = (counts[val] || 0) + 1;
-                });
-                return Object.entries(counts).sort((a, b) => b[1] - a[1]);
-            };
 
             return (
                 <div className="flex h-screen overflow-hidden bg-neuBg">
@@ -188,13 +187,13 @@
                         </div>
                     </div>
 
-                    {/* Main Content */}
+                    {/* Main Content Area */}
                     <div className="flex-1 overflow-y-auto p-6 md:p-10">
                         {showAlert && (
                             <div className="mb-6 p-4 rounded-2xl shadow-neu bg-neuBg border-l-4 border-blue-500 flex justify-between items-center">
                                 <div>
                                     <h3 className="font-bold text-slate-700">☀️ Good Morning! HR System Active</h3>
-                                    <p className="text-sm text-slate-500">You can now change candidate statuses directly in the Joiners Directory (Joined, Offer Released, Revoked).</p>
+                                    <p className="text-sm text-slate-500">Manage your interviews, documents, welcome kits, reminders, and custom task workflows below.</p>
                                 </div>
                                 <button onClick={() => setShowAlert(false)} className="px-4 py-2 rounded-xl shadow-neu hover:shadow-neuInset text-xs font-bold text-slate-600">Dismiss</button>
                             </div>
@@ -249,7 +248,6 @@
                                     </button>
                                 </div>
 
-                                {/* SEARCH BOX */}
                                 <div className="p-4 rounded-2xl shadow-neu bg-neuBg flex items-center gap-3">
                                     <span className="text-slate-400 font-bold text-lg">🔍</span>
                                     <input
@@ -264,7 +262,6 @@
                                     )}
                                 </div>
 
-                                {/* TABLE */}
                                 <div className="p-6 rounded-2xl shadow-neu bg-neuBg overflow-x-auto">
                                     <table className="w-full text-left border-collapse">
                                         <thead>
@@ -280,11 +277,7 @@
                                         </thead>
                                         <tbody className="text-sm">
                                             {filteredProfiles.length === 0 ? (
-                                                <tr>
-                                                    <td colSpan="7" className="text-center p-6 text-slate-400">
-                                                        {isLoading ? 'Loading candidates...' : 'No candidate records match your search.'}
-                                                    </td>
-                                                </tr>
+                                                <tr><td colSpan="7" className="text-center p-6 text-slate-400">{isLoading ? 'Loading candidates...' : 'No candidate records match your search.'}</td></tr>
                                             ) : (
                                                 filteredProfiles.map((p, idx) => (
                                                     <tr key={idx} className="border-b border-slate-200 hover:bg-white/50 transition">
@@ -312,7 +305,7 @@
                             </div>
                         )}
 
-                        {/* JOINERS DIRECTORY TAB WITH STATUS SELECTOR */}
+                        {/* JOINERS DIRECTORY TAB */}
                         {activeTab === 'joiners' && (
                             <div className="space-y-6">
                                 <div className="flex justify-between items-center">
@@ -339,7 +332,6 @@
                                                             <p className="text-xs text-slate-500 mt-1">{j.role} • {j.location} • Exp: {j.totalExp} • CTC: {j.expectedCtc}</p>
                                                         </div>
 
-                                                        {/* Dynamic Status Switcher */}
                                                         <div className="flex items-center gap-3">
                                                             <span className="text-xs font-bold text-slate-400 uppercase">Status:</span>
                                                             <select
@@ -361,31 +353,95 @@
                             </div>
                         )}
 
-                        {/* TODOS TAB */}
+                        {/* TO-DO & TASK MANAGER TAB */}
                         {activeTab === 'todos' && (
                             <div className="space-y-6">
-                                <h2 className="text-2xl font-bold text-slate-700">Daily To-Do & Task Manager</h2>
+                                <h2 className="text-2xl font-bold text-slate-700">Daily To-Do & Workflow Task Manager</h2>
+                                
+                                {/* Add Task Form */}
                                 <div className="p-6 rounded-2xl shadow-neu bg-neuBg space-y-4">
-                                    <div className="flex gap-2">
-                                        <input type="text" placeholder="Add task..." value={newTodo} onChange={e => setNewTodo(e.target.value)} className="flex-1 p-3 rounded-xl shadow-neuInset bg-neuBg outline-none text-sm" />
-                                        <button onClick={() => { if(!newTodo) return; setTodos([...todos, { id: Date.now(), text: newTodo, completed: false }]); setNewTodo(''); }} className="px-6 py-3 rounded-xl shadow-neu hover:shadow-neuInset font-bold text-blue-600 text-sm">Add Task</button>
+                                    <h3 className="font-bold text-slate-700 text-sm">Create New Task</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <input 
+                                            type="text" 
+                                            placeholder="Enter task description..." 
+                                            value={newTodoText} 
+                                            onChange={e => setNewTodoText(e.target.value)} 
+                                            className="md:col-span-2 p-3 rounded-xl shadow-neuInset bg-neuBg outline-none text-sm" 
+                                        />
+                                        <select 
+                                            value={newTodoCategory} 
+                                            onChange={e => setNewTodoCategory(e.target.value)} 
+                                            className="p-3 rounded-xl shadow-neuInset bg-neuBg outline-none text-sm font-medium text-slate-600"
+                                        >
+                                            <option value="Interview schedule">Interview schedule</option>
+                                            <option value="Document collection">Document collection</option>
+                                            <option value="Welcome kit">Welcome kit</option>
+                                            <option value="Reminders">Reminders</option>
+                                            <option value="Custom Task">Custom List / Custom</option>
+                                        </select>
                                     </div>
-                                    <div className="space-y-3 mt-4">
-                                        {todos.map(todo => (
-                                            <div key={todo.id} className={`p-4 rounded-xl shadow-neu flex items-center justify-between ${todo.completed ? 'opacity-60' : ''}`}>
+                                    <button 
+                                        onClick={() => {
+                                            if(!newTodoText.trim()) return;
+                                            setTodos([...todos, { id: Date.now(), text: newTodoText, category: newTodoCategory, completed: false }]);
+                                            setNewTodoText('');
+                                        }} 
+                                        className="w-full py-3 rounded-xl shadow-neu hover:shadow-neuInset font-bold text-blue-600 text-sm transition"
+                                    >
+                                        ➕ Add Task to Workflow
+                                    </button>
+                                </div>
+
+                                {/* Category Filters */}
+                                <div className="flex flex-wrap gap-2 pt-2">
+                                    {['All', 'Interview schedule', 'Document collection', 'Welcome kit', 'Reminders', 'Custom Task'].map(cat => (
+                                        <button
+                                            key={cat}
+                                            onClick={() => setTodoFilter(cat)}
+                                            className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
+                                                todoFilter === cat ? 'shadow-neuInset text-blue-600' : 'shadow-neu hover:shadow-neuSm text-slate-600'
+                                            }`}
+                                        >
+                                            {cat}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                {/* Task List */}
+                                <div className="p-6 rounded-2xl shadow-neu bg-neuBg space-y-3">
+                                    {todos.filter(t => todoFilter === 'All' || t.category === todoFilter).length === 0 ? (
+                                        <p className="text-slate-400 text-center py-6 text-sm">No tasks found in this category.</p>
+                                    ) : (
+                                        todos.filter(t => todoFilter === 'All' || t.category === todoFilter).map(todo => (
+                                            <div key={todo.id} className={`p-4 rounded-xl shadow-neu flex items-center justify-between transition ${todo.completed ? 'opacity-65' : ''}`}>
                                                 <div className="flex items-center space-x-3">
-                                                    <input type="checkbox" checked={todo.completed} onChange={() => setTodos(todos.map(t => t.id === todo.id ? {...t, completed: !t.completed} : t))} className="w-5 h-5 accent-blue-600 cursor-pointer" />
-                                                    <span className={`text-sm ${todo.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>{todo.text}</span>
+                                                    <input 
+                                                        type="checkbox" 
+                                                        checked={todo.completed} 
+                                                        onChange={() => setTodos(todos.map(t => t.id === todo.id ? {...t, completed: !t.completed} : t))} 
+                                                        className="w-5 h-5 accent-blue-600 cursor-pointer" 
+                                                    />
+                                                    <div>
+                                                        <span className={`text-sm font-semibold ${todo.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>{todo.text}</span>
+                                                        <span className="block text-[10px] text-blue-600 uppercase font-bold mt-0.5">{todo.category}</span>
+                                                    </div>
                                                 </div>
+                                                <button 
+                                                    onClick={() => setTodos(todos.filter(t => t.id !== todo.id))}
+                                                    className="px-2.5 py-1 rounded-lg shadow-neu hover:shadow-neuInset text-xs font-bold text-rose-500"
+                                                >
+                                                    Delete
+                                                </button>
                                             </div>
-                                        ))}
-                                    </div>
+                                        ))
+                                    )}
                                 </div>
                             </div>
                         )}
                     </div>
 
-                    {/* CANDIDATE DETAILS POPUP MODAL */}
+                    {/* CANDIDATE DETAILS MODAL */}
                     {selectedCandidate && (
                         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
                             <div className="bg-neuBg p-6 md:p-8 rounded-3xl shadow-neu max-w-2xl w-full max-h-[90vh] overflow-y-auto space-y-6">
