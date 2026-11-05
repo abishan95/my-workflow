@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Work Flow - HR Portal</title>
+    <title>My Work Flow - Senior HR Portal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -76,7 +76,6 @@
                 }));
             };
 
-            // Auto-fetch fresh data on every page load & refresh
             const fetchSheetData = React.useCallback(() => {
                 setIsLoading(true);
                 setSyncStatus('Fetching up-to-date data...');
@@ -152,7 +151,6 @@
                 );
             });
 
-            // Dynamic Analytics Breakdown Calculator
             const getBreakdown = (key) => {
                 const allRecords = [...profiles, ...joiners];
                 const counts = {};
@@ -167,16 +165,38 @@
 
             return (
                 <div className="flex h-screen overflow-hidden bg-neuBg">
-                    {/* Sidebar */}
-                    <div className="w-64 bg-neuBg p-6 shadow-neu flex flex-col justify-between hidden md:flex">
+                    {/* Sidebar with Logo & User Profile (Abishan - Senior HR) */}
+                    <div className="w-72 bg-neuBg p-6 shadow-neu flex flex-col justify-between hidden md:flex">
                         <div>
-                            <div className="flex items-center space-x-3 mb-8">
-                                <div className="w-10 h-10 rounded-xl bg-neuBg shadow-neu flex items-center justify-center font-bold text-blue-600">MW</div>
+                            {/* Logo & Brand Header */}
+                            <div className="flex items-center space-x-3 mb-6 p-2 rounded-2xl shadow-neuInset">
+                                <img 
+                                    src="https://raw.githubusercontent.com/abishan95/my-workflow/main/My%20workflow%20logo.jpeg" 
+                                    alt="My Workflow Logo" 
+                                    className="w-12 h-12 rounded-xl object-cover shadow-neu" 
+                                    onError={(e) => {
+                                        // Fallback if raw image link is propagating
+                                        e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 24 24' fill='none' stroke='%232563eb' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6'/%3E%3C/svg%3E";
+                                    }}
+                                />
                                 <div>
-                                    <h1 className="font-bold text-slate-800">My Work Flow</h1>
-                                    <p className="text-xs text-slate-500">HR Operations Portal</p>
+                                    <h1 className="font-extrabold text-slate-800 text-sm">My Work Flow</h1>
+                                    <p className="text-[10px] text-blue-600 font-bold uppercase tracking-wider">HR Intelligence</p>
                                 </div>
                             </div>
+
+                            {/* User Profile Card (Abishan / Senior HR) */}
+                            <div className="p-3.5 mb-8 rounded-2xl shadow-neu bg-neuBg flex items-center space-x-3">
+                                <div className="w-10 h-10 rounded-xl shadow-neuInset flex items-center justify-center font-extrabold text-blue-600 bg-neuBg">
+                                    A
+                                </div>
+                                <div className="overflow-hidden">
+                                    <h2 className="font-bold text-slate-800 text-sm truncate">Abishan</h2>
+                                    <p className="text-xs text-blue-600 font-semibold">Senior HR</p>
+                                </div>
+                            </div>
+
+                            {/* Navigation Tabs */}
                             <nav className="space-y-3">
                                 {[
                                     { id: 'dashboard', label: '📊 Deep Analytics' },
@@ -196,6 +216,7 @@
                                 ))}
                             </nav>
                         </div>
+                        
                         <div className="text-xs text-slate-500 p-3 text-center shadow-neuInset rounded-xl flex items-center justify-center gap-2">
                             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                             {syncStatus}
@@ -207,8 +228,8 @@
                         {showAlert && (
                             <div className="mb-6 p-4 rounded-2xl shadow-neu bg-neuBg border-l-4 border-blue-500 flex justify-between items-center">
                                 <div>
-                                    <h3 className="font-bold text-slate-700">☀️ Real-Time Analytics Engine Active</h3>
-                                    <p className="text-sm text-slate-500">Dashboard reports are automatically computed from your live Google Sheet on every refresh.</p>
+                                    <h3 className="font-bold text-slate-700">☀️ Welcome back, Abishan (Senior HR)</h3>
+                                    <p className="text-sm text-slate-500">Dashboard analytics and records are fully synced with your office Google Sheet.</p>
                                 </div>
                                 <button onClick={() => setShowAlert(false)} className="px-4 py-2 rounded-xl shadow-neu hover:shadow-neuInset text-xs font-bold text-slate-600">Dismiss</button>
                             </div>
@@ -227,117 +248,76 @@
                                     </button>
                                 </div>
 
-                                {isLoading && totalDatasetCount === 0 ? (
-                                    <div className="p-12 rounded-3xl shadow-neu bg-neuBg text-center">
-                                        <p className="text-slate-500 font-bold animate-pulse">Fetching and visualizing live records from Google Sheet...</p>
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                                    <div className="p-6 rounded-2xl shadow-neu bg-neuBg">
+                                        <p className="text-xs text-slate-400 font-bold uppercase">Total Pipeline</p>
+                                        <h3 className="text-3xl font-extrabold text-slate-700 mt-2">{totalDatasetCount}</h3>
                                     </div>
-                                ) : (
-                                    <>
-                                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                                            <div className="p-6 rounded-2xl shadow-neu bg-neuBg">
-                                                <p className="text-xs text-slate-400 font-bold uppercase">Total Pipeline</p>
-                                                <h3 className="text-3xl font-extrabold text-slate-700 mt-2">{totalDatasetCount}</h3>
-                                            </div>
-                                            <div className="p-6 rounded-2xl shadow-neu bg-neuBg">
-                                                <p className="text-xs text-slate-400 font-bold uppercase">Active Sourced</p>
-                                                <h3 className="text-3xl font-extrabold text-indigo-600 mt-2">{profiles.length}</h3>
-                                            </div>
-                                            <div className="p-6 rounded-2xl shadow-neu bg-neuBg">
-                                                <p className="text-xs text-slate-400 font-bold uppercase">Offers & Joiners</p>
-                                                <h3 className="text-3xl font-extrabold text-emerald-600 mt-2">{joiners.length}</h3>
-                                            </div>
-                                            <div className="p-6 rounded-2xl shadow-neu bg-neuBg">
-                                                <p className="text-xs text-slate-400 font-bold uppercase">Conversion Rate</p>
-                                                <h3 className="text-3xl font-extrabold text-amber-600 mt-2">
-                                                    {totalDatasetCount > 0 ? ((joiners.length / totalDatasetCount) * 100).toFixed(1) + '%' : '0%'}
-                                                </h3>
-                                            </div>
+                                    <div className="p-6 rounded-2xl shadow-neu bg-neuBg">
+                                        <p className="text-xs text-slate-400 font-bold uppercase">Active Sourced</p>
+                                        <h3 className="text-3xl font-extrabold text-indigo-600 mt-2">{profiles.length}</h3>
+                                    </div>
+                                    <div className="p-6 rounded-2xl shadow-neu bg-neuBg">
+                                        <p className="text-xs text-slate-400 font-bold uppercase">Offers & Joiners</p>
+                                        <h3 className="text-3xl font-extrabold text-emerald-600 mt-2">{joiners.length}</h3>
+                                    </div>
+                                    <div className="p-6 rounded-2xl shadow-neu bg-neuBg">
+                                        <p className="text-xs text-slate-400 font-bold uppercase">Conversion Rate</p>
+                                        <h3 className="text-3xl font-extrabold text-amber-600 mt-2">
+                                            {totalDatasetCount > 0 ? ((joiners.length / totalDatasetCount) * 100).toFixed(1) + '%' : '0%'}
+                                        </h3>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div className="p-6 rounded-2xl shadow-neu bg-neuBg space-y-4">
+                                        <h3 className="font-bold text-slate-700 border-b border-slate-300 pb-2">📂 Breakdown by CV Source</h3>
+                                        <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
+                                            {getBreakdown('source').map(([src, count], idx) => (
+                                                <div key={idx} className="flex justify-between items-center p-3 rounded-xl shadow-neuInset bg-neuBg">
+                                                    <span className="text-sm font-medium text-slate-600 truncate">{src}</span>
+                                                    <span className="px-3 py-1 rounded-lg shadow-neu text-xs font-bold text-blue-600">{count}</span>
+                                                </div>
+                                            ))}
                                         </div>
+                                    </div>
 
-                                        {/* Visualization Report Breakdowns */}
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                            
-                                            {/* CV Source Breakdown */}
-                                            <div className="p-6 rounded-2xl shadow-neu bg-neuBg space-y-4">
-                                                <h3 className="font-bold text-slate-700 border-b border-slate-300 pb-2">📂 Breakdown by CV Source</h3>
-                                                <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
-                                                    {getBreakdown('source').map(([src, count], idx) => (
-                                                        <div key={idx} className="flex justify-between items-center p-3 rounded-xl shadow-neuInset bg-neuBg">
-                                                            <span className="text-sm font-medium text-slate-600 truncate">{src}</span>
-                                                            <span className="px-3 py-1 rounded-lg shadow-neu text-xs font-bold text-blue-600">{count}</span>
-                                                        </div>
-                                                    ))}
+                                    <div className="p-6 rounded-2xl shadow-neu bg-neuBg space-y-4">
+                                        <h3 className="font-bold text-slate-700 border-b border-slate-300 pb-2">📍 Breakdown by Location</h3>
+                                        <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
+                                            {getBreakdown('location').map(([loc, count], idx) => (
+                                                <div key={idx} className="flex justify-between items-center p-3 rounded-xl shadow-neuInset bg-neuBg">
+                                                    <span className="text-sm font-medium text-slate-600 truncate">{loc}</span>
+                                                    <span className="px-3 py-1 rounded-lg shadow-neu text-xs font-bold text-emerald-600">{count}</span>
                                                 </div>
-                                            </div>
-
-                                            {/* Location Breakdown */}
-                                            <div className="p-6 rounded-2xl shadow-neu bg-neuBg space-y-4">
-                                                <h3 className="font-bold text-slate-700 border-b border-slate-300 pb-2">📍 Breakdown by Location</h3>
-                                                <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
-                                                    {getBreakdown('location').map(([loc, count], idx) => (
-                                                        <div key={idx} className="flex justify-between items-center p-3 rounded-xl shadow-neuInset bg-neuBg">
-                                                            <span className="text-sm font-medium text-slate-600 truncate">{loc}</span>
-                                                            <span className="px-3 py-1 rounded-lg shadow-neu text-xs font-bold text-emerald-600">{count}</span>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-
-                                            {/* Role Breakdown */}
-                                            <div className="p-6 rounded-2xl shadow-neu bg-neuBg space-y-4">
-                                                <h3 className="font-bold text-slate-700 border-b border-slate-300 pb-2">💼 Breakdown by Role</h3>
-                                                <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
-                                                    {getBreakdown('role').map(([role, count], idx) => (
-                                                        <div key={idx} className="flex justify-between items-center p-3 rounded-xl shadow-neuInset bg-neuBg">
-                                                            <span className="text-sm font-medium text-slate-600 truncate">{role}</span>
-                                                            <span className="px-3 py-1 rounded-lg shadow-neu text-xs font-bold text-indigo-600">{count}</span>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-
-                                            {/* Department Breakdown */}
-                                            <div className="p-6 rounded-2xl shadow-neu bg-neuBg space-y-4">
-                                                <h3 className="font-bold text-slate-700 border-b border-slate-300 pb-2">🏢 Breakdown by Department</h3>
-                                                <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
-                                                    {getBreakdown('department').map(([dept, count], idx) => (
-                                                        <div key={idx} className="flex justify-between items-center p-3 rounded-xl shadow-neuInset bg-neuBg">
-                                                            <span className="text-sm font-medium text-slate-600 truncate">{dept}</span>
-                                                            <span className="px-3 py-1 rounded-lg shadow-neu text-xs font-bold text-amber-600">{count}</span>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-
-                                            {/* BU Head / Recruiter Breakdown */}
-                                            <div className="p-6 rounded-2xl shadow-neu bg-neuBg space-y-4">
-                                                <h3 className="font-bold text-slate-700 border-b border-slate-300 pb-2">👤 Breakdown by BU Head / Recruiter</h3>
-                                                <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
-                                                    {getBreakdown('buHead').map(([head, count], idx) => (
-                                                        <div key={idx} className="flex justify-between items-center p-3 rounded-xl shadow-neuInset bg-neuBg">
-                                                            <span className="text-sm font-medium text-slate-600 truncate">{head}</span>
-                                                            <span className="px-3 py-1 rounded-lg shadow-neu text-xs font-bold text-purple-600">{count}</span>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-
-                                            {/* Notice Period Breakdown */}
-                                            <div className="p-6 rounded-2xl shadow-neu bg-neuBg space-y-4">
-                                                <h3 className="font-bold text-slate-700 border-b border-slate-300 pb-2">⏳ Notice Period Breakdown</h3>
-                                                <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
-                                                    {getBreakdown('noticePeriod').map(([np, count], idx) => (
-                                                        <div key={idx} className="flex justify-between items-center p-3 rounded-xl shadow-neuInset bg-neuBg">
-                                                            <span className="text-sm font-medium text-slate-600 truncate">{np}</span>
-                                                            <span className="px-3 py-1 rounded-lg shadow-neu text-xs font-bold text-rose-600">{count}</span>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-
+                                            ))}
                                         </div>
-                                    </>
-                                )}
+                                    </div>
+
+                                    <div className="p-6 rounded-2xl shadow-neu bg-neuBg space-y-4">
+                                        <h3 className="font-bold text-slate-700 border-b border-slate-300 pb-2">💼 Breakdown by Role</h3>
+                                        <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
+                                            {getBreakdown('role').map(([role, count], idx) => (
+                                                <div key={idx} className="flex justify-between items-center p-3 rounded-xl shadow-neuInset bg-neuBg">
+                                                    <span className="text-sm font-medium text-slate-600 truncate">{role}</span>
+                                                    <span className="px-3 py-1 rounded-lg shadow-neu text-xs font-bold text-indigo-600">{count}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="p-6 rounded-2xl shadow-neu bg-neuBg space-y-4">
+                                        <h3 className="font-bold text-slate-700 border-b border-slate-300 pb-2">🏢 Breakdown by Department</h3>
+                                        <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
+                                            {getBreakdown('department').map(([dept, count], idx) => (
+                                                <div key={idx} className="flex justify-between items-center p-3 rounded-xl shadow-neuInset bg-neuBg">
+                                                    <span className="text-sm font-medium text-slate-600 truncate">{dept}</span>
+                                                    <span className="px-3 py-1 rounded-lg shadow-neu text-xs font-bold text-amber-600">{count}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         )}
 
