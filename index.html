@@ -30,16 +30,16 @@
         const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzg0o4r0RboJGr75shmuf-6fglCaa3xoBTsf6CHUmqe_nNUu5WXAutbCdNJSmgNDlGe/exec";
 
         function App() {
-            const [activeTab, setActiveTab] = React.useState('todos');
-            const [isLoading, setIsLoading] = React.useState(false);
-            const [syncStatus, setSyncStatus] = React.useState('Connecting...');
+            const [activeTab, setActiveTab] = React.useState('dashboard');
+            const [isLoading, setIsLoading] = React.useState(true);
+            const [syncStatus, setSyncStatus] = React.useState('Syncing Live Data...');
             const [profiles, setProfiles] = React.useState([]);
             const [joiners, setJoiners] = React.useState([]);
 
             const [searchTerm, setSearchTerm] = React.useState('');
             const [selectedCandidate, setSelectedCandidate] = React.useState(null);
 
-            // Enhanced To-Do State with Categories
+            // To-Do Task State
             const [todos, setTodos] = React.useState([
                 { id: '1', text: 'Schedule L2 technical round for shortlisted engineers', category: 'Interview schedule', completed: false },
                 { id: '2', text: 'Collect previous employment payslips and ID proofs', category: 'Document collection', completed: false },
@@ -52,6 +52,7 @@
 
             const [showAlert, setShowAlert] = React.useState(true);
 
+            // Comprehensive parser for sheet fields
             const parseSheetData = (data) => {
                 return data.map((item, index) => ({
                     id: index,
@@ -75,9 +76,10 @@
                 }));
             };
 
+            // Auto-fetch fresh data on every page load & refresh
             const fetchSheetData = React.useCallback(() => {
                 setIsLoading(true);
-                setSyncStatus('Fetching...');
+                setSyncStatus('Fetching up-to-date data...');
                 fetch(WEBHOOK_URL)
                     .then(res => res.json())
                     .then(data => {
@@ -91,7 +93,7 @@
                     })
                     .catch(err => {
                         console.error('Fetch error:', err);
-                        setSyncStatus('Offline');
+                        setSyncStatus('Offline / Cached');
                         setIsLoading(false);
                     });
             }, []);
@@ -150,6 +152,19 @@
                 );
             });
 
+            // Dynamic Analytics Breakdown Calculator
+            const getBreakdown = (key) => {
+                const allRecords = [...profiles, ...joiners];
+                const counts = {};
+                allRecords.forEach(item => {
+                    const val = item[key] && item[key].toString().trim() !== '' ? item[key] : 'Unspecified';
+                    counts[val] = (counts[val] || 0) + 1;
+                });
+                return Object.entries(counts).sort((a, b) => b[1] - a[1]);
+            };
+
+            const totalDatasetCount = profiles.length + joiners.length;
+
             return (
                 <div className="flex h-screen overflow-hidden bg-neuBg">
                     {/* Sidebar */}
@@ -192,46 +207,137 @@
                         {showAlert && (
                             <div className="mb-6 p-4 rounded-2xl shadow-neu bg-neuBg border-l-4 border-blue-500 flex justify-between items-center">
                                 <div>
-                                    <h3 className="font-bold text-slate-700">☀️ Good Morning! HR System Active</h3>
-                                    <p className="text-sm text-slate-500">Manage your interviews, documents, welcome kits, reminders, and custom task workflows below.</p>
+                                    <h3 className="font-bold text-slate-700">☀️ Real-Time Analytics Engine Active</h3>
+                                    <p className="text-sm text-slate-500">Dashboard reports are automatically computed from your live Google Sheet on every refresh.</p>
                                 </div>
                                 <button onClick={() => setShowAlert(false)} className="px-4 py-2 rounded-xl shadow-neu hover:shadow-neuInset text-xs font-bold text-slate-600">Dismiss</button>
                             </div>
                         )}
 
-                        {/* DASHBOARD TAB */}
+                        {/* DEEP ANALYTICS DASHBOARD TAB */}
                         {activeTab === 'dashboard' && (
                             <div className="space-y-8">
                                 <div className="flex justify-between items-center">
                                     <div>
-                                        <h2 className="text-2xl font-bold text-slate-700">Recruitment Analytics</h2>
-                                        <p className="text-xs text-slate-400 mt-1">Total Dataset: <strong>{profiles.length + joiners.length} Candidates</strong></p>
+                                        <h2 className="text-2xl font-bold text-slate-700">Recruitment Deep Analytics</h2>
+                                        <p className="text-xs text-slate-400 mt-1">Total Live Dataset Analyzed: <strong>{totalDatasetCount} Candidates</strong></p>
                                     </div>
-                                    <button onClick={fetchSheetData} className="px-5 py-2.5 rounded-xl shadow-neu hover:shadow-neuInset text-xs font-bold text-blue-600 transition">
-                                        {isLoading ? 'Processing...' : '↻ Refresh Analytics'}
+                                    <button onClick={fetchSheetData} className="px-5 py-2.5 rounded-xl shadow-neu hover:shadow-neuInset text-xs font-bold text-blue-600 transition flex items-center gap-2">
+                                        <span>{isLoading ? 'Syncing...' : '↻ Refresh Analytics'}</span>
                                     </button>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                                    <div className="p-6 rounded-2xl shadow-neu bg-neuBg">
-                                        <p className="text-xs text-slate-400 font-bold uppercase">Total Pipeline</p>
-                                        <h3 className="text-3xl font-extrabold text-slate-700 mt-2">{profiles.length + joiners.length}</h3>
+                                {isLoading && totalDatasetCount === 0 ? (
+                                    <div className="p-12 rounded-3xl shadow-neu bg-neuBg text-center">
+                                        <p className="text-slate-500 font-bold animate-pulse">Fetching and visualizing live records from Google Sheet...</p>
                                     </div>
-                                    <div className="p-6 rounded-2xl shadow-neu bg-neuBg">
-                                        <p className="text-xs text-slate-400 font-bold uppercase">Active Sourced</p>
-                                        <h3 className="text-3xl font-extrabold text-indigo-600 mt-2">{profiles.length}</h3>
-                                    </div>
-                                    <div className="p-6 rounded-2xl shadow-neu bg-neuBg">
-                                        <p className="text-xs text-slate-400 font-bold uppercase">Offers & Joiners</p>
-                                        <h3 className="text-3xl font-extrabold text-emerald-600 mt-2">{joiners.length}</h3>
-                                    </div>
-                                    <div className="p-6 rounded-2xl shadow-neu bg-neuBg">
-                                        <p className="text-xs text-slate-400 font-bold uppercase">Conversion Rate</p>
-                                        <h3 className="text-3xl font-extrabold text-amber-600 mt-2">
-                                            {profiles.length + joiners.length > 0 ? ((joiners.length / (profiles.length + joiners.length)) * 100).toFixed(1) + '%' : '0%'}
-                                        </h3>
-                                    </div>
-                                </div>
+                                ) : (
+                                    <>
+                                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                                            <div className="p-6 rounded-2xl shadow-neu bg-neuBg">
+                                                <p className="text-xs text-slate-400 font-bold uppercase">Total Pipeline</p>
+                                                <h3 className="text-3xl font-extrabold text-slate-700 mt-2">{totalDatasetCount}</h3>
+                                            </div>
+                                            <div className="p-6 rounded-2xl shadow-neu bg-neuBg">
+                                                <p className="text-xs text-slate-400 font-bold uppercase">Active Sourced</p>
+                                                <h3 className="text-3xl font-extrabold text-indigo-600 mt-2">{profiles.length}</h3>
+                                            </div>
+                                            <div className="p-6 rounded-2xl shadow-neu bg-neuBg">
+                                                <p className="text-xs text-slate-400 font-bold uppercase">Offers & Joiners</p>
+                                                <h3 className="text-3xl font-extrabold text-emerald-600 mt-2">{joiners.length}</h3>
+                                            </div>
+                                            <div className="p-6 rounded-2xl shadow-neu bg-neuBg">
+                                                <p className="text-xs text-slate-400 font-bold uppercase">Conversion Rate</p>
+                                                <h3 className="text-3xl font-extrabold text-amber-600 mt-2">
+                                                    {totalDatasetCount > 0 ? ((joiners.length / totalDatasetCount) * 100).toFixed(1) + '%' : '0%'}
+                                                </h3>
+                                            </div>
+                                        </div>
+
+                                        {/* Visualization Report Breakdowns */}
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                            
+                                            {/* CV Source Breakdown */}
+                                            <div className="p-6 rounded-2xl shadow-neu bg-neuBg space-y-4">
+                                                <h3 className="font-bold text-slate-700 border-b border-slate-300 pb-2">📂 Breakdown by CV Source</h3>
+                                                <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
+                                                    {getBreakdown('source').map(([src, count], idx) => (
+                                                        <div key={idx} className="flex justify-between items-center p-3 rounded-xl shadow-neuInset bg-neuBg">
+                                                            <span className="text-sm font-medium text-slate-600 truncate">{src}</span>
+                                                            <span className="px-3 py-1 rounded-lg shadow-neu text-xs font-bold text-blue-600">{count}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {/* Location Breakdown */}
+                                            <div className="p-6 rounded-2xl shadow-neu bg-neuBg space-y-4">
+                                                <h3 className="font-bold text-slate-700 border-b border-slate-300 pb-2">📍 Breakdown by Location</h3>
+                                                <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
+                                                    {getBreakdown('location').map(([loc, count], idx) => (
+                                                        <div key={idx} className="flex justify-between items-center p-3 rounded-xl shadow-neuInset bg-neuBg">
+                                                            <span className="text-sm font-medium text-slate-600 truncate">{loc}</span>
+                                                            <span className="px-3 py-1 rounded-lg shadow-neu text-xs font-bold text-emerald-600">{count}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {/* Role Breakdown */}
+                                            <div className="p-6 rounded-2xl shadow-neu bg-neuBg space-y-4">
+                                                <h3 className="font-bold text-slate-700 border-b border-slate-300 pb-2">💼 Breakdown by Role</h3>
+                                                <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
+                                                    {getBreakdown('role').map(([role, count], idx) => (
+                                                        <div key={idx} className="flex justify-between items-center p-3 rounded-xl shadow-neuInset bg-neuBg">
+                                                            <span className="text-sm font-medium text-slate-600 truncate">{role}</span>
+                                                            <span className="px-3 py-1 rounded-lg shadow-neu text-xs font-bold text-indigo-600">{count}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {/* Department Breakdown */}
+                                            <div className="p-6 rounded-2xl shadow-neu bg-neuBg space-y-4">
+                                                <h3 className="font-bold text-slate-700 border-b border-slate-300 pb-2">🏢 Breakdown by Department</h3>
+                                                <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
+                                                    {getBreakdown('department').map(([dept, count], idx) => (
+                                                        <div key={idx} className="flex justify-between items-center p-3 rounded-xl shadow-neuInset bg-neuBg">
+                                                            <span className="text-sm font-medium text-slate-600 truncate">{dept}</span>
+                                                            <span className="px-3 py-1 rounded-lg shadow-neu text-xs font-bold text-amber-600">{count}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {/* BU Head / Recruiter Breakdown */}
+                                            <div className="p-6 rounded-2xl shadow-neu bg-neuBg space-y-4">
+                                                <h3 className="font-bold text-slate-700 border-b border-slate-300 pb-2">👤 Breakdown by BU Head / Recruiter</h3>
+                                                <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
+                                                    {getBreakdown('buHead').map(([head, count], idx) => (
+                                                        <div key={idx} className="flex justify-between items-center p-3 rounded-xl shadow-neuInset bg-neuBg">
+                                                            <span className="text-sm font-medium text-slate-600 truncate">{head}</span>
+                                                            <span className="px-3 py-1 rounded-lg shadow-neu text-xs font-bold text-purple-600">{count}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {/* Notice Period Breakdown */}
+                                            <div className="p-6 rounded-2xl shadow-neu bg-neuBg space-y-4">
+                                                <h3 className="font-bold text-slate-700 border-b border-slate-300 pb-2">⏳ Notice Period Breakdown</h3>
+                                                <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
+                                                    {getBreakdown('noticePeriod').map(([np, count], idx) => (
+                                                        <div key={idx} className="flex justify-between items-center p-3 rounded-xl shadow-neuInset bg-neuBg">
+                                                            <span className="text-sm font-medium text-slate-600 truncate">{np}</span>
+                                                            <span className="px-3 py-1 rounded-lg shadow-neu text-xs font-bold text-rose-600">{count}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         )}
 
@@ -358,7 +464,6 @@
                             <div className="space-y-6">
                                 <h2 className="text-2xl font-bold text-slate-700">Daily To-Do & Workflow Task Manager</h2>
                                 
-                                {/* Add Task Form */}
                                 <div className="p-6 rounded-2xl shadow-neu bg-neuBg space-y-4">
                                     <h3 className="font-bold text-slate-700 text-sm">Create New Task</h3>
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -393,7 +498,6 @@
                                     </button>
                                 </div>
 
-                                {/* Category Filters */}
                                 <div className="flex flex-wrap gap-2 pt-2">
                                     {['All', 'Interview schedule', 'Document collection', 'Welcome kit', 'Reminders', 'Custom Task'].map(cat => (
                                         <button
@@ -408,7 +512,6 @@
                                     ))}
                                 </div>
 
-                                {/* Task List */}
                                 <div className="p-6 rounded-2xl shadow-neu bg-neuBg space-y-3">
                                     {todos.filter(t => todoFilter === 'All' || t.category === todoFilter).length === 0 ? (
                                         <p className="text-slate-400 text-center py-6 text-sm">No tasks found in this category.</p>
