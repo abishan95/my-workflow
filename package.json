@@ -1,0 +1,12 @@
+{
+  "name": "my-workflow",
+  "private": true,
+  "version": "1.0.0",
+  "description": "HR Workflow App",
+  "scripts": {
+    "start": "serve ."
+  },
+  "dependencies": {
+    "serve": "^14.2.1"
+  }
+}
