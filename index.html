@@ -30,7 +30,7 @@
         const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzg0o4r0RboJGr75shmuf-6fglCaa3xoBTsf6CHUmqe_nNUu5WXAutbCdNJSmgNDlGe/exec";
 
         function App() {
-            const [activeTab, setActiveTab] = React.useState('profiles');
+            const [activeTab, setActiveTab] = React.useState('joiners');
             const [isLoading, setIsLoading] = React.useState(false);
             const [syncStatus, setSyncStatus] = React.useState('Connecting...');
             const [profiles, setProfiles] = React.useState([]);
@@ -81,8 +81,8 @@
                     .then(data => {
                         if (Array.isArray(data)) {
                             const formatted = parseSheetData(data);
-                            setProfiles(formatted.filter(p => p.status !== 'Joined'));
-                            setJoiners(formatted.filter(p => p.status === 'Joined'));
+                            setProfiles(formatted.filter(p => p.status !== 'Joined' && p.status !== 'Offer Released' && p.status !== 'Revoked'));
+                            setJoiners(formatted.filter(p => p.status === 'Joined' || p.status === 'Offer Released' || p.status === 'Revoked'));
                             setSyncStatus('Synced (' + formatted.length + ' Records)');
                         }
                         setIsLoading(false);
@@ -98,13 +98,14 @@
                 fetchSheetData();
             }, [fetchSheetData]);
 
-            // Confirmation alert before marking joined
-            const handleMarkJoined = (candidate) => {
-                const confirmed = window.confirm(`Are you sure you want to mark ${candidate.candidateName} as JOINED?`);
+            // Handle status change for joiners (Joined, Offer Released, Revoked)
+            const handleStatusChange = (candidate, newStatus) => {
+                const confirmed = window.confirm(`Change status of ${candidate.candidateName} to "${newStatus}"?`);
                 if (confirmed) {
-                    const updated = { ...candidate, status: 'Joined' };
-                    setProfiles(prev => prev.filter(p => p.candidateName !== candidate.candidateName));
-                    setJoiners(prev => [updated, ...prev]);
+                    const updated = { ...candidate, status: newStatus };
+                    
+                    // Update Joiners local state
+                    setJoiners(prev => prev.map(item => item.candidateName === candidate.candidateName ? updated : item));
 
                     // Send POST request to update Google Sheet
                     fetch(WEBHOOK_URL, {
@@ -114,10 +115,17 @@
                         body: JSON.stringify(updated)
                     });
 
-                    // Close modal if open
-                    setSelectedCandidate(null);
-                    alert(`${candidate.candidateName} has been moved to the Joiners Directory!`);
+                    if (selectedCandidate && selectedCandidate.candidateName === candidate.candidateName) {
+                        setSelectedCandidate(updated);
+                    }
+                    alert(`Status updated to "${newStatus}" for ${candidate.candidateName}!`);
                 }
+            };
+
+            // Confirmation alert before marking joined from Sourced
+            const handleMarkJoined = (candidate) => {
+                handleStatusChange(candidate, 'Joined');
+                setProfiles(prev => prev.filter(p => p.candidateName !== candidate.candidateName));
             };
 
             // Filter profiles based on search input
@@ -186,7 +194,7 @@
                             <div className="mb-6 p-4 rounded-2xl shadow-neu bg-neuBg border-l-4 border-blue-500 flex justify-between items-center">
                                 <div>
                                     <h3 className="font-bold text-slate-700">☀️ Good Morning! HR System Active</h3>
-                                    <p className="text-sm text-slate-500">Click on any candidate's name in the Sourced Directory to view full profile details.</p>
+                                    <p className="text-sm text-slate-500">You can now change candidate statuses directly in the Joiners Directory (Joined, Offer Released, Revoked).</p>
                                 </div>
                                 <button onClick={() => setShowAlert(false)} className="px-4 py-2 rounded-xl shadow-neu hover:shadow-neuInset text-xs font-bold text-slate-600">Dismiss</button>
                             </div>
@@ -215,7 +223,7 @@
                                         <h3 className="text-3xl font-extrabold text-indigo-600 mt-2">{profiles.length}</h3>
                                     </div>
                                     <div className="p-6 rounded-2xl shadow-neu bg-neuBg">
-                                        <p className="text-xs text-slate-400 font-bold uppercase">Total Joiners</p>
+                                        <p className="text-xs text-slate-400 font-bold uppercase">Offers & Joiners</p>
                                         <h3 className="text-3xl font-extrabold text-emerald-600 mt-2">{joiners.length}</h3>
                                     </div>
                                     <div className="p-6 rounded-2xl shadow-neu bg-neuBg">
@@ -223,32 +231,6 @@
                                         <h3 className="text-3xl font-extrabold text-amber-600 mt-2">
                                             {profiles.length + joiners.length > 0 ? ((joiners.length / (profiles.length + joiners.length)) * 100).toFixed(1) + '%' : '0%'}
                                         </h3>
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                    <div className="p-6 rounded-2xl shadow-neu bg-neuBg space-y-4">
-                                        <h3 className="font-bold text-slate-700 border-b border-slate-300 pb-2">📂 Breakdown by CV Source</h3>
-                                        <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
-                                            {getBreakdown('source').map(([src, count], idx) => (
-                                                <div key={idx} className="flex justify-between items-center p-3 rounded-xl shadow-neuInset bg-neuBg">
-                                                    <span className="text-sm font-medium text-slate-600 truncate">{src}</span>
-                                                    <span className="px-3 py-1 rounded-lg shadow-neu text-xs font-bold text-blue-600">{count} candidates</span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    <div className="p-6 rounded-2xl shadow-neu bg-neuBg space-y-4">
-                                        <h3 className="font-bold text-slate-700 border-b border-slate-300 pb-2">📍 Breakdown by Location</h3>
-                                        <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
-                                            {getBreakdown('location').map(([loc, count], idx) => (
-                                                <div key={idx} className="flex justify-between items-center p-3 rounded-xl shadow-neuInset bg-neuBg">
-                                                    <span className="text-sm font-medium text-slate-600 truncate">{loc}</span>
-                                                    <span className="px-3 py-1 rounded-lg shadow-neu text-xs font-bold text-emerald-600">{count} candidates</span>
-                                                </div>
-                                            ))}
-                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -267,7 +249,7 @@
                                     </button>
                                 </div>
 
-                                {/* SEARCH BOX FEATURE */}
+                                {/* SEARCH BOX */}
                                 <div className="p-4 rounded-2xl shadow-neu bg-neuBg flex items-center gap-3">
                                     <span className="text-slate-400 font-bold text-lg">🔍</span>
                                     <input
@@ -278,18 +260,16 @@
                                         className="w-full bg-neuBg outline-none text-slate-700 font-medium text-sm placeholder-slate-400"
                                     />
                                     {searchTerm && (
-                                        <button onClick={() => setSearchTerm('')} className="text-xs font-bold text-slate-400 px-2 py-1 rounded-lg shadow-neu hover:shadow-neuInset">
-                                            Clear
-                                        </button>
+                                        <button onClick={() => setSearchTerm('')} className="text-xs font-bold text-slate-400 px-2 py-1 rounded-lg shadow-neu hover:shadow-neuInset">Clear</button>
                                     )}
                                 </div>
 
-                                {/* PROFILES TABLE */}
+                                {/* TABLE */}
                                 <div className="p-6 rounded-2xl shadow-neu bg-neuBg overflow-x-auto">
                                     <table className="w-full text-left border-collapse">
                                         <thead>
                                             <tr className="border-b border-slate-300 text-xs text-slate-400 uppercase">
-                                                <th className="p-3">Candidate Name (Click for Info)</th>
+                                                <th className="p-3">Candidate Name</th>
                                                 <th className="p-3">Source</th>
                                                 <th className="p-3">Role</th>
                                                 <th className="p-3">Location</th>
@@ -302,17 +282,14 @@
                                             {filteredProfiles.length === 0 ? (
                                                 <tr>
                                                     <td colSpan="7" className="text-center p-6 text-slate-400">
-                                                        {isLoading ? 'Loading candidates...' : 'No candidate records match your search query.'}
+                                                        {isLoading ? 'Loading candidates...' : 'No candidate records match your search.'}
                                                     </td>
                                                 </tr>
                                             ) : (
                                                 filteredProfiles.map((p, idx) => (
                                                     <tr key={idx} className="border-b border-slate-200 hover:bg-white/50 transition">
                                                         <td className="p-3">
-                                                            <button 
-                                                                onClick={() => setSelectedCandidate(p)}
-                                                                className="font-semibold text-blue-600 hover:underline text-left flex items-center gap-1.5"
-                                                            >
+                                                            <button onClick={() => setSelectedCandidate(p)} className="font-semibold text-blue-600 hover:underline text-left flex items-center gap-1.5">
                                                                 👤 {p.candidateName}
                                                             </button>
                                                         </td>
@@ -322,10 +299,7 @@
                                                         <td className="p-3">{p.totalExp}</td>
                                                         <td className="p-3">{p.noticePeriod}</td>
                                                         <td className="p-3 text-center">
-                                                            <button 
-                                                                onClick={() => handleMarkJoined(p)} 
-                                                                className="px-3 py-1.5 rounded-xl shadow-neu hover:shadow-neuInset text-xs font-bold text-emerald-600 transition"
-                                                            >
+                                                            <button onClick={() => handleMarkJoined(p)} className="px-3 py-1.5 rounded-xl shadow-neu hover:shadow-neuInset text-xs font-bold text-emerald-600 transition">
                                                                 Mark Joined
                                                             </button>
                                                         </td>
@@ -338,24 +312,49 @@
                             </div>
                         )}
 
-                        {/* JOINERS DIRECTORY */}
+                        {/* JOINERS DIRECTORY TAB WITH STATUS SELECTOR */}
                         {activeTab === 'joiners' && (
                             <div className="space-y-6">
-                                <h2 className="text-2xl font-bold text-slate-700">Joined Employees ({joiners.length})</h2>
+                                <div className="flex justify-between items-center">
+                                    <h2 className="text-2xl font-bold text-slate-700">Joiners & Offer Management ({joiners.length})</h2>
+                                    <button onClick={fetchSheetData} className="px-4 py-2 rounded-xl shadow-neu hover:shadow-neuInset text-xs font-bold text-blue-600">
+                                        {isLoading ? 'Syncing...' : '↻ Refresh Sheet'}
+                                    </button>
+                                </div>
+
                                 <div className="p-6 rounded-2xl shadow-neu bg-neuBg">
-                                    {joiners.length === 0 ? <p className="text-slate-400 text-center py-6">No joiners recorded yet.</p> : (
-                                        <div className="space-y-3">
-                                            {joiners.map((j, idx) => (
-                                                <div key={idx} className="p-4 rounded-xl shadow-neu flex justify-between items-center">
-                                                    <div>
-                                                        <button onClick={() => setSelectedCandidate(j)} className="font-bold text-slate-700 hover:text-blue-600 text-left">
-                                                            {j.candidateName}
-                                                        </button>
-                                                        <p className="text-xs text-slate-500">{j.role} • {j.location} • Exp: {j.totalExp}</p>
+                                    {joiners.length === 0 ? <p className="text-slate-400 text-center py-6">No candidates in joiners status recorded yet.</p> : (
+                                        <div className="space-y-4">
+                                            {joiners.map((j, idx) => {
+                                                const statusColor = 
+                                                    j.status === 'Joined' ? 'text-emerald-600 border-emerald-500' :
+                                                    j.status === 'Offer Released' ? 'text-blue-600 border-blue-500' : 'text-rose-600 border-rose-500';
+
+                                                return (
+                                                    <div key={idx} className="p-4 rounded-xl shadow-neu bg-neuBg flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                                        <div>
+                                                            <button onClick={() => setSelectedCandidate(j)} className="font-bold text-slate-800 hover:text-blue-600 text-left text-base">
+                                                                👤 {j.candidateName}
+                                                            </button>
+                                                            <p className="text-xs text-slate-500 mt-1">{j.role} • {j.location} • Exp: {j.totalExp} • CTC: {j.expectedCtc}</p>
+                                                        </div>
+
+                                                        {/* Dynamic Status Switcher */}
+                                                        <div className="flex items-center gap-3">
+                                                            <span className="text-xs font-bold text-slate-400 uppercase">Status:</span>
+                                                            <select
+                                                                value={j.status || 'Joined'}
+                                                                onChange={(e) => handleStatusChange(j, e.target.value)}
+                                                                className={`px-3 py-2 rounded-xl shadow-neuInset bg-neuBg font-bold text-xs outline-none cursor-pointer border-l-4 ${statusColor}`}
+                                                            >
+                                                                <option value="Joined">🟢 Joined</option>
+                                                                <option value="Offer Released">🔵 Offer Released</option>
+                                                                <option value="Revoked">🔴 Revoked</option>
+                                                            </select>
+                                                        </div>
                                                     </div>
-                                                    <span className="px-3 py-1 rounded-full shadow-neuInset text-xs text-emerald-600 font-bold">Joined</span>
-                                                </div>
-                                            ))}
+                                                );
+                                            })}
                                         </div>
                                     )}
                                 </div>
@@ -395,80 +394,24 @@
                                         <h3 className="text-2xl font-bold text-slate-800">{selectedCandidate.candidateName}</h3>
                                         <p className="text-sm font-semibold text-blue-600">{selectedCandidate.role} • {selectedCandidate.department}</p>
                                     </div>
-                                    <button 
-                                        onClick={() => setSelectedCandidate(null)}
-                                        className="w-10 h-10 rounded-xl shadow-neu hover:shadow-neuInset flex items-center justify-center font-bold text-slate-500 text-lg"
-                                    >
-                                        ✕
-                                    </button>
+                                    <button onClick={() => setSelectedCandidate(null)} className="w-10 h-10 rounded-xl shadow-neu hover:shadow-neuInset flex items-center justify-center font-bold text-slate-500 text-lg">✕</button>
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                                    <div className="p-3 rounded-xl shadow-neuInset bg-neuBg">
-                                        <p className="text-xs text-slate-400 font-bold uppercase">CV Source</p>
-                                        <p className="font-semibold text-slate-700 mt-1">{selectedCandidate.source}</p>
-                                    </div>
-                                    <div className="p-3 rounded-xl shadow-neuInset bg-neuBg">
-                                        <p className="text-xs text-slate-400 font-bold uppercase">Contact Number</p>
-                                        <p className="font-semibold text-slate-700 mt-1">{selectedCandidate.contactNumber}</p>
-                                    </div>
-                                    <div className="p-3 rounded-xl shadow-neuInset bg-neuBg">
-                                        <p className="text-xs text-slate-400 font-bold uppercase">Email Address</p>
-                                        <p className="font-semibold text-slate-700 mt-1 truncate">{selectedCandidate.emailId}</p>
-                                    </div>
-                                    <div className="p-3 rounded-xl shadow-neuInset bg-neuBg">
-                                        <p className="text-xs text-slate-400 font-bold uppercase">Current Location</p>
-                                        <p className="font-semibold text-slate-700 mt-1">{selectedCandidate.location}</p>
-                                    </div>
-                                    <div className="p-3 rounded-xl shadow-neuInset bg-neuBg">
-                                        <p className="text-xs text-slate-400 font-bold uppercase">Current Company</p>
-                                        <p className="font-semibold text-slate-700 mt-1">{selectedCandidate.currentCompany}</p>
-                                    </div>
-                                    <div className="p-3 rounded-xl shadow-neuInset bg-neuBg">
-                                        <p className="text-xs text-slate-400 font-bold uppercase">Designation</p>
-                                        <p className="font-semibold text-slate-700 mt-1">{selectedCandidate.designation}</p>
-                                    </div>
-                                    <div className="p-3 rounded-xl shadow-neuInset bg-neuBg">
-                                        <p className="text-xs text-slate-400 font-bold uppercase">Overall Experience</p>
-                                        <p className="font-semibold text-slate-700 mt-1">{selectedCandidate.totalExp}</p>
-                                    </div>
-                                    <div className="p-3 rounded-xl shadow-neuInset bg-neuBg">
-                                        <p className="text-xs text-slate-400 font-bold uppercase">Notice Period</p>
-                                        <p className="font-semibold text-slate-700 mt-1">{selectedCandidate.noticePeriod}</p>
-                                    </div>
-                                    <div className="p-3 rounded-xl shadow-neuInset bg-neuBg">
-                                        <p className="text-xs text-slate-400 font-bold uppercase">Current CTC</p>
-                                        <p className="font-semibold text-slate-700 mt-1">{selectedCandidate.currentCtc}</p>
-                                    </div>
-                                    <div className="p-3 rounded-xl shadow-neuInset bg-neuBg">
-                                        <p className="text-xs text-slate-400 font-bold uppercase">Expected CTC</p>
-                                        <p className="font-semibold text-slate-700 mt-1">{selectedCandidate.expectedCtc}</p>
-                                    </div>
-                                    <div className="p-3 rounded-xl shadow-neuInset bg-neuBg">
-                                        <p className="text-xs text-slate-400 font-bold uppercase">BU Head / Recruiter</p>
-                                        <p className="font-semibold text-slate-700 mt-1">{selectedCandidate.buHead}</p>
-                                    </div>
-                                    <div className="p-3 rounded-xl shadow-neuInset bg-neuBg">
-                                        <p className="text-xs text-slate-400 font-bold uppercase">Business Unit</p>
-                                        <p className="font-semibold text-slate-700 mt-1">{selectedCandidate.businessUnit}</p>
-                                    </div>
+                                    <div className="p-3 rounded-xl shadow-neuInset bg-neuBg"><p className="text-xs text-slate-400 font-bold uppercase">CV Source</p><p className="font-semibold text-slate-700 mt-1">{selectedCandidate.source}</p></div>
+                                    <div className="p-3 rounded-xl shadow-neuInset bg-neuBg"><p className="text-xs text-slate-400 font-bold uppercase">Contact Number</p><p className="font-semibold text-slate-700 mt-1">{selectedCandidate.contactNumber}</p></div>
+                                    <div className="p-3 rounded-xl shadow-neuInset bg-neuBg"><p className="text-xs text-slate-400 font-bold uppercase">Email Address</p><p className="font-semibold text-slate-700 mt-1 truncate">{selectedCandidate.emailId}</p></div>
+                                    <div className="p-3 rounded-xl shadow-neuInset bg-neuBg"><p className="text-xs text-slate-400 font-bold uppercase">Current Location</p><p className="font-semibold text-slate-700 mt-1">{selectedCandidate.location}</p></div>
+                                    <div className="p-3 rounded-xl shadow-neuInset bg-neuBg"><p className="text-xs text-slate-400 font-bold uppercase">Current Company</p><p className="font-semibold text-slate-700 mt-1">{selectedCandidate.currentCompany}</p></div>
+                                    <div className="p-3 rounded-xl shadow-neuInset bg-neuBg"><p className="text-xs text-slate-400 font-bold uppercase">Designation</p><p className="font-semibold text-slate-700 mt-1">{selectedCandidate.designation}</p></div>
+                                    <div className="p-3 rounded-xl shadow-neuInset bg-neuBg"><p className="text-xs text-slate-400 font-bold uppercase">Overall Experience</p><p className="font-semibold text-slate-700 mt-1">{selectedCandidate.totalExp}</p></div>
+                                    <div className="p-3 rounded-xl shadow-neuInset bg-neuBg"><p className="text-xs text-slate-400 font-bold uppercase">Notice Period</p><p className="font-semibold text-slate-700 mt-1">{selectedCandidate.noticePeriod}</p></div>
+                                    <div className="p-3 rounded-xl shadow-neuInset bg-neuBg"><p className="text-xs text-slate-400 font-bold uppercase">Current CTC</p><p className="font-semibold text-slate-700 mt-1">{selectedCandidate.currentCtc}</p></div>
+                                    <div className="p-3 rounded-xl shadow-neuInset bg-neuBg"><p className="text-xs text-slate-400 font-bold uppercase">Expected CTC</p><p className="font-semibold text-slate-700 mt-1">{selectedCandidate.expectedCtc}</p></div>
                                 </div>
 
                                 <div className="flex justify-between items-center pt-4 border-t border-slate-300">
-                                    <button 
-                                        onClick={() => setSelectedCandidate(null)}
-                                        className="px-5 py-2.5 rounded-xl shadow-neu hover:shadow-neuInset text-xs font-bold text-slate-600"
-                                    >
-                                        Close
-                                    </button>
-                                    {selectedCandidate.status !== 'Joined' && (
-                                        <button 
-                                            onClick={() => handleMarkJoined(selectedCandidate)}
-                                            className="px-5 py-2.5 rounded-xl shadow-neu hover:shadow-neuInset text-xs font-bold text-emerald-600"
-                                        >
-                                            Mark as Joined
-                                        </button>
-                                    )}
+                                    <button onClick={() => setSelectedCandidate(null)} className="px-5 py-2.5 rounded-xl shadow-neu hover:shadow-neuInset text-xs font-bold text-slate-600">Close</button>
                                 </div>
                             </div>
                         </div>
