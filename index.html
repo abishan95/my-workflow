@@ -24,12 +24,12 @@
                         neoBg: '#E9EEF5',
                         neoSurface: '#E9EEF5',
                         neoWhite: '#FFFFFF',
-                        powderBlue: '#FFEDD5', // Updated to warm orange tint background
+                        powderBlue: '#FFEDD5',
                         lavender: '#FFF7ED',
                         mint: '#DFF5F0',
                         softPeach: '#FFEBDD',
-                        primaryAccent: '#F97316', // Solid Orange primary accent
-                        secondaryAccent: '#FB923C', // Warm Orange secondary accent
+                        primaryAccent: '#F97316',
+                        secondaryAccent: '#FB923C',
                         successMint: '#71CDB3',
                         warningPeach: '#F0BE83',
                         dangerRose: '#E9949B',
@@ -175,8 +175,18 @@
             const [newTaskHeading, setNewTaskHeading] = React.useState('Interview schedule');
             const [newTaskDate, setNewTaskDate] = React.useState(getTodayString());
 
-            // Cleared out all sample tasks so it starts completely fresh and empty
             const [todos, setTodos] = React.useState([]);
+
+            // Smart Auto-Rollover: If past pending task, roll over date day-by-day to today
+            React.useEffect(() => {
+                const today = getTodayString();
+                setTodos(prev => prev.map(t => {
+                    if (!t.completed && t.date < today) {
+                        return { ...t, date: today };
+                    }
+                    return t;
+                }));
+            }, []);
 
             const parseSheetData = (data) => {
                 return data.map((item, index) => ({
@@ -309,6 +319,25 @@
             const completedCount = todos.filter(t => t.completed).length;
             const pendingCount = todos.filter(t => !t.completed).length;
 
+            // Helper to get week dates corresponding to the current week starting Monday
+            const getWeekDates = () => {
+                const curr = new Date();
+                const day = curr.getDay();
+                const diff = curr.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
+                const monday = new Date(curr.setDate(diff));
+                
+                const week = [];
+                for (let i = 0; i < 7; i++) {
+                    const nextDay = new Date(monday);
+                    nextDay.setDate(monday.getDate() + i);
+                    week.push({
+                        name: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][i],
+                        dateStr: nextDay.toISOString().split('T')[0]
+                    });
+                }
+                return week;
+            };
+
             return (
                 <div className="flex h-screen overflow-hidden bg-neoBg text-primaryText">
                     
@@ -394,7 +423,7 @@
                     {/* Main Workspace Layout */}
                     <main className="flex-1 flex flex-col h-screen overflow-hidden p-4 md:pl-0">
                         
-                        {/* Top Global Bar */}
+                        {/* Top Global Bar - Search bar ONLY on Sourced Directory page */}
                         <header className="p-4 rounded-[20px] neo-card mb-4 flex flex-col md:flex-row items-center justify-between gap-4">
                             <div className="flex items-center space-x-3">
                                 <div>
@@ -410,17 +439,18 @@
                                 </div>
                             </div>
 
-                            {/* Global Search Interface */}
-                            <div className="w-full md:w-80 relative">
-                                <span className="absolute left-3.5 top-3 text-secondaryText"><Icons.Search /></span>
-                                <input
-                                    type="text"
-                                    placeholder="Search candidate, role, location..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-2.5 rounded-xl neo-input text-primaryText text-xs font-medium placeholder-secondaryText"
-                                />
-                            </div>
+                            {activeTab === 'profiles' && (
+                                <div className="w-full md:w-80 relative">
+                                    <span className="absolute left-3.5 top-3 text-secondaryText"><Icons.Search /></span>
+                                    <input
+                                        type="text"
+                                        placeholder="Search candidate, role, location..."
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        className="w-full pl-10 pr-4 py-2.5 rounded-xl neo-input text-primaryText text-xs font-medium placeholder-secondaryText"
+                                    />
+                                </div>
+                            )}
                         </header>
 
                         {/* Scrollable Page Body */}
@@ -624,7 +654,7 @@
                                 </div>
                             )}
 
-                            {/* TASK MANAGEMENT PAGE (Fresh Start - No Sample Tasks) */}
+                            {/* TASK MANAGEMENT PAGE */}
                             {activeTab === 'todos' && (
                                 <div className="space-y-6">
                                     
@@ -746,7 +776,7 @@
                                         {taskViewMode === 'Daily' && (
                                             <div className="space-y-3">
                                                 {todos.filter(t => t.date === getTodayString() && (taskFilterStatus === 'All' || (taskFilterStatus === 'Completed' ? t.completed : !t.completed))).length === 0 ? (
-                                                    <p className="text-secondaryText text-xs italic py-8 text-center">No tasks added yet. Use the console above to add your first task!</p>
+                                                    <p className="text-secondaryText text-xs italic py-8 text-center">No tasks scheduled for today.</p>
                                                 ) : (
                                                     todos.filter(t => t.date === getTodayString() && (taskFilterStatus === 'All' || (taskFilterStatus === 'Completed' ? t.completed : !t.completed))).map(t => (
                                                         <div key={t.id} className="p-4 rounded-xl neo-input flex items-center justify-between">
@@ -770,16 +800,16 @@
                                             </div>
                                         )}
 
-                                        {/* WEEKLY VIEW (Day by Day) */}
+                                        {/* WEEKLY VIEW (Strictly Date-Matched Day by Day) */}
                                         {taskViewMode === 'Weekly' && (
                                             <div className="grid grid-cols-1 md:grid-cols-7 gap-3">
-                                                {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day, idx) => {
-                                                    const dayTasks = todos.filter(t => (taskFilterStatus === 'All' || (taskFilterStatus === 'Completed' ? t.completed : !t.completed)));
+                                                {getWeekDates().map((dayObj, idx) => {
+                                                    const dayTasks = todos.filter(t => t.date === dayObj.dateStr && (taskFilterStatus === 'All' || (taskFilterStatus === 'Completed' ? t.completed : !t.completed)));
                                                     return (
-                                                        <div key={idx} className="p-3 rounded-xl neo-input space-y-3 min-h-[160px]">
-                                                            <div className="border-b border-darkShadow/20 pb-1 flex justify-between items-center">
-                                                                <h4 className="font-bold text-xs text-primaryText">{day}</h4>
-                                                                <span className="text-[10px] text-secondaryText">Day {idx+1}</span>
+                                                        <div key={idx} className="p-3 rounded-xl neo-input space-y-3 min-h-[180px]">
+                                                            <div className="border-b border-darkShadow/20 pb-1 flex flex-col">
+                                                                <h4 className="font-bold text-xs text-primaryText">{dayObj.name}</h4>
+                                                                <span className="text-[9px] text-primaryAccent font-bold">{dayObj.dateStr}</span>
                                                             </div>
                                                             <div className="space-y-2">
                                                                 {dayTasks.length === 0 ? (
