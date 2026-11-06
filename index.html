@@ -224,12 +224,25 @@
                 fetch(WEBHOOK_URL)
                     .then(res => res.json())
                     .then(data => {
-                        if (Array.isArray(data)) {
-                            const formatted = parseSheetData(data);
-                            setProfiles(formatted.filter(p => p.status !== 'Joined' && p.status !== 'Offer Released' && p.status !== 'Revoked'));
-                            setJoiners(formatted.filter(p => p.status === 'Joined' || p.status === 'Offer Released' || p.status === 'Revoked'));
-                            setSyncStatus('Synced (' + formatted.length + ' Records)');
+                        // Supports both new structured object and legacy array format
+                        const rawCandidates = Array.isArray(data) ? data : (data.candidates || []);
+                        const rawTasks = !Array.isArray(data) && data.tasks ? data.tasks : [];
+
+                        const formatted = parseSheetData(rawCandidates);
+                        setProfiles(formatted.filter(p => p.status !== 'Joined' && p.status !== 'Offer Released' && p.status !== 'Revoked'));
+                        setJoiners(formatted.filter(p => p.status === 'Joined' || p.status === 'Offer Released' || p.status === 'Revoked'));
+                        
+                        if (rawTasks.length > 0) {
+                            setTodos(rawTasks.map(t => ({
+                                id: t.id ? t.id.toString() : Date.now().toString(),
+                                title: t.title || '',
+                                heading: t.heading || 'Custom task',
+                                date: t.date || getTodayString(),
+                                completed: t.completed === true || t.completed === 'TRUE' || t.completed === 'true'
+                            })));
                         }
+
+                        setSyncStatus('Synced (' + formatted.length + ' Records)');
                         setIsLoading(false);
                     })
                     .catch(err => {
@@ -281,23 +294,56 @@
             const handleAddTask = () => {
                 if (!newTaskTitle.trim()) return;
                 const newTask = {
+                    type: 'task',
                     id: Date.now().toString(),
                     title: newTaskTitle,
                     heading: newTaskHeading,
                     date: newTaskDate || getTodayString(),
                     completed: false
                 };
-                setTodos([...todos, newTask]);
+
+                setTodos(prev => [...prev, newTask]);
                 setNewTaskTitle('');
                 setNewTaskDate(getTodayString());
+
+                // Save to backend sheet webhook
+                fetch(WEBHOOK_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newTask)
+                }).catch(err => console.error("Error saving task:", err));
             };
 
             const toggleTaskStatus = (id) => {
-                setTodos(todos.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
+                let updatedTask = null;
+                setTodos(prev => prev.map(t => {
+                    if (t.id === id) {
+                        updatedTask = { ...t, type: 'task', completed: !t.completed };
+                        return updatedTask;
+                    }
+                    return t;
+                }));
+
+                if (updatedTask) {
+                    fetch(WEBHOOK_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(updatedTask)
+                    }).catch(err => console.error("Error updating task status:", err));
+                }
             };
 
             const deleteTask = (id) => {
-                setTodos(todos.filter(t => t.id !== id));
+                setTodos(prev => prev.filter(t => t.id !== id));
+
+                fetch(WEBHOOK_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ type: 'task', action: 'delete_task', id: id })
+                }).catch(err => console.error("Error deleting task:", err));
             };
 
             const filteredProfiles = profiles.filter(p => {
