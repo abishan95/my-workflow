@@ -32,10 +32,10 @@
             color: #334155;
         }
         .soft-glass-card {
-            background: rgba(255, 255, 255, 0.6);
+            background: rgba(255, 255, 255, 0.65);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.85);
             box-shadow: 12px 12px 24px #d1d9e6, -12px -12px 24px #ffffff, inset 0 0 0 1px rgba(255, 255, 255, 0.6);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
@@ -44,7 +44,7 @@
             transform: translateY(-2px);
         }
         .neo-input-soft {
-            background: rgba(240, 244, 248, 0.8);
+            background: rgba(240, 244, 248, 0.85);
             border: 1px solid rgba(255, 255, 255, 0.9);
             box-shadow: inset 4px 4px 8px #d1d9e6, inset -4px -4px 8px #ffffff;
         }
@@ -82,15 +82,21 @@
             const [searchTerm, setSearchTerm] = React.useState('');
             const [selectedCandidate, setSelectedCandidate] = React.useState(null);
 
+            // Jiron-style Task Management State
+            const [viewMode, setViewMode] = React.useState('Week'); // Day, Week, Month
+            const [taskFilter, setTaskFilter] = React.useState('All'); // All, Pending, Finished
+            
             const [todos, setTodos] = React.useState([
-                { id: '1', text: 'Schedule L2 technical round for shortlisted engineers', category: 'Interview schedule', completed: false },
-                { id: '2', text: 'Collect previous employment payslips and ID proofs', category: 'Document collection', completed: false },
-                { id: '3', text: 'Dispatch laptop and company branded welcome kit', category: 'Welcome kit', completed: false },
-                { id: '4', text: 'Send reminder for document submission deadline', category: 'Reminders', completed: false }
+                { id: '1', title: 'Schedule L2 technical round for shortlisted engineers', reminder: 'Follow up with BU Head at 10:00 AM', deadline: '2026-03-25', status: 'In Progress', stage: 'inProgress', completed: false, time: '09:00 AM' },
+                { id: '2', title: 'Collect previous employment payslips and ID proofs', reminder: 'Check candidate WhatsApp response', deadline: '2026-03-26', status: 'Draft', stage: 'draft', completed: false, time: '11:30 AM' },
+                { id: '3', title: 'Dispatch laptop and company branded welcome kit', reminder: 'Verify courier tracking ID', deadline: '2026-03-24', status: 'Done', stage: 'done', completed: true, time: '02:00 PM' },
+                { id: '4', title: 'Send reminder for document submission deadline', reminder: 'Email template #3', deadline: '2026-03-27', status: 'Editing', stage: 'editing', completed: false, time: '04:15 PM' }
             ]);
-            const [newTodoText, setNewTodoText] = React.useState('');
-            const [newTodoCategory, setNewTodoCategory] = React.useState('Interview schedule');
-            const [todoFilter, setTodoFilter] = React.useState('All');
+
+            const [newTitle, setNewTitle] = React.useState('');
+            const [newReminder, setNewReminder] = React.useState('');
+            const [newDeadline, setNewDeadline] = React.useState('');
+            const [newStage, setNewStage] = React.useState('draft');
 
             const parseSheetData = (data) => {
                 return data.map((item, index) => ({
@@ -178,6 +184,43 @@
                 }
             };
 
+            const handleAddTask = () => {
+                if (!newTitle.trim()) return;
+                const newTask = {
+                    id: Date.now().toString(),
+                    title: newTitle,
+                    reminder: newReminder || 'No reminder set',
+                    deadline: newDeadline || 'No deadline',
+                    stage: newStage,
+                    status: newStage === 'done' ? 'Done' : newStage === 'inProgress' ? 'In Progress' : newStage === 'editing' ? 'Editing' : 'Draft',
+                    completed: newStage === 'done',
+                    time: '10:00 AM'
+                };
+                setTodos([...todos, newTask]);
+                setNewTitle('');
+                setNewReminder('');
+                setNewDeadline('');
+            };
+
+            const toggleTaskCompletion = (taskId) => {
+                setTodos(todos.map(t => {
+                    if (t.id === taskId) {
+                        const isComp = !t.completed;
+                        return {
+                            ...t,
+                            completed: isComp,
+                            stage: isComp ? 'done' : 'inProgress',
+                            status: isComp ? 'Done' : 'In Progress'
+                        };
+                    }
+                    return t;
+                }));
+            };
+
+            const deleteTask = (taskId) => {
+                setTodos(todos.filter(t => t.id !== taskId));
+            };
+
             const filteredProfiles = profiles.filter(p => {
                 const term = searchTerm.toLowerCase();
                 return (
@@ -201,6 +244,15 @@
             };
 
             const totalDatasetCount = profiles.length + joiners.length;
+
+            const pendingCount = todos.filter(t => !t.completed).length;
+            const finishedCount = todos.filter(t => t.completed).length;
+
+            const displayTodos = todos.filter(t => {
+                if (taskFilter === 'Pending') return !t.completed;
+                if (taskFilter === 'Finished') return t.completed;
+                return true;
+            });
 
             return (
                 <div className="flex h-screen overflow-hidden bg-transparent">
@@ -240,7 +292,7 @@
                                     { id: 'dashboard', label: '📊 Deep Analytics', badge: 'LIVE' },
                                     { id: 'profiles', label: '📋 Sourced Directory', count: profiles.length },
                                     { id: 'joiners', label: '✅ Joiners Directory', count: joiners.length },
-                                    { id: 'todos', label: '📌 Task Workflow', count: todos.length }
+                                    { id: 'todos', label: '📌 Task Management', count: todos.length }
                                 ].map(tab => (
                                     <button
                                         key={tab.id}
@@ -316,7 +368,6 @@
                                             <p className="text-xs text-slate-500 font-semibold">Live visualization based on <strong className="text-purple-600">{totalDatasetCount} Sourced Records</strong></p>
                                         </div>
 
-                                        {/* Graphical Floating Neomorphic Nodes */}
                                         <div className="flex items-center space-x-4 bg-white/80 p-4 rounded-2xl shadow-neoSoft z-10 animate-float">
                                             <div className="w-12 h-12 rounded-2xl neo-input-soft flex items-center justify-center text-cyan-600 font-black text-lg shadow-neoInset">
                                                 📊
@@ -534,89 +585,233 @@
                                 </div>
                             )}
 
-                            {/* TASK WORKFLOW TAB */}
+                            {/* TASK MANAGEMENT PAGE (MATCHING JIRON REFERENCE SUITE) */}
                             {activeTab === 'todos' && (
                                 <div className="space-y-6">
-                                    <h2 className="text-2xl font-black text-slate-800">Task & Workflow Manager</h2>
                                     
+                                    {/* Top Controls & Add Task Bar */}
                                     <div className="p-6 rounded-3xl soft-glass-card space-y-4">
-                                        <h3 className="font-extrabold text-slate-700 text-sm">Create New Task Item</h3>
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div className="flex flex-col md:flex-row items-center justify-between gap-4 border-b border-slate-200 pb-4">
+                                            <div>
+                                                <h2 className="text-2xl font-black text-slate-800">Time Tracker & Task Management</h2>
+                                                <p className="text-xs text-cyan-600 font-bold mt-0.5">Jiron Workflow Console • Reminders & Scheduled Deadlines</p>
+                                            </div>
+
+                                            {/* Daily / Weekly / Monthly View Toggles */}
+                                            <div className="flex items-center space-x-2 bg-white/70 p-1.5 rounded-2xl shadow-neoInset">
+                                                {['Day', 'Week', 'Month'].map(m => (
+                                                    <button
+                                                        key={m}
+                                                        onClick={() => setViewMode(m)}
+                                                        className={`px-4 py-1.5 rounded-xl text-xs font-extrabold transition ${
+                                                            viewMode === m 
+                                                                ? 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white shadow-neoSoft' 
+                                                                : 'text-slate-500 hover:text-slate-800'
+                                                        }`}
+                                                    >
+                                                        {m}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Task Creation Inputs (Title, Reminder, Deadline) */}
+                                        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                                             <input 
                                                 type="text" 
-                                                placeholder="Task description..." 
-                                                value={newTodoText} 
-                                                onChange={e => setNewTodoText(e.target.value)} 
-                                                className="md:col-span-2 p-3.5 rounded-2xl neo-input-soft text-slate-700 text-sm outline-none font-semibold" 
+                                                placeholder="Task Title..." 
+                                                value={newTitle} 
+                                                onChange={e => setNewTitle(e.target.value)} 
+                                                className="p-3 rounded-2xl neo-input-soft text-slate-700 text-xs font-semibold outline-none" 
+                                            />
+                                            <input 
+                                                type="text" 
+                                                placeholder="Reminder under title (e.g., Call at 10 AM)..." 
+                                                value={newReminder} 
+                                                onChange={e => setNewReminder(e.target.value)} 
+                                                className="p-3 rounded-2xl neo-input-soft text-slate-700 text-xs font-semibold outline-none" 
+                                            />
+                                            <input 
+                                                type="date" 
+                                                value={newDeadline} 
+                                                onChange={e => setNewDeadline(e.target.value)} 
+                                                className="p-3 rounded-2xl neo-input-soft text-slate-700 text-xs font-semibold outline-none" 
                                             />
                                             <select 
-                                                value={newTodoCategory} 
-                                                onChange={e => setNewTodoCategory(e.target.value)} 
-                                                className="p-3.5 rounded-2xl neo-input-soft text-slate-700 text-sm font-bold cursor-pointer"
+                                                value={newStage} 
+                                                onChange={e => setNewStage(e.target.value)} 
+                                                className="p-3 rounded-2xl neo-input-soft text-slate-700 text-xs font-bold outline-none cursor-pointer"
                                             >
-                                                <option value="Interview schedule">Interview schedule</option>
-                                                <option value="Document collection">Document collection</option>
-                                                <option value="Welcome kit">Welcome kit</option>
-                                                <option value="Reminders">Reminders</option>
-                                                <option value="Custom Task">Custom List / Custom</option>
+                                                <option value="draft">Draft</option>
+                                                <option value="inProgress">In Progress</option>
+                                                <option value="editing">Editing</option>
+                                                <option value="done">Done</option>
                                             </select>
                                         </div>
+
                                         <button 
-                                            onClick={() => {
-                                                if(!newTodoText.trim()) return;
-                                                setTodos([...todos, { id: Date.now(), text: newTodoText, category: newTodoCategory, completed: false }]);
-                                                setNewTodoText('');
-                                            }} 
-                                            className="w-full py-4 rounded-2xl neo-btn-active font-black text-cyan-700 text-sm transition shadow-neoSoft"
+                                            onClick={handleAddTask} 
+                                            className="w-full py-3 rounded-2xl neo-btn-active font-black text-cyan-700 text-xs transition shadow-neoSoft"
                                         >
-                                            ➕ Add Task to Workflow
+                                            ➕ Create New Task Entry
                                         </button>
                                     </div>
 
-                                    <div className="flex flex-wrap gap-2 pt-2">
-                                        {['All', 'Interview schedule', 'Document collection', 'Welcome kit', 'Reminders', 'Custom Task'].map(cat => (
-                                            <button
-                                                key={cat}
-                                                onClick={() => setTodoFilter(cat)}
-                                                className={`px-5 py-2.5 rounded-2xl text-xs font-black transition ${
-                                                    todoFilter === cat 
-                                                        ? 'neo-btn-active text-cyan-600 shadow-neoSoft' 
-                                                        : 'soft-glass-card text-slate-600 hover:text-slate-800'
-                                                }`}
-                                            >
-                                                {cat}
-                                            </button>
-                                        ))}
+                                    {/* Task Status Filters & Metrics */}
+                                    <div className="flex flex-col md:flex-row items-center justify-between gap-4 p-4 rounded-3xl soft-glass-card">
+                                        <div className="flex items-center space-x-2">
+                                            <span className="text-xs font-extrabold text-slate-500 uppercase mr-2">Filter View:</span>
+                                            {['All', 'Pending', 'Finished'].map(f => (
+                                                <button
+                                                    key={f}
+                                                    onClick={() => setTaskFilter(f)}
+                                                    className={`px-4 py-2 rounded-2xl text-xs font-black transition ${
+                                                        taskFilter === f 
+                                                            ? 'neo-btn-active text-cyan-600 shadow-neoSoft' 
+                                                            : 'text-slate-500 hover:text-slate-800'
+                                                    }`}
+                                                >
+                                                    {f}
+                                                </button>
+                                            ))}
+                                        </div>
+
+                                        {/* Status Count Pill showing Difference */}
+                                        <div className="flex items-center space-x-4 text-xs font-extrabold">
+                                            <span className="px-3 py-1.5 rounded-2xl bg-amber-100 text-amber-700 border border-amber-300 shadow-neoInset">
+                                                ⏳ Pending: {pendingCount}
+                                            </span>
+                                            <span className="px-3 py-1.5 rounded-2xl bg-emerald-100 text-emerald-700 border border-emerald-300 shadow-neoInset">
+                                                ✅ Finished: {finishedCount}
+                                            </span>
+                                            <span className="px-3 py-1.5 rounded-2xl bg-purple-100 text-purple-700 border border-purple-300 shadow-neoSoft">
+                                                Diff: {finishedCount - pendingCount}
+                                            </span>
+                                        </div>
                                     </div>
 
-                                    <div className="p-6 rounded-3xl soft-glass-card space-y-3">
-                                        {todos.filter(t => todoFilter === 'All' || t.category === todoFilter).length === 0 ? (
-                                            <p className="text-slate-400 text-center py-6 font-bold text-sm">No tasks found.</p>
-                                        ) : (
-                                            todos.filter(t => todoFilter === 'All' || t.category === todoFilter).map(todo => (
-                                                <div key={todo.id} className={`p-4 rounded-2xl neo-input-soft flex items-center justify-between transition ${todo.completed ? 'opacity-50' : ''}`}>
-                                                    <div className="flex items-center space-x-3">
-                                                        <input 
-                                                            type="checkbox" 
-                                                            checked={todo.completed} 
-                                                            onChange={() => setTodos(todos.map(t => t.id === todo.id ? {...t, completed: !t.completed} : t))} 
-                                                            className="w-5 h-5 accent-cyan-600 cursor-pointer" 
-                                                        />
-                                                        <div>
-                                                            <span className={`text-sm font-bold ${todo.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}>{todo.text}</span>
-                                                            <span className="block text-[10px] text-cyan-600 uppercase font-black mt-0.5">{todo.category}</span>
+                                    {/* Jiron Board Columns (Draft, In Progress, Editing, Done) */}
+                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                        {/* Draft Column */}
+                                        <div className="p-4 rounded-3xl soft-glass-card space-y-3">
+                                            <div className="flex justify-between items-center border-b border-slate-200 pb-2">
+                                                <h3 className="font-extrabold text-xs text-slate-700 uppercase tracking-wider">Draft</h3>
+                                                <span className="w-2 h-2 rounded-full bg-slate-400"></span>
+                                            </div>
+                                            <div className="space-y-3">
+                                                {displayTodos.filter(t => t.stage === 'draft' || t.status === 'Draft').map(todo => (
+                                                    <div key={todo.id} className="p-3.5 rounded-2xl neo-input-soft space-y-2 relative">
+                                                        <h4 className="font-bold text-slate-800 text-xs">{todo.title}</h4>
+                                                        <p className="text-[10px] font-bold text-cyan-600 bg-cyan-50 p-1.5 rounded-xl border border-cyan-200">
+                                                            🔔 {todo.reminder}
+                                                        </p>
+                                                        <div className="flex justify-between items-center text-[10px] text-slate-500 font-semibold pt-1">
+                                                            <span>📅 {todo.deadline}</span>
+                                                            <button onClick={() => deleteTask(todo.id)} className="text-rose-500 hover:underline">Delete</button>
                                                         </div>
                                                     </div>
-                                                    <button 
-                                                        onClick={() => setTodos(todos.filter(t => t.id !== todo.id))}
-                                                        className="px-3 py-1 rounded-xl bg-rose-50 border border-rose-200 text-xs font-black text-rose-600 hover:bg-rose-100 transition"
-                                                    >
-                                                        Delete
-                                                    </button>
-                                                </div>
-                                            ))
-                                        )}
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* In Progress Column */}
+                                        <div className="p-4 rounded-3xl soft-glass-card space-y-3">
+                                            <div className="flex justify-between items-center border-b border-slate-200 pb-2">
+                                                <h3 className="font-extrabold text-xs text-cyan-600 uppercase tracking-wider">In Progress</h3>
+                                                <span className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse"></span>
+                                            </div>
+                                            <div className="space-y-3">
+                                                {displayTodos.filter(t => t.stage === 'inProgress' || t.status === 'In Progress').map(todo => (
+                                                    <div key={todo.id} className="p-3.5 rounded-2xl neo-input-soft space-y-2 relative border-l-2 border-l-cyan-500">
+                                                        <h4 className="font-bold text-slate-800 text-xs">{todo.title}</h4>
+                                                        <p className="text-[10px] font-bold text-purple-600 bg-purple-50 p-1.5 rounded-xl border border-purple-200">
+                                                            🔔 {todo.reminder}
+                                                        </p>
+                                                        <div className="flex justify-between items-center text-[10px] text-slate-500 font-semibold pt-1">
+                                                            <span>📅 {todo.deadline}</span>
+                                                            <button onClick={() => toggleTaskCompletion(todo.id)} className="text-emerald-600 font-bold hover:underline">Mark Done</button>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Editing / Review Column */}
+                                        <div className="p-4 rounded-3xl soft-glass-card space-y-3">
+                                            <div className="flex justify-between items-center border-b border-slate-200 pb-2">
+                                                <h3 className="font-extrabold text-xs text-amber-600 uppercase tracking-wider">Editing / Review</h3>
+                                                <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                                            </div>
+                                            <div className="space-y-3">
+                                                {displayTodos.filter(t => t.stage === 'editing' || t.status === 'Editing').map(todo => (
+                                                    <div key={todo.id} className="p-3.5 rounded-2xl neo-input-soft space-y-2 relative border-l-2 border-l-amber-500">
+                                                        <h4 className="font-bold text-slate-800 text-xs">{todo.title}</h4>
+                                                        <p className="text-[10px] font-bold text-amber-700 bg-amber-50 p-1.5 rounded-xl border border-amber-200">
+                                                            🔔 {todo.reminder}
+                                                        </p>
+                                                        <div className="flex justify-between items-center text-[10px] text-slate-500 font-semibold pt-1">
+                                                            <span>📅 {todo.deadline}</span>
+                                                            <button onClick={() => toggleTaskCompletion(todo.id)} className="text-emerald-600 font-bold hover:underline">Mark Done</button>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Done Column */}
+                                        <div className="p-4 rounded-3xl soft-glass-card space-y-3">
+                                            <div className="flex justify-between items-center border-b border-slate-200 pb-2">
+                                                <h3 className="font-extrabold text-xs text-emerald-600 uppercase tracking-wider">Done</h3>
+                                                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                            </div>
+                                            <div className="space-y-3">
+                                                {displayTodos.filter(t => t.stage === 'done' || t.completed).map(todo => (
+                                                    <div key={todo.id} className="p-3.5 rounded-2xl neo-input-soft space-y-2 relative opacity-80 border-l-2 border-l-emerald-500">
+                                                        <h4 className="font-bold text-slate-500 line-through text-xs">{todo.title}</h4>
+                                                        <p className="text-[10px] font-bold text-emerald-700 bg-emerald-50 p-1.5 rounded-xl border border-emerald-200">
+                                                            🔔 {todo.reminder}
+                                                        </p>
+                                                        <div className="flex justify-between items-center text-[10px] text-slate-400 font-semibold pt-1">
+                                                            <span>✅ Completed</span>
+                                                            <button onClick={() => deleteTask(todo.id)} className="text-rose-500 hover:underline">Remove</button>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
                                     </div>
+
+                                    {/* Task Management Schedule Grid (Matching Jiron Bottom Schedule) */}
+                                    <div className="p-6 rounded-3xl soft-glass-card space-y-4">
+                                        <div className="flex justify-between items-center">
+                                            <h3 className="font-black text-slate-800 text-sm">Weekly Time Schedule Grid</h3>
+                                            <span className="text-xs font-bold text-cyan-600">Showing {viewMode} Schedule</span>
+                                        </div>
+
+                                        <div className="grid grid-cols-7 gap-2 text-center text-xs font-extrabold text-slate-500 pb-2 border-b border-slate-200">
+                                            <div>Mon</div>
+                                            <div>Tue</div>
+                                            <div>Wed</div>
+                                            <div>Thu</div>
+                                            <div>Fri</div>
+                                            <div>Sat</div>
+                                            <div>Sun</div>
+                                        </div>
+
+                                        <div className="grid grid-cols-7 gap-2">
+                                            {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, i) => (
+                                                <div key={i} className="min-h-[100px] p-2 rounded-2xl neo-input-soft space-y-2">
+                                                    {todos.slice(i, i + 1).map(t => (
+                                                        <div key={t.id} className={`p-2 rounded-xl text-[10px] font-bold ${t.completed ? 'bg-emerald-100 text-emerald-800' : 'bg-gradient-to-r from-cyan-400 to-purple-400 text-white shadow-neoSoft'}`}>
+                                                            <p className="truncate">{t.title}</p>
+                                                            <p className="text-[9px] opacity-90 mt-0.5">{t.time}</p>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
                                 </div>
                             )}
 
