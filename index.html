@@ -1,3 +1,4 @@
+html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -82,21 +83,33 @@
             const [searchTerm, setSearchTerm] = React.useState('');
             const [selectedCandidate, setSelectedCandidate] = React.useState(null);
 
-            // Jiron-style Task Management State
-            const [viewMode, setViewMode] = React.useState('Week'); // Day, Week, Month
-            const [taskFilter, setTaskFilter] = React.useState('All'); // All, Pending, Finished
-            
+            // Task Management State & Views (Daily, Weekly, Monthly)
+            const [taskViewMode, setTaskViewMode] = React.useState('Weekly'); // Daily, Weekly, Monthly
+            const [taskFilterStatus, setTaskFilterStatus] = React.useState('All'); // All, Pending, Completed
+
+            // Task creation form state
+            const getTodayString = () => new Date().toISOString().split('T')[0];
+            const [newTaskTitle, setNewTaskTitle] = React.useState('');
+            const [newTaskHeading, setNewTaskHeading] = React.useState('Interview schedule');
+            const [newTaskDate, setNewnewTaskDate] = React.useState(getTodayString());
+
             const [todos, setTodos] = React.useState([
-                { id: '1', title: 'Schedule L2 technical round for shortlisted engineers', reminder: 'Follow up with BU Head at 10:00 AM', deadline: '2026-03-25', status: 'In Progress', stage: 'inProgress', completed: false, time: '09:00 AM' },
-                { id: '2', title: 'Collect previous employment payslips and ID proofs', reminder: 'Check candidate WhatsApp response', deadline: '2026-03-26', status: 'Draft', stage: 'draft', completed: false, time: '11:30 AM' },
-                { id: '3', title: 'Dispatch laptop and company branded welcome kit', reminder: 'Verify courier tracking ID', deadline: '2026-03-24', status: 'Done', stage: 'done', completed: true, time: '02:00 PM' },
-                { id: '4', title: 'Send reminder for document submission deadline', reminder: 'Email template #3', deadline: '2026-03-27', status: 'Editing', stage: 'editing', completed: false, time: '04:15 PM' }
+                { id: '1', title: 'Schedule L2 technical round for shortlisted engineers', heading: 'Interview schedule', date: getTodayString(), completed: false },
+                { id: '2', title: 'Dispatch laptop and welcome kit for joining candidate', heading: 'Welcome Kit', date: getTodayString(), completed: false },
+                { id: '3', title: 'Send reminder for document submission deadline', heading: 'Reminders', date: '2026-11-10', completed: false },
+                { id: '4', title: 'Review custom talent acquisition strategy report', heading: 'Custom task', date: '2026-11-12', completed: true }
             ]);
 
-            const [newTitle, setNewTitle] = React.useState('');
-            const [newReminder, setNewReminder] = React.useState('');
-            const [newDeadline, setNewDeadline] = React.useState('');
-            const [newStage, setNewStage] = React.useState('draft');
+            // Smart Spillover Logic: Automatically rollover pending past tasks to today
+            React.useEffect(() => {
+                const today = getTodayString();
+                setTodos(prev => prev.map(t => {
+                    if (!t.completed && t.date < today) {
+                        return { ...t, date: today };
+                    }
+                    return t;
+                }));
+            }, []);
 
             const parseSheetData = (data) => {
                 return data.map((item, index) => ({
@@ -185,40 +198,25 @@
             };
 
             const handleAddTask = () => {
-                if (!newTitle.trim()) return;
+                if (!newTaskTitle.trim()) return;
                 const newTask = {
                     id: Date.now().toString(),
-                    title: newTitle,
-                    reminder: newReminder || 'No reminder set',
-                    deadline: newDeadline || 'No deadline',
-                    stage: newStage,
-                    status: newStage === 'done' ? 'Done' : newStage === 'inProgress' ? 'In Progress' : newStage === 'editing' ? 'Editing' : 'Draft',
-                    completed: newStage === 'done',
-                    time: '10:00 AM'
+                    title: newTaskTitle,
+                    heading: newTaskHeading,
+                    date: newTaskDate || getTodayString(),
+                    completed: false
                 };
                 setTodos([...todos, newTask]);
-                setNewTitle('');
-                setNewReminder('');
-                setNewDeadline('');
+                setNewTaskTitle('');
+                setNewnewTaskDate(getTodayString());
             };
 
-            const toggleTaskCompletion = (taskId) => {
-                setTodos(todos.map(t => {
-                    if (t.id === taskId) {
-                        const isComp = !t.completed;
-                        return {
-                            ...t,
-                            completed: isComp,
-                            stage: isComp ? 'done' : 'inProgress',
-                            status: isComp ? 'Done' : 'In Progress'
-                        };
-                    }
-                    return t;
-                }));
+            const toggleTaskStatus = (id) => {
+                setTodos(todos.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
             };
 
-            const deleteTask = (taskId) => {
-                setTodos(todos.filter(t => t.id !== taskId));
+            const deleteTask = (id) => {
+                setTodos(todos.filter(t => t.id !== id));
             };
 
             const filteredProfiles = profiles.filter(p => {
@@ -245,14 +243,8 @@
 
             const totalDatasetCount = profiles.length + joiners.length;
 
+            const completedCount = todos.filter(t => t.completed).length;
             const pendingCount = todos.filter(t => !t.completed).length;
-            const finishedCount = todos.filter(t => t.completed).length;
-
-            const displayTodos = todos.filter(t => {
-                if (taskFilter === 'Pending') return !t.completed;
-                if (taskFilter === 'Finished') return t.completed;
-                return true;
-            });
 
             return (
                 <div className="flex h-screen overflow-hidden bg-transparent">
@@ -357,7 +349,6 @@
                             {/* DEEP ANALYTICS TAB */}
                             {activeTab === 'dashboard' && (
                                 <div className="space-y-6">
-                                    {/* Graphical Floating Neomorphic Insight Component */}
                                     <div className="p-6 rounded-3xl soft-glass-card flex flex-col md:flex-row items-center justify-between gap-6 border-l-4 border-l-cyan-500 relative overflow-hidden">
                                         <div className="space-y-2 z-10">
                                             <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-cyan-100 text-cyan-700 text-xs font-bold shadow-neoInset">
@@ -382,7 +373,6 @@
                                         </div>
                                     </div>
 
-                                    {/* Metric Tiles */}
                                     <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                                         <div className="p-6 rounded-3xl soft-glass-card">
                                             <p className="text-xs text-slate-500 font-extrabold uppercase">Total Pipeline</p>
@@ -416,7 +406,6 @@
                                         </div>
                                     </div>
 
-                                    {/* Breakdown Cards Grid */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div className="p-6 rounded-3xl soft-glass-card space-y-4">
                                             <h3 className="font-extrabold text-slate-800 border-b border-slate-200 pb-3 flex justify-between items-center">
@@ -585,88 +574,95 @@
                                 </div>
                             )}
 
-                            {/* TASK MANAGEMENT PAGE (MATCHING JIRON REFERENCE SUITE) */}
+                            {/* TASK MANAGEMENT PAGE (1. Enter Task, 2. Heading, 3. Modern Calendar, 4. Save + Spillover Logic + Daily/Weekly/Monthly View) */}
                             {activeTab === 'todos' && (
                                 <div className="space-y-6">
                                     
-                                    {/* Top Controls & Add Task Bar */}
+                                    {/* Task Creation Console */}
                                     <div className="p-6 rounded-3xl soft-glass-card space-y-4">
                                         <div className="flex flex-col md:flex-row items-center justify-between gap-4 border-b border-slate-200 pb-4">
                                             <div>
-                                                <h2 className="text-2xl font-black text-slate-800">Time Tracker & Task Management</h2>
-                                                <p className="text-xs text-cyan-600 font-bold mt-0.5">Jiron Workflow Console • Reminders & Scheduled Deadlines</p>
+                                                <h2 className="text-2xl font-black text-slate-800">Task Management & Schedule</h2>
+                                                <p className="text-xs text-cyan-600 font-bold mt-0.5">Add, Schedule, and Auto-Rollover Pending Daily Tasks</p>
                                             </div>
 
                                             {/* Daily / Weekly / Monthly View Toggles */}
                                             <div className="flex items-center space-x-2 bg-white/70 p-1.5 rounded-2xl shadow-neoInset">
-                                                {['Day', 'Week', 'Month'].map(m => (
+                                                {['Daily', 'Weekly', 'Monthly'].map(v => (
                                                     <button
-                                                        key={m}
-                                                        onClick={() => setViewMode(m)}
+                                                        key={v}
+                                                        onClick={() => setTaskViewMode(v)}
                                                         className={`px-4 py-1.5 rounded-xl text-xs font-extrabold transition ${
-                                                            viewMode === m 
+                                                            taskViewMode === v 
                                                                 ? 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white shadow-neoSoft' 
                                                                 : 'text-slate-500 hover:text-slate-800'
                                                         }`}
                                                     >
-                                                        {m}
+                                                        {v}
                                                     </button>
                                                 ))}
                                             </div>
                                         </div>
 
-                                        {/* Task Creation Inputs (Title, Reminder, Deadline) */}
-                                        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                                            <input 
-                                                type="text" 
-                                                placeholder="Task Title..." 
-                                                value={newTitle} 
-                                                onChange={e => setNewTitle(e.target.value)} 
-                                                className="p-3 rounded-2xl neo-input-soft text-slate-700 text-xs font-semibold outline-none" 
-                                            />
-                                            <input 
-                                                type="text" 
-                                                placeholder="Reminder under title (e.g., Call at 10 AM)..." 
-                                                value={newReminder} 
-                                                onChange={e => setNewReminder(e.target.value)} 
-                                                className="p-3 rounded-2xl neo-input-soft text-slate-700 text-xs font-semibold outline-none" 
-                                            />
-                                            <input 
-                                                type="date" 
-                                                value={newDeadline} 
-                                                onChange={e => setNewDeadline(e.target.value)} 
-                                                className="p-3 rounded-2xl neo-input-soft text-slate-700 text-xs font-semibold outline-none" 
-                                            />
-                                            <select 
-                                                value={newStage} 
-                                                onChange={e => setNewStage(e.target.value)} 
-                                                className="p-3 rounded-2xl neo-input-soft text-slate-700 text-xs font-bold outline-none cursor-pointer"
-                                            >
-                                                <option value="draft">Draft</option>
-                                                <option value="inProgress">In Progress</option>
-                                                <option value="editing">Editing</option>
-                                                <option value="done">Done</option>
-                                            </select>
-                                        </div>
+                                        {/* Task Form Columns: 1. Task Title | 2. Heading | 3. Modern Calendar UI | 4. Save Button */}
+                                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
+                                            <div>
+                                                <label className="block text-[10px] font-extrabold uppercase text-slate-400 mb-1">1. Enter Task</label>
+                                                <input 
+                                                    type="text" 
+                                                    placeholder="Task description..." 
+                                                    value={newTaskTitle} 
+                                                    onChange={e => setNewTaskTitle(e.target.value)} 
+                                                    className="w-full p-3 rounded-2xl neo-input-soft text-slate-700 text-xs font-semibold outline-none" 
+                                                />
+                                            </div>
 
-                                        <button 
-                                            onClick={handleAddTask} 
-                                            className="w-full py-3 rounded-2xl neo-btn-active font-black text-cyan-700 text-xs transition shadow-neoSoft"
-                                        >
-                                            ➕ Create New Task Entry
-                                        </button>
+                                            <div>
+                                                <label className="block text-[10px] font-extrabold uppercase text-slate-400 mb-1">2. Heading</label>
+                                                <select 
+                                                    value={newTaskHeading} 
+                                                    onChange={e => setNewTaskHeading(e.target.value)} 
+                                                    className="w-full p-3 rounded-2xl neo-input-soft text-slate-700 text-xs font-bold outline-none cursor-pointer"
+                                                >
+                                                    <option value="Interview schedule">Interview schedule</option>
+                                                    <option value="Welcome Kit">Welcome Kit</option>
+                                                    <option value="Reminders">Reminders</option>
+                                                    <option value="Custom task">Custom task</option>
+                                                </select>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-[10px] font-extrabold uppercase text-slate-400 mb-1">3. Calendar (Modern UI)</label>
+                                                <input 
+                                                    type="date" 
+                                                    value={newTaskDate} 
+                                                    onChange={e => setNewnewTaskDate(e.target.value)} 
+                                                    className="w-full p-3 rounded-2xl neo-input-soft text-slate-700 text-xs font-semibold outline-none cursor-pointer" 
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-[10px] font-extrabold uppercase text-slate-400 mb-1 opacity-0">Action</label>
+                                                <button 
+                                                    onClick={handleAddTask} 
+                                                    className="w-full py-3 rounded-2xl neo-btn-active font-black text-cyan-700 text-xs transition shadow-neoSoft"
+                                                >
+                                                    💾 Save Task
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
 
-                                    {/* Task Status Filters & Metrics */}
+                                    {/* Task Status Filters & Difference Counters */}
                                     <div className="flex flex-col md:flex-row items-center justify-between gap-4 p-4 rounded-3xl soft-glass-card">
                                         <div className="flex items-center space-x-2">
-                                            <span className="text-xs font-extrabold text-slate-500 uppercase mr-2">Filter View:</span>
-                                            {['All', 'Pending', 'Finished'].map(f => (
+                                            <span className="text-xs font-extrabold text-slate-500 uppercase mr-2">Filter:</span>
+                                            {['All', 'Pending', 'Completed'].map(f => (
                                                 <button
                                                     key={f}
-                                                    onClick={() => setTaskFilter(f)}
+                                                    onClick={() => setTaskFilterStatus(f)}
                                                     className={`px-4 py-2 rounded-2xl text-xs font-black transition ${
-                                                        taskFilter === f 
+                                                        taskFilterStatus === f 
                                                             ? 'neo-btn-active text-cyan-600 shadow-neoSoft' 
                                                             : 'text-slate-500 hover:text-slate-800'
                                                     }`}
@@ -676,140 +672,111 @@
                                             ))}
                                         </div>
 
-                                        {/* Status Count Pill showing Difference */}
                                         <div className="flex items-center space-x-4 text-xs font-extrabold">
                                             <span className="px-3 py-1.5 rounded-2xl bg-amber-100 text-amber-700 border border-amber-300 shadow-neoInset">
                                                 ⏳ Pending: {pendingCount}
                                             </span>
                                             <span className="px-3 py-1.5 rounded-2xl bg-emerald-100 text-emerald-700 border border-emerald-300 shadow-neoInset">
-                                                ✅ Finished: {finishedCount}
+                                                ✅ Completed: {completedCount}
                                             </span>
                                             <span className="px-3 py-1.5 rounded-2xl bg-purple-100 text-purple-700 border border-purple-300 shadow-neoSoft">
-                                                Diff: {finishedCount - pendingCount}
+                                                Difference: {completedCount - pendingCount}
                                             </span>
                                         </div>
                                     </div>
 
-                                    {/* Jiron Board Columns (Draft, In Progress, Editing, Done) */}
-                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                                        {/* Draft Column */}
-                                        <div className="p-4 rounded-3xl soft-glass-card space-y-3">
-                                            <div className="flex justify-between items-center border-b border-slate-200 pb-2">
-                                                <h3 className="font-extrabold text-xs text-slate-700 uppercase tracking-wider">Draft</h3>
-                                                <span className="w-2 h-2 rounded-full bg-slate-400"></span>
+                                    {/* Task Views: Daily, Weekly (Day-by-Day), Monthly */}
+                                    <div className="p-6 rounded-3xl soft-glass-card space-y-6">
+                                        <div className="flex justify-between items-center border-b border-slate-200 pb-3">
+                                            <h3 className="font-black text-slate-800 text-base">Task Schedule View ({taskViewMode})</h3>
+                                            <span className="text-xs font-bold text-cyan-600">Active Date Roll-over Enabled</span>
+                                        </div>
+
+                                        {/* DAILY VIEW */}
+                                        {taskViewMode === 'Daily' && (
+                                            <div className="space-y-4">
+                                                <p className="text-xs font-bold text-slate-500">Tasks for Today ({getTodayString()}):</p>
+                                                <div className="space-y-3">
+                                                    {todos.filter(t => t.date === getTodayString() && (taskFilterStatus === 'All' || (taskFilterStatus === 'Completed' ? t.completed : !t.completed))).length === 0 ? (
+                                                        <p className="text-slate-400 text-xs italic py-4">No tasks scheduled for today.</p>
+                                                    ) : (
+                                                        todos.filter(t => t.date === getTodayString() && (taskFilterStatus === 'All' || (taskFilterStatus === 'Completed' ? t.completed : !t.completed))).map(t => (
+                                                            <div key={t.id} className={`p-4 rounded-2xl neo-input-soft flex items-center justify-between ${t.completed ? 'opacity-70 bg-emerald-50/50' : 'border-l-4 border-l-cyan-500'}`}>
+                                                                <div>
+                                                                    <span className="px-2.5 py-0.5 rounded-md bg-cyan-100 text-cyan-700 text-[10px] font-extrabold">{t.heading}</span>
+                                                                    <h4 className={`font-bold text-sm mt-1 ${t.completed ? 'line-through text-slate-400' : 'text-slate-800'}`}>{t.title}</h4>
+                                                                    <p className="text-[10px] font-semibold text-slate-500 mt-0.5">Scheduled Date: {t.date}</p>
+                                                                </div>
+                                                                <div className="flex items-center space-x-2">
+                                                                    <button 
+                                                                        onClick={() => toggleTaskStatus(t.id)} 
+                                                                        className={`px-3 py-1.5 rounded-xl text-xs font-bold ${t.completed ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}
+                                                                    >
+                                                                        {t.completed ? 'Mark Pending' : 'Mark Completed'}
+                                                                    </button>
+                                                                    <button onClick={() => deleteTask(t.id)} className="text-rose-500 text-xs font-bold hover:underline px-2">Delete</button>
+                                                                </div>
+                                                            </div>
+                                                        ))
+                                                    )}
+                                                </div>
                                             </div>
-                                            <div className="space-y-3">
-                                                {displayTodos.filter(t => t.stage === 'draft' || t.status === 'Draft').map(todo => (
-                                                    <div key={todo.id} className="p-3.5 rounded-2xl neo-input-soft space-y-2 relative">
-                                                        <h4 className="font-bold text-slate-800 text-xs">{todo.title}</h4>
-                                                        <p className="text-[10px] font-bold text-cyan-600 bg-cyan-50 p-1.5 rounded-xl border border-cyan-200">
-                                                            🔔 {todo.reminder}
-                                                        </p>
-                                                        <div className="flex justify-between items-center text-[10px] text-slate-500 font-semibold pt-1">
-                                                            <span>📅 {todo.deadline}</span>
-                                                            <button onClick={() => deleteTask(todo.id)} className="text-rose-500 hover:underline">Delete</button>
+                                        )}
+
+                                        {/* WEEKLY VIEW (Day by Day) */}
+                                        {taskViewMode === 'Weekly' && (
+                                            <div className="grid grid-cols-1 md:grid-cols-7 gap-3">
+                                                {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day, idx) => {
+                                                    const dayTasks = todos.filter(t => (taskFilterStatus === 'All' || (taskFilterStatus === 'Completed' ? t.completed : !t.completed)));
+                                                    return (
+                                                        <div key={idx} className="p-3 rounded-2xl neo-input-soft space-y-3 min-h-[180px]">
+                                                            <div className="border-b border-slate-200 pb-1.5 flex justify-between items-center">
+                                                                <h4 className="font-extrabold text-xs text-slate-700">{day}</h4>
+                                                                <span className="text-[10px] text-cyan-600 font-bold">Day {idx+1}</span>
+                                                            </div>
+                                                            <div className="space-y-2">
+                                                                {dayTasks.map(t => (
+                                                                    <div key={t.id} className={`p-2 rounded-xl text-xs ${t.completed ? 'bg-emerald-100 text-emerald-800' : 'bg-white/80 shadow-neoSoft text-slate-700'}`}>
+                                                                        <span className="block text-[9px] font-black uppercase text-cyan-600">{t.heading}</span>
+                                                                        <p className={`font-semibold mt-0.5 ${t.completed ? 'line-through opacity-70' : ''}`}>{t.title}</p>
+                                                                        <div className="flex justify-between items-center mt-2 pt-1 border-t border-slate-100 text-[10px]">
+                                                                            <button onClick={() => toggleTaskStatus(t.id)} className="font-bold text-cyan-700 hover:underline">
+                                                                                {t.completed ? 'Pending' : 'Done'}
+                                                                            </button>
+                                                                            <span className="text-slate-400">{t.date}</span>
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                ))}
+                                                    );
+                                                })}
                                             </div>
-                                        </div>
+                                        )}
 
-                                        {/* In Progress Column */}
-                                        <div className="p-4 rounded-3xl soft-glass-card space-y-3">
-                                            <div className="flex justify-between items-center border-b border-slate-200 pb-2">
-                                                <h3 className="font-extrabold text-xs text-cyan-600 uppercase tracking-wider">In Progress</h3>
-                                                <span className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse"></span>
-                                            </div>
-                                            <div className="space-y-3">
-                                                {displayTodos.filter(t => t.stage === 'inProgress' || t.status === 'In Progress').map(todo => (
-                                                    <div key={todo.id} className="p-3.5 rounded-2xl neo-input-soft space-y-2 relative border-l-2 border-l-cyan-500">
-                                                        <h4 className="font-bold text-slate-800 text-xs">{todo.title}</h4>
-                                                        <p className="text-[10px] font-bold text-purple-600 bg-purple-50 p-1.5 rounded-xl border border-purple-200">
-                                                            🔔 {todo.reminder}
-                                                        </p>
-                                                        <div className="flex justify-between items-center text-[10px] text-slate-500 font-semibold pt-1">
-                                                            <span>📅 {todo.deadline}</span>
-                                                            <button onClick={() => toggleTaskCompletion(todo.id)} className="text-emerald-600 font-bold hover:underline">Mark Done</button>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-
-                                        {/* Editing / Review Column */}
-                                        <div className="p-4 rounded-3xl soft-glass-card space-y-3">
-                                            <div className="flex justify-between items-center border-b border-slate-200 pb-2">
-                                                <h3 className="font-extrabold text-xs text-amber-600 uppercase tracking-wider">Editing / Review</h3>
-                                                <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-                                            </div>
-                                            <div className="space-y-3">
-                                                {displayTodos.filter(t => t.stage === 'editing' || t.status === 'Editing').map(todo => (
-                                                    <div key={todo.id} className="p-3.5 rounded-2xl neo-input-soft space-y-2 relative border-l-2 border-l-amber-500">
-                                                        <h4 className="font-bold text-slate-800 text-xs">{todo.title}</h4>
-                                                        <p className="text-[10px] font-bold text-amber-700 bg-amber-50 p-1.5 rounded-xl border border-amber-200">
-                                                            🔔 {todo.reminder}
-                                                        </p>
-                                                        <div className="flex justify-between items-center text-[10px] text-slate-500 font-semibold pt-1">
-                                                            <span>📅 {todo.deadline}</span>
-                                                            <button onClick={() => toggleTaskCompletion(todo.id)} className="text-emerald-600 font-bold hover:underline">Mark Done</button>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-
-                                        {/* Done Column */}
-                                        <div className="p-4 rounded-3xl soft-glass-card space-y-3">
-                                            <div className="flex justify-between items-center border-b border-slate-200 pb-2">
-                                                <h3 className="font-extrabold text-xs text-emerald-600 uppercase tracking-wider">Done</h3>
-                                                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                                            </div>
-                                            <div className="space-y-3">
-                                                {displayTodos.filter(t => t.stage === 'done' || t.completed).map(todo => (
-                                                    <div key={todo.id} className="p-3.5 rounded-2xl neo-input-soft space-y-2 relative opacity-80 border-l-2 border-l-emerald-500">
-                                                        <h4 className="font-bold text-slate-500 line-through text-xs">{todo.title}</h4>
-                                                        <p className="text-[10px] font-bold text-emerald-700 bg-emerald-50 p-1.5 rounded-xl border border-emerald-200">
-                                                            🔔 {todo.reminder}
-                                                        </p>
-                                                        <div className="flex justify-between items-center text-[10px] text-slate-400 font-semibold pt-1">
-                                                            <span>✅ Completed</span>
-                                                            <button onClick={() => deleteTask(todo.id)} className="text-rose-500 hover:underline">Remove</button>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Task Management Schedule Grid (Matching Jiron Bottom Schedule) */}
-                                    <div className="p-6 rounded-3xl soft-glass-card space-y-4">
-                                        <div className="flex justify-between items-center">
-                                            <h3 className="font-black text-slate-800 text-sm">Weekly Time Schedule Grid</h3>
-                                            <span className="text-xs font-bold text-cyan-600">Showing {viewMode} Schedule</span>
-                                        </div>
-
-                                        <div className="grid grid-cols-7 gap-2 text-center text-xs font-extrabold text-slate-500 pb-2 border-b border-slate-200">
-                                            <div>Mon</div>
-                                            <div>Tue</div>
-                                            <div>Wed</div>
-                                            <div>Thu</div>
-                                            <div>Fri</div>
-                                            <div>Sat</div>
-                                            <div>Sun</div>
-                                        </div>
-
-                                        <div className="grid grid-cols-7 gap-2">
-                                            {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, i) => (
-                                                <div key={i} className="min-h-[100px] p-2 rounded-2xl neo-input-soft space-y-2">
-                                                    {todos.slice(i, i + 1).map(t => (
-                                                        <div key={t.id} className={`p-2 rounded-xl text-[10px] font-bold ${t.completed ? 'bg-emerald-100 text-emerald-800' : 'bg-gradient-to-r from-cyan-400 to-purple-400 text-white shadow-neoSoft'}`}>
-                                                            <p className="truncate">{t.title}</p>
-                                                            <p className="text-[9px] opacity-90 mt-0.5">{t.time}</p>
+                                        {/* MONTHLY VIEW */}
+                                        {taskViewMode === 'Monthly' && (
+                                            <div className="space-y-4">
+                                                <p className="text-xs font-bold text-slate-500">Monthly Task Overview (November 2026):</p>
+                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                    {todos.filter(t => (taskFilterStatus === 'All' || (taskFilterStatus === 'Completed' ? t.completed : !t.completed))).map(t => (
+                                                        <div key={t.id} className="p-4 rounded-2xl neo-input-soft space-y-2">
+                                                            <div className="flex justify-between items-center">
+                                                                <span className="px-2 py-0.5 rounded bg-purple-100 text-purple-700 text-[10px] font-bold">{t.heading}</span>
+                                                                <span className="text-xs font-extrabold text-cyan-600">📅 {t.date}</span>
+                                                            </div>
+                                                            <h4 className={`font-bold text-xs ${t.completed ? 'line-through text-slate-400' : 'text-slate-800'}`}>{t.title}</h4>
+                                                            <div className="flex justify-between items-center pt-2 border-t border-slate-200">
+                                                                <button onClick={() => toggleTaskStatus(t.id)} className={`text-[10px] font-bold px-2 py-1 rounded ${t.completed ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                                                                    {t.completed ? 'Mark Pending' : 'Mark Completed'}
+                                                                </button>
+                                                                <button onClick={() => deleteTask(t.id)} className="text-rose-500 text-[10px] font-bold">Delete</button>
+                                                            </div>
                                                         </div>
                                                     ))}
                                                 </div>
-                                            ))}
-                                        </div>
+                                            </div>
+                                        )}
                                     </div>
 
                                 </div>
