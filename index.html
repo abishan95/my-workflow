@@ -1,10 +1,13 @@
-html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Work Flow - Soft Glass HR Portal</title>
+    <title>My Work Flow - Premium Personal Workspace</title>
+    <!-- Google Fonts: Manrope (Headings) & Inter (Body) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -13,65 +16,156 @@ html
         tailwind.config = {
             theme: {
                 extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        heading: ['Manrope', 'sans-serif'],
+                    },
                     colors: {
-                        softWhite: '#f0f4f8',
-                        accentCyan: '#06b6d4',
-                        accentPurple: '#8b5cf6',
+                        neoBg: '#E9EEF5',
+                        neoSurface: '#E9EEF5',
+                        neoWhite: '#FFFFFF',
+                        powderBlue: '#E6EEFF',
+                        lavender: '#EEE8FF',
+                        mint: '#DFF5F0',
+                        softPeach: '#FFEBDD',
+                        primaryAccent: '#829CFB',
+                        secondaryAccent: '#A99AEF',
+                        successMint: '#71CDB3',
+                        warningPeach: '#F0BE83',
+                        dangerRose: '#E9949B',
+                        primaryText: '#34415B',
+                        secondaryText: '#8290A6',
+                        darkShadow: '#CBD3DF',
+                        lightShadow: '#FFFFFF',
                     },
                     boxShadow: {
-                        neoSoft: '10px 10px 20px #d1d9e6, -10px -10px 20px #ffffff',
-                        neoInset: 'inset 4px 4px 8px #d1d9e6, inset -4px -4px 8px #ffffff',
+                        neoRaised: '7px 7px 16px #CBD3DF, -7px -7px 16px #FFFFFF',
+                        neoRaisedHover: '10px 10px 22px #C2CBE0, -10px -10px 22px #FFFFFF',
+                        neoInset: 'inset 4px 4px 9px #CBD3DF, inset -4px -4px 9px #FFFFFF',
+                        neoInsetFocus: 'inset 4px 4px 9px #CBD3DF, 0 0 0 3px rgba(130, 156, 251, 0.3)',
                     }
                 }
             }
         }
     </script>
     <style>
+        :root {
+            --neo-bg: #E9EEF5;
+            --primary-accent: #829CFB;
+            --primary-text: #34415B;
+        }
         body {
-            background: linear-gradient(135deg, #e0e7ff 0%, #f0f4f8 50%, #e0f2fe 100%);
-            background-attachment: fixed;
-            color: #334155;
+            background-color: #E9EEF5;
+            color: #34415B;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
         }
-        .soft-glass-card {
-            background: rgba(255, 255, 255, 0.65);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.85);
-            box-shadow: 12px 12px 24px #d1d9e6, -12px -12px 24px #ffffff, inset 0 0 0 1px rgba(255, 255, 255, 0.6);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        h1, h2, h3, h4, .font-heading {
+            font-family: 'Manrope', sans-serif;
         }
-        .soft-glass-card:hover {
-            box-shadow: 16px 16px 32px #c5d0e3, -16px -16px 32px #ffffff;
+        .neo-card {
+            background-color: #E9EEF5;
+            border-radius: 20px;
+            box-shadow: 7px 7px 16px #CBD3DF, -7px -7px 16px #FFFFFF;
+            transition: all 0.2s ease-in-out;
+        }
+        .neo-card:hover {
+            box-shadow: 10px 10px 22px #C2CBE0, -10px -10px 22px #FFFFFF;
             transform: translateY(-2px);
         }
-        .neo-input-soft {
-            background: rgba(240, 244, 248, 0.85);
-            border: 1px solid rgba(255, 255, 255, 0.9);
-            box-shadow: inset 4px 4px 8px #d1d9e6, inset -4px -4px 8px #ffffff;
+        .neo-card-flat {
+            background-color: #E9EEF5;
+            border-radius: 20px;
+            box-shadow: 7px 7px 16px #CBD3DF, -7px -7px 16px #FFFFFF;
         }
-        .neo-input-soft:focus {
-            border-color: #06b6d4;
-            box-shadow: inset 4px 4px 8px #d1d9e6, 0 0 12px rgba(6, 182, 212, 0.25);
+        .neo-input {
+            background-color: #E9EEF5;
+            border-radius: 14px;
+            box-shadow: inset 4px 4px 9px #CBD3DF, inset -4px -4px 9px #FFFFFF;
+            border: 1px solid transparent;
+            transition: all 0.2s ease;
+        }
+        .neo-input:focus {
+            outline: none;
+            border-color: rgba(130, 156, 251, 0.6);
+            box-shadow: inset 4px 4px 9px #CBD3DF, 0 0 0 3px rgba(130, 156, 251, 0.25);
+        }
+        .neo-btn-primary {
+            background: linear-gradient(135deg, #829CFB 0%, #708DF9 100%);
+            color: #FFFFFF;
+            border-radius: 14px;
+            box-shadow: 5px 5px 12px #CBD3DF, -5px -5px 12px #FFFFFF;
+            transition: all 0.18s ease;
+        }
+        .neo-btn-primary:hover {
+            box-shadow: 7px 7px 16px #CBD3DF, -7px -7px 16px #FFFFFF;
+            transform: translateY(-1px);
+        }
+        .neo-btn-primary:active {
+            box-shadow: inset 3px 3px 6px rgba(0,0,0,0.2);
+            transform: translateY(1px);
+        }
+        .neo-btn-secondary {
+            background-color: #E9EEF5;
+            color: #34415B;
+            border-radius: 14px;
+            box-shadow: 5px 5px 12px #CBD3DF, -5px -5px 12px #FFFFFF;
+            transition: all 0.18s ease;
+        }
+        .neo-btn-secondary:hover {
+            box-shadow: 7px 7px 16px #C2CBE0, -7px -7px 16px #FFFFFF;
+            color: #829CFB;
+        }
+        .neo-btn-secondary:active {
+            box-shadow: inset 3px 3px 6px #CBD3DF, inset -3px -3px 6px #FFFFFF;
         }
         .neo-btn-active {
-            background: linear-gradient(135deg, #ffffff 0%, #e0f2fe 100%);
-            border: 1px solid rgba(6, 182, 212, 0.4);
-            box-shadow: 6px 6px 12px #c8d3e6, -6px -6px 12px #ffffff;
+            background: #E6EEFF;
+            color: #829CFB;
+            border-radius: 14px;
+            box-shadow: inset 3px 3px 7px #C5D0E3, inset -3px -3px 7px #FFFFFF;
+            font-weight: 700;
         }
-        @keyframes floatMotion {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-6px); }
+        .glass-pill {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
         }
-        .animate-float {
-            animation: floatMotion 4s ease-in-out infinite;
+        /* Custom scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #E9EEF5;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #CBD3DF;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #8290A6;
         }
     </style>
 </head>
-<body class="font-sans min-h-screen overflow-x-hidden text-slate-700">
+<body class="bg-neoBg text-primaryText min-h-screen">
     <div id="root"></div>
 
     <script type="text/babel">
         const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzg0o4r0RboJGr75shmuf-6fglCaa3xoBTsf6CHUmqe_nNUu5WXAutbCdNJSmgNDlGe/exec";
+
+        // SVG Lucide-style Minimal Icons
+        const Icons = {
+            Dashboard: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>,
+            Directory: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>,
+            Joiners: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+            Tasks: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>,
+            Search: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>,
+            Sync: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
+            Calendar: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
+            User: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>,
+            Bell: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>,
+        };
 
         function App() {
             const [activeTab, setActiveTab] = React.useState('dashboard');
@@ -84,14 +178,13 @@ html
             const [selectedCandidate, setSelectedCandidate] = React.useState(null);
 
             // Task Management State & Views (Daily, Weekly, Monthly)
-            const [taskViewMode, setTaskViewMode] = React.useState('Weekly'); // Daily, Weekly, Monthly
-            const [taskFilterStatus, setTaskFilterStatus] = React.useState('All'); // All, Pending, Completed
+            const [taskViewMode, setTaskViewMode] = React.useState('Weekly');
+            const [taskFilterStatus, setTaskFilterStatus] = React.useState('All');
 
-            // Task creation form state
             const getTodayString = () => new Date().toISOString().split('T')[0];
             const [newTaskTitle, setNewTaskTitle] = React.useState('');
             const [newTaskHeading, setNewTaskHeading] = React.useState('Interview schedule');
-            const [newTaskDate, setNewnewTaskDate] = React.useState(getTodayString());
+            const [newTaskDate, setNewTaskDate] = React.useState(getTodayString());
 
             const [todos, setTodos] = React.useState([
                 { id: '1', title: 'Schedule L2 technical round for shortlisted engineers', heading: 'Interview schedule', date: getTodayString(), completed: false },
@@ -100,7 +193,7 @@ html
                 { id: '4', title: 'Review custom talent acquisition strategy report', heading: 'Custom task', date: '2026-11-12', completed: true }
             ]);
 
-            // Smart Spillover Logic: Automatically rollover pending past tasks to today
+            // Auto-Rollover Pending Past Tasks to Today
             React.useEffect(() => {
                 const today = getTodayString();
                 setTodos(prev => prev.map(t => {
@@ -136,7 +229,7 @@ html
 
             const fetchSheetData = React.useCallback(() => {
                 setIsLoading(true);
-                setSyncStatus('Fetching up-to-date data...');
+                setSyncStatus('Fetching live data...');
                 fetch(WEBHOOK_URL)
                     .then(res => res.json())
                     .then(data => {
@@ -175,12 +268,11 @@ html
                     if (selectedCandidate && selectedCandidate.candidateName === candidate.candidateName) {
                         setSelectedCandidate(updated);
                     }
-                    alert(`Status updated to "${newStatus}" for ${candidate.candidateName}!`);
                 }
             };
 
             const handleMarkJoined = (candidate) => {
-                const confirmed = window.confirm(`Are you sure you want to mark ${candidate.candidateName} as JOINED?`);
+                const confirmed = window.confirm(`Mark ${candidate.candidateName} as JOINED?`);
                 if (confirmed) {
                     const updated = { ...candidate, status: 'Joined' };
                     setProfiles(prev => prev.filter(p => p.candidateName !== candidate.candidateName));
@@ -192,8 +284,6 @@ html
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(updated)
                     });
-
-                    alert(`${candidate.candidateName} has been moved to the Joiners Directory!`);
                 }
             };
 
@@ -208,7 +298,7 @@ html
                 };
                 setTodos([...todos, newTask]);
                 setNewTaskTitle('');
-                setNewnewTaskDate(getTodayString());
+                setNewTaskDate(getTodayString());
             };
 
             const toggleTaskStatus = (id) => {
@@ -242,360 +332,355 @@ html
             };
 
             const totalDatasetCount = profiles.length + joiners.length;
-
             const completedCount = todos.filter(t => t.completed).length;
             const pendingCount = todos.filter(t => !t.completed).length;
 
             return (
-                <div className="flex h-screen overflow-hidden bg-transparent">
-                    {/* Sidebar */}
-                    <div className="w-72 soft-glass-card p-6 flex flex-col justify-between hidden md:flex z-20 m-4 rounded-3xl">
+                <div className="flex h-screen overflow-hidden bg-neoBg text-primaryText">
+                    
+                    {/* 1. Floating Soft Neumorphic Sidebar */}
+                    <aside className="w-64 p-5 flex flex-col justify-between hidden md:flex z-20 m-4 rounded-[22px] neo-card-flat border border-white/60">
                         <div>
-                            {/* Logo */}
-                            <div className="flex items-center justify-center mb-6">
+                            {/* Logo & Branding */}
+                            <div className="flex items-center space-x-3 mb-8 px-2">
                                 <img 
                                     src="./logo.jpeg" 
-                                    alt="My Workflow Logo" 
-                                    className="w-16 h-16 rounded-2xl object-cover shadow-neoSoft border-2 border-white" 
+                                    alt="My Workflow" 
+                                    className="w-11 h-11 rounded-2xl object-cover shadow-neoRaised border border-white/80" 
                                     onError={(e) => {
-                                        e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 24 24' fill='none' stroke='%2306b6d4' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6'/%3E%3C/svg%3E";
+                                        e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44' viewBox='0 0 24 24' fill='none' stroke='%23829CFB' stroke-width='2'%3E%3Cpath d='M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6'/%3E%3C/svg%3E";
                                     }}
                                 />
+                                <div>
+                                    <h1 className="font-heading font-extrabold text-base text-primaryText leading-tight">My Work Flow</h1>
+                                    <p className="text-[11px] text-secondaryText font-medium">Personal Workspace</p>
+                                </div>
                             </div>
 
-                            {/* User Profile Card */}
-                            <div className="p-4 mb-6 rounded-2xl soft-glass-card flex items-center space-x-3 border border-white">
-                                <div className="w-12 h-12 rounded-2xl overflow-hidden shadow-neoSoft border-2 border-cyan-400 bg-cyan-100 flex items-center justify-center">
-                                    <svg viewBox="0 0 64 64" className="w-10 h-10">
-                                        <circle cx="32" cy="24" r="12" fill="#06b6d4" />
-                                        <path d="M12 54 C 12 38, 52 38, 52 54" fill="#8b5cf6" />
-                                        <polygon points="32,32 28,42 36,42" fill="#ffffff" />
-                                    </svg>
+                            {/* User Profile Pill */}
+                            <div className="p-3 mb-6 rounded-2xl neo-card flex items-center space-x-3">
+                                <div className="w-9 h-9 rounded-xl bg-lavender flex items-center justify-center text-primaryAccent font-heading font-bold text-sm shadow-neoInset">
+                                    A
                                 </div>
                                 <div className="overflow-hidden">
-                                    <h2 className="font-extrabold text-slate-800 text-sm truncate">Abishan</h2>
-                                    <p className="text-xs text-cyan-600 font-bold tracking-wide">Senior HR Lead</p>
+                                    <h2 className="font-heading font-bold text-xs text-primaryText truncate">Abishan</h2>
+                                    <p className="text-[10px] text-secondaryText font-medium">Talent Acquisition</p>
                                 </div>
                             </div>
 
-                            {/* Navigation Tabs */}
-                            <nav className="space-y-3">
+                            {/* Sidebar Navigation */}
+                            <nav className="space-y-2.5">
                                 {[
-                                    { id: 'dashboard', label: '📊 Deep Analytics', badge: 'LIVE' },
-                                    { id: 'profiles', label: '📋 Sourced Directory', count: profiles.length },
-                                    { id: 'joiners', label: '✅ Joiners Directory', count: joiners.length },
-                                    { id: 'todos', label: '📌 Task Management', count: todos.length }
-                                ].map(tab => (
-                                    <button
-                                        key={tab.id}
-                                        onClick={() => setActiveTab(tab.id)}
-                                        className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl font-bold text-xs transition-all ${
-                                            activeTab === tab.id 
-                                                ? 'neo-btn-active text-cyan-600 shadow-neoSoft font-extrabold' 
-                                                : 'soft-glass-card text-slate-600 hover:text-cyan-600'
-                                        }`}
-                                    >
-                                        <span>{tab.label}</span>
-                                        {tab.badge && <span className="px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-600 text-[10px] border border-cyan-300 font-black animate-pulse">{tab.badge}</span>}
-                                        {tab.count !== undefined && <span className="px-2 py-0.5 rounded-full bg-white text-slate-600 text-[10px] shadow-neoInset font-extrabold">{tab.count}</span>}
-                                    </button>
-                                ))}
+                                    { id: 'dashboard', label: 'Dashboard', icon: Icons.Dashboard },
+                                    { id: 'profiles', label: 'Sourced Directory', icon: Icons.Directory, count: profiles.length },
+                                    { id: 'joiners', label: 'Joiners Directory', icon: Icons.Joiners, count: joiners.length },
+                                    { id: 'todos', label: 'Task Management', icon: Icons.Tasks, count: todos.length }
+                                ].map(tab => {
+                                    const IconComp = tab.icon;
+                                    const isActive = activeTab === tab.id;
+                                    return (
+                                        <button
+                                            key={tab.id}
+                                            onClick={() => setActiveTab(tab.id)}
+                                            className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl font-semibold text-xs transition-all ${
+                                                isActive 
+                                                    ? 'neo-btn-active' 
+                                                    : 'text-secondaryText hover:text-primaryText hover:bg-white/40'
+                                            }`}
+                                        >
+                                            <div className="flex items-center space-x-3">
+                                                <span className={isActive ? 'text-primaryAccent' : 'text-secondaryText'}><IconComp /></span>
+                                                <span className="font-heading">{tab.label}</span>
+                                            </div>
+                                            {tab.count !== undefined && (
+                                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                                    isActive ? 'bg-primaryAccent text-white' : 'bg-white/80 text-secondaryText shadow-neoInset'
+                                                }`}>
+                                                    {tab.count}
+                                                </span>
+                                            )}
+                                        </button>
+                                    );
+                                })}
                             </nav>
                         </div>
                         
-                        <div className="p-4 rounded-2xl neo-input-soft flex items-center space-x-3 animate-float">
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-cyan-400 to-purple-400 flex items-center justify-center text-white shadow-neoSoft">
-                                🌐
-                            </div>
-                            <div className="text-[11px]">
-                                <p className="font-extrabold text-slate-700">Global Sourcing</p>
-                                <p className="text-cyan-600 font-semibold">{syncStatus}</p>
-                            </div>
+                        {/* Live Sync Badge */}
+                        <div className="p-3 rounded-2xl neo-input text-[11px] font-semibold text-secondaryText flex items-center justify-between">
+                            <span className="flex items-center gap-2 truncate">
+                                <span className="w-2 h-2 rounded-full bg-successMint animate-pulse"></span>
+                                <span className="truncate">{syncStatus}</span>
+                            </span>
+                            <button onClick={fetchSheetData} className="text-primaryAccent hover:underline text-[10px] font-bold">
+                                Refresh
+                            </button>
                         </div>
-                    </div>
+                    </aside>
 
-                    {/* Main Workspace */}
-                    <div className="flex-1 flex flex-col h-screen overflow-hidden p-4 md:pl-0">
+                    {/* 2. Main Workspace Layout */}
+                    <main className="flex-1 flex flex-col h-screen overflow-hidden p-4 md:pl-0">
                         
-                        {/* Top Header Bar: Displayed ONLY on 'Sourced Directory' page */}
-                        {activeTab === 'profiles' && (
-                            <div className="p-4 rounded-3xl soft-glass-card mb-4 flex flex-col md:flex-row items-center justify-between gap-4 animate-float">
-                                <div className="flex items-center space-x-3">
-                                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center text-white font-black shadow-neoSoft">
-                                        HR
-                                    </div>
-                                    <div>
-                                        <h1 className="text-lg font-black text-slate-800 tracking-wide">MY WORKFLOW</h1>
-                                        <p className="text-[10px] text-cyan-600 font-bold tracking-widest uppercase">3D Soft Glass Operations Suite</p>
-                                    </div>
-                                </div>
-
-                                <div className="w-full md:w-96 relative">
-                                    <span className="absolute left-4 top-3 text-slate-400">🔍</span>
-                                    <input
-                                        type="text"
-                                        placeholder="Search candidates, roles, source, location..."
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
-                                        className="w-full pl-11 pr-4 py-2.5 rounded-2xl neo-input-soft text-slate-700 font-semibold text-sm placeholder-slate-400 outline-none"
-                                    />
+                        {/* Top Global Bar */}
+                        <header className="p-4 rounded-[20px] neo-card mb-4 flex flex-col md:flex-row items-center justify-between gap-4">
+                            <div className="flex items-center space-x-3">
+                                <div>
+                                    <h1 className="font-heading font-extrabold text-lg text-primaryText">
+                                        {activeTab === 'dashboard' && 'Personal Overview'}
+                                        {activeTab === 'profiles' && 'Sourced Candidates Directory'}
+                                        {activeTab === 'joiners' && 'Joiners & Offers'}
+                                        {activeTab === 'todos' && 'Task Workflow Console'}
+                                    </h1>
+                                    <p className="text-[11px] text-secondaryText font-medium">
+                                        Friday, Nov 6, 2026 • Welcome back, Abishan
+                                    </p>
                                 </div>
                             </div>
-                        )}
 
-                        {/* Scroll Body */}
-                        <div className="flex-1 overflow-y-auto pr-2 space-y-6">
+                            {/* Global Search Interface */}
+                            <div className="w-full md:w-80 relative">
+                                <span className="absolute left-3.5 top-3 text-secondaryText"><Icons.Search /></span>
+                                <input
+                                    type="text"
+                                    placeholder="Search candidate, role, location..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="w-full pl-10 pr-4 py-2.5 rounded-xl neo-input text-primaryText text-xs font-medium placeholder-secondaryText"
+                                />
+                            </div>
+                        </header>
 
-                            {/* DEEP ANALYTICS TAB */}
+                        {/* Scrollable Page Body */}
+                        <div className="flex-1 overflow-y-auto pr-1 space-y-6">
+
+                            {/* DASHBOARD PAGE */}
                             {activeTab === 'dashboard' && (
                                 <div className="space-y-6">
-                                    <div className="p-6 rounded-3xl soft-glass-card flex flex-col md:flex-row items-center justify-between gap-6 border-l-4 border-l-cyan-500 relative overflow-hidden">
-                                        <div className="space-y-2 z-10">
-                                            <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-cyan-100 text-cyan-700 text-xs font-bold shadow-neoInset">
-                                                <span className="w-2 h-2 rounded-full bg-cyan-500 animate-ping"></span>
-                                                <span>Graphical Floating Insight Engine</span>
-                                            </div>
-                                            <h2 className="text-2xl font-black text-slate-800">Recruitment Deep Analytics</h2>
-                                            <p className="text-xs text-slate-500 font-semibold">Live visualization based on <strong className="text-purple-600">{totalDatasetCount} Sourced Records</strong></p>
+                                    
+                                    {/* Soft Pastel KPI Cards Grid */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5">
+                                        <div className="p-5 rounded-[20px] neo-card bg-powderBlue/40 border border-white/60">
+                                            <p className="text-xs font-bold text-secondaryText uppercase tracking-wider">Total Pipeline</p>
+                                            <h3 className="font-heading text-3xl font-extrabold text-primaryText mt-2">{totalDatasetCount}</h3>
+                                            <p className="text-[11px] text-primaryAccent font-medium mt-1">100% Sourced Records</p>
                                         </div>
 
-                                        <div className="flex items-center space-x-4 bg-white/80 p-4 rounded-2xl shadow-neoSoft z-10 animate-float">
-                                            <div className="w-12 h-12 rounded-2xl neo-input-soft flex items-center justify-center text-cyan-600 font-black text-lg shadow-neoInset">
-                                                📊
-                                            </div>
-                                            <div>
-                                                <p className="text-xs font-black text-slate-700">Analytics Active</p>
-                                                <p className="text-[10px] font-bold text-cyan-600">Dynamic Floating Graph</p>
-                                            </div>
-                                            <button onClick={fetchSheetData} className="px-4 py-2 rounded-xl neo-btn-active text-xs font-bold text-cyan-700 hover:text-purple-600 transition">
-                                                {isLoading ? 'Syncing...' : '↻ Refresh'}
-                                            </button>
+                                        <div className="p-5 rounded-[20px] neo-card bg-lavender/40 border border-white/60">
+                                            <p className="text-xs font-bold text-secondaryText uppercase tracking-wider">Active Screening</p>
+                                            <h3 className="font-heading text-3xl font-extrabold text-secondaryAccent mt-2">{profiles.length}</h3>
+                                            <p className="text-[11px] text-secondaryText font-medium mt-1">Candidates in evaluation</p>
+                                        </div>
+
+                                        <div className="p-5 rounded-[20px] neo-card bg-mint/40 border border-white/60">
+                                            <p className="text-xs font-bold text-secondaryText uppercase tracking-wider">Offers & Joiners</p>
+                                            <h3 className="font-heading text-3xl font-extrabold text-successMint mt-2">{joiners.length}</h3>
+                                            <p className="text-[11px] text-successMint font-medium mt-1">Successful onboardings</p>
+                                        </div>
+
+                                        <div className="p-5 rounded-[20px] neo-card bg-softPeach/40 border border-white/60">
+                                            <p className="text-xs font-bold text-secondaryText uppercase tracking-wider">Pending Tasks</p>
+                                            <h3 className="font-heading text-3xl font-extrabold text-warningPeach mt-2">{pendingCount}</h3>
+                                            <p className="text-[11px] text-warningPeach font-medium mt-1">Actions requiring focus</p>
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                                        <div className="p-6 rounded-3xl soft-glass-card">
-                                            <p className="text-xs text-slate-500 font-extrabold uppercase">Total Pipeline</p>
-                                            <h3 className="text-3xl font-black text-slate-800 mt-2">{totalDatasetCount}</h3>
-                                            <div className="w-full bg-slate-200 h-2 rounded-full mt-3 overflow-hidden shadow-neoInset">
-                                                <div className="bg-gradient-to-r from-cyan-400 to-purple-500 h-full w-full rounded-full"></div>
-                                            </div>
-                                        </div>
-                                        <div className="p-6 rounded-3xl soft-glass-card">
-                                            <p className="text-xs text-slate-500 font-extrabold uppercase">Sourced Active</p>
-                                            <h3 className="text-3xl font-black text-cyan-600 mt-2">{profiles.length}</h3>
-                                            <div className="w-full bg-slate-200 h-2 rounded-full mt-3 overflow-hidden shadow-neoInset">
-                                                <div className="bg-cyan-400 h-full rounded-full" style={{ width: `${totalDatasetCount ? (profiles.length/totalDatasetCount)*100 : 0}%` }}></div>
-                                            </div>
-                                        </div>
-                                        <div className="p-6 rounded-3xl soft-glass-card">
-                                            <p className="text-xs text-slate-500 font-extrabold uppercase">Offers & Joiners</p>
-                                            <h3 className="text-3xl font-black text-purple-600 mt-2">{joiners.length}</h3>
-                                            <div className="w-full bg-slate-200 h-2 rounded-full mt-3 overflow-hidden shadow-neoInset">
-                                                <div className="bg-purple-500 h-full rounded-full" style={{ width: `${totalDatasetCount ? (joiners.length/totalDatasetCount)*100 : 0}%` }}></div>
-                                            </div>
-                                        </div>
-                                        <div className="p-6 rounded-3xl soft-glass-card">
-                                            <p className="text-xs text-slate-500 font-extrabold uppercase">Conversion Rate</p>
-                                            <h3 className="text-3xl font-black text-emerald-600 mt-2">
-                                                {totalDatasetCount > 0 ? ((joiners.length / totalDatasetCount) * 100).toFixed(1) + '%' : '0%'}
-                                            </h3>
-                                            <div className="w-full bg-slate-200 h-2 rounded-full mt-3 overflow-hidden shadow-neoInset">
-                                                <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${totalDatasetCount ? (joiners.length/totalDatasetCount)*100 : 0}%` }}></div>
-                                            </div>
-                                        </div>
-                                    </div>
-
+                                    {/* Data Visualizations Breakdown Cards */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="p-6 rounded-3xl soft-glass-card space-y-4">
-                                            <h3 className="font-extrabold text-slate-800 border-b border-slate-200 pb-3 flex justify-between items-center">
-                                                <span>📂 CV Sourced Channels</span>
-                                                <span className="text-xs text-cyan-600 font-bold">{getBreakdown('source').length} Channels</span>
+                                        
+                                        {/* Sourced Channel Breakdown */}
+                                        <div className="p-6 rounded-[20px] neo-card space-y-4">
+                                            <h3 className="font-heading font-bold text-sm text-primaryText border-b border-darkShadow/20 pb-3 flex justify-between items-center">
+                                                <span>CV Sourced Channels</span>
+                                                <span className="text-xs text-primaryAccent font-semibold">{getBreakdown('source').length} Channels</span>
                                             </h3>
-                                            <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
+                                            <div className="space-y-3 max-h-56 overflow-y-auto pr-1">
                                                 {getBreakdown('source').map(([src, count], idx) => (
-                                                    <div key={idx} className="flex justify-between items-center p-3 rounded-2xl neo-input-soft">
-                                                        <span className="text-sm font-bold text-slate-700 truncate">{src}</span>
-                                                        <span className="px-3 py-1 rounded-xl bg-cyan-500/10 border border-cyan-300 text-xs font-black text-cyan-700 shadow-neoSoft">{count}</span>
+                                                    <div key={idx} className="flex justify-between items-center p-3 rounded-xl neo-input">
+                                                        <span className="text-xs font-medium text-primaryText truncate">{src}</span>
+                                                        <span className="px-2.5 py-1 rounded-lg bg-powderBlue text-primaryAccent text-xs font-bold shadow-neoInset">{count}</span>
                                                     </div>
                                                 ))}
                                             </div>
                                         </div>
 
-                                        <div className="p-6 rounded-3xl soft-glass-card space-y-4">
-                                            <h3 className="font-extrabold text-slate-800 border-b border-slate-200 pb-3 flex justify-between items-center">
-                                                <span>📍 Location Distribution</span>
-                                                <span className="text-xs text-purple-600 font-bold">{getBreakdown('location').length} Cities</span>
+                                        {/* Location Distribution */}
+                                        <div className="p-6 rounded-[20px] neo-card space-y-4">
+                                            <h3 className="font-heading font-bold text-sm text-primaryText border-b border-darkShadow/20 pb-3 flex justify-between items-center">
+                                                <span>Location Distribution</span>
+                                                <span className="text-xs text-secondaryAccent font-semibold">{getBreakdown('location').length} Cities</span>
                                             </h3>
-                                            <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
+                                            <div className="space-y-3 max-h-56 overflow-y-auto pr-1">
                                                 {getBreakdown('location').map(([loc, count], idx) => (
-                                                    <div key={idx} className="flex justify-between items-center p-3 rounded-2xl neo-input-soft">
-                                                        <span className="text-sm font-bold text-slate-700 truncate">{loc}</span>
-                                                        <span className="px-3 py-1 rounded-xl bg-purple-500/10 border border-purple-300 text-xs font-black text-purple-700 shadow-neoSoft">{count}</span>
+                                                    <div key={idx} className="flex justify-between items-center p-3 rounded-xl neo-input">
+                                                        <span className="text-xs font-medium text-primaryText truncate">{loc}</span>
+                                                        <span className="px-2.5 py-1 rounded-lg bg-lavender text-secondaryAccent text-xs font-bold shadow-neoInset">{count}</span>
                                                     </div>
                                                 ))}
                                             </div>
                                         </div>
 
-                                        <div className="p-6 rounded-3xl soft-glass-card space-y-4">
-                                            <h3 className="font-extrabold text-slate-800 border-b border-slate-200 pb-3 flex justify-between items-center">
-                                                <span>💼 Role Breakdown</span>
-                                                <span className="text-xs text-cyan-600 font-bold">{getBreakdown('role').length} Roles</span>
+                                        {/* Role Breakdown */}
+                                        <div className="p-6 rounded-[20px] neo-card space-y-4">
+                                            <h3 className="font-heading font-bold text-sm text-primaryText border-b border-darkShadow/20 pb-3 flex justify-between items-center">
+                                                <span>Role Breakdown</span>
+                                                <span className="text-xs text-primaryAccent font-semibold">{getBreakdown('role').length} Roles</span>
                                             </h3>
-                                            <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
+                                            <div className="space-y-3 max-h-56 overflow-y-auto pr-1">
                                                 {getBreakdown('role').map(([role, count], idx) => (
-                                                    <div key={idx} className="flex justify-between items-center p-3 rounded-2xl neo-input-soft">
-                                                        <span className="text-sm font-bold text-slate-700 truncate">{role}</span>
-                                                        <span className="px-3 py-1 rounded-xl bg-cyan-500/10 border border-cyan-300 text-xs font-black text-cyan-700">{count}</span>
+                                                    <div key={idx} className="flex justify-between items-center p-3 rounded-xl neo-input">
+                                                        <span className="text-xs font-medium text-primaryText truncate">{role}</span>
+                                                        <span className="px-2.5 py-1 rounded-lg bg-powderBlue text-primaryAccent text-xs font-bold">{count}</span>
                                                     </div>
                                                 ))}
                                             </div>
                                         </div>
 
-                                        <div className="p-6 rounded-3xl soft-glass-card space-y-4">
-                                            <h3 className="font-extrabold text-slate-800 border-b border-slate-200 pb-3 flex justify-between items-center">
-                                                <span>🏢 Department Breakdown</span>
-                                                <span className="text-xs text-purple-600 font-bold">{getBreakdown('department').length} Depts</span>
+                                        {/* Department Breakdown */}
+                                        <div className="p-6 rounded-[20px] neo-card space-y-4">
+                                            <h3 className="font-heading font-bold text-sm text-primaryText border-b border-darkShadow/20 pb-3 flex justify-between items-center">
+                                                <span>Department Breakdown</span>
+                                                <span className="text-xs text-warningPeach font-semibold">{getBreakdown('department').length} Departments</span>
                                             </h3>
-                                            <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
+                                            <div className="space-y-3 max-h-56 overflow-y-auto pr-1">
                                                 {getBreakdown('department').map(([dept, count], idx) => (
-                                                    <div key={idx} className="flex justify-between items-center p-3 rounded-2xl neo-input-soft">
-                                                        <span className="text-sm font-bold text-slate-700 truncate">{dept}</span>
-                                                        <span className="px-3 py-1 rounded-xl bg-purple-500/10 border border-purple-300 text-xs font-black text-purple-700">{count}</span>
+                                                    <div key={idx} className="flex justify-between items-center p-3 rounded-xl neo-input">
+                                                        <span className="text-xs font-medium text-primaryText truncate">{dept}</span>
+                                                        <span className="px-2.5 py-1 rounded-lg bg-softPeach text-warningPeach text-xs font-bold">{count}</span>
                                                     </div>
                                                 ))}
                                             </div>
                                         </div>
+
                                     </div>
                                 </div>
                             )}
 
-                            {/* SOURCED DIRECTORY TAB */}
+                            {/* SOURCED DIRECTORY PAGE */}
                             {activeTab === 'profiles' && (
                                 <div className="space-y-6">
-                                    <div className="flex justify-between items-center p-6 rounded-3xl soft-glass-card">
-                                        <div>
-                                            <h2 className="text-2xl font-black text-slate-800">Sourced Candidates Directory</h2>
-                                            <p className="text-xs text-cyan-600 font-bold mt-1">Showing {filteredProfiles.length} active candidates</p>
+                                    <div className="p-6 rounded-[20px] neo-card">
+                                        <div className="flex justify-between items-center border-b border-darkShadow/20 pb-4 mb-4">
+                                            <div>
+                                                <h2 className="font-heading font-bold text-base text-primaryText">Sourced Candidates List</h2>
+                                                <p className="text-xs text-secondaryText mt-0.5">Showing {filteredProfiles.length} active candidate records</p>
+                                            </div>
+                                            <button onClick={fetchSheetData} className="px-4 py-2 neo-btn-secondary text-xs font-bold flex items-center gap-2">
+                                                <Icons.Sync /> Sync Webhook
+                                            </button>
                                         </div>
-                                        <button onClick={fetchSheetData} className="px-5 py-2.5 rounded-2xl neo-btn-active text-xs font-black text-cyan-700">
-                                            {isLoading ? 'Syncing...' : '↻ Sync Sheet'}
-                                        </button>
-                                    </div>
 
-                                    <div className="p-6 rounded-3xl soft-glass-card overflow-x-auto">
-                                        <table className="w-full text-left border-collapse">
-                                            <thead>
-                                                <tr className="border-b border-slate-200 text-xs text-slate-400 font-black uppercase tracking-wider">
-                                                    <th className="p-4">Candidate Name</th>
-                                                    <th className="p-4">Source</th>
-                                                    <th className="p-4">Role</th>
-                                                    <th className="p-4">Location</th>
-                                                    <th className="p-4">Exp</th>
-                                                    <th className="p-4">Notice</th>
-                                                    <th className="p-4 text-center">Action</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="text-sm">
-                                                {filteredProfiles.length === 0 ? (
-                                                    <tr><td colSpan="7" className="text-center p-8 text-slate-400 font-bold">{isLoading ? 'Loading records...' : 'No candidates found.'}</td></tr>
-                                                ) : (
-                                                    filteredProfiles.map((p, idx) => (
-                                                        <tr key={idx} className="border-b border-slate-100 hover:bg-white/60 transition">
-                                                            <td className="p-4">
-                                                                <button onClick={() => setSelectedCandidate(p)} className="font-extrabold text-cyan-600 hover:text-purple-600 hover:underline text-left flex items-center gap-2">
-                                                                    👤 {p.candidateName}
-                                                                </button>
-                                                            </td>
-                                                            <td className="p-4"><span className="px-3 py-1 rounded-xl neo-input-soft text-xs font-bold text-slate-600">{p.source}</span></td>
-                                                            <td className="p-4 text-slate-700 font-semibold">{p.role}</td>
-                                                            <td className="p-4 text-slate-600">{p.location}</td>
-                                                            <td className="p-4 text-slate-600">{p.totalExp}</td>
-                                                            <td className="p-4 text-slate-600">{p.noticePeriod}</td>
-                                                            <td className="p-4 text-center">
-                                                                <button onClick={() => handleMarkJoined(p)} className="px-4 py-2 rounded-2xl neo-btn-active text-xs font-black text-emerald-600 transition shadow-neoSoft">
-                                                                    Mark Joined
-                                                                </button>
-                                                            </td>
-                                                        </tr>
-                                                    ))
-                                                )}
-                                            </tbody>
-                                        </table>
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-left border-collapse">
+                                                <thead>
+                                                    <tr className="border-b border-darkShadow/20 text-xs text-secondaryText font-bold uppercase tracking-wider">
+                                                        <th className="p-3.5">Candidate Name</th>
+                                                        <th className="p-3.5">Source</th>
+                                                        <th className="p-3.5">Role</th>
+                                                        <th className="p-3.5">Location</th>
+                                                        <th className="p-3.5">Exp</th>
+                                                        <th className="p-3.5">Notice</th>
+                                                        <th className="p-3.5 text-center">Action</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="text-xs">
+                                                    {filteredProfiles.length === 0 ? (
+                                                        <tr><td colSpan="7" className="text-center p-8 text-secondaryText font-medium">{isLoading ? 'Loading records...' : 'No candidate records match your search.'}</td></tr>
+                                                    ) : (
+                                                        filteredProfiles.map((p, idx) => (
+                                                            <tr key={idx} className="border-b border-darkShadow/10 hover:bg-white/40 transition">
+                                                                <td className="p-3.5">
+                                                                    <button onClick={() => setSelectedCandidate(p)} className="font-bold text-primaryAccent hover:underline text-left">
+                                                                        {p.candidateName}
+                                                                    </button>
+                                                                </td>
+                                                                <td className="p-3.5"><span className="px-2.5 py-1 rounded-md neo-input text-[11px] font-medium text-secondaryText">{p.source}</span></td>
+                                                                <td className="p-3.5 font-medium text-primaryText">{p.role}</td>
+                                                                <td className="p-3.5 text-secondaryText">{p.location}</td>
+                                                                <td className="p-3.5 text-secondaryText">{p.totalExp}</td>
+                                                                <td className="p-3.5 text-secondaryText">{p.noticePeriod}</td>
+                                                                <td className="p-3.5 text-center">
+                                                                    <button onClick={() => handleMarkJoined(p)} className="px-3.5 py-1.5 neo-btn-primary text-[11px] font-bold">
+                                                                        Mark Joined
+                                                                    </button>
+                                                                </td>
+                                                            </tr>
+                                                        ))
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        </div>
                                     </div>
                                 </div>
                             )}
 
-                            {/* JOINERS DIRECTORY TAB */}
+                            {/* JOINERS DIRECTORY PAGE */}
                             {activeTab === 'joiners' && (
                                 <div className="space-y-6">
-                                    <div className="flex justify-between items-center p-6 rounded-3xl soft-glass-card">
-                                        <h2 className="text-2xl font-black text-slate-800">Joiners & Offer Directory ({joiners.length})</h2>
-                                        <button onClick={fetchSheetData} className="px-5 py-2.5 rounded-2xl neo-btn-active text-xs font-black text-cyan-700">
-                                            {isLoading ? 'Syncing...' : '↻ Refresh Sheet'}
-                                        </button>
-                                    </div>
+                                    <div className="p-6 rounded-[20px] neo-card">
+                                        <div className="flex justify-between items-center border-b border-darkShadow/20 pb-4 mb-4">
+                                            <div>
+                                                <h2 className="font-heading font-bold text-base text-primaryText">Joiners & Offer Directory ({joiners.length})</h2>
+                                                <p className="text-xs text-secondaryText mt-0.5">Candidates with released offers or confirmed joining</p>
+                                            </div>
+                                            <button onClick={fetchSheetData} className="px-4 py-2 neo-btn-secondary text-xs font-bold flex items-center gap-2">
+                                                <Icons.Sync /> Refresh Sheet
+                                            </button>
+                                        </div>
 
-                                    <div className="p-6 rounded-3xl soft-glass-card">
-                                        {joiners.length === 0 ? <p className="text-slate-400 text-center py-8 font-bold">No candidates in offer/joined status yet.</p> : (
-                                            <div className="space-y-4">
-                                                {joiners.map((j, idx) => {
-                                                    const statusStyle = 
-                                                        j.status === 'Joined' ? 'text-emerald-600 border-emerald-300 bg-emerald-50' :
-                                                        j.status === 'Offer Released' ? 'text-cyan-600 border-cyan-300 bg-cyan-50' : 'text-rose-600 border-rose-300 bg-rose-50';
-
-                                                    return (
-                                                        <div key={idx} className="p-5 rounded-2xl neo-input-soft flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                                            <div>
-                                                                <button onClick={() => setSelectedCandidate(j)} className="font-extrabold text-slate-800 hover:text-cyan-600 text-left text-lg">
-                                                                    👤 {j.candidateName}
-                                                                </button>
-                                                                <p className="text-xs text-slate-500 mt-1 font-semibold">{j.role} • {j.location} • Exp: {j.totalExp} • Expected CTC: {j.expectedCtc}</p>
-                                                            </div>
-
-                                                            <div className="flex items-center gap-3">
-                                                                <span className="text-xs font-bold text-slate-400 uppercase">Status:</span>
-                                                                <select
-                                                                    value={j.status || 'Joined'}
-                                                                    onChange={(e) => handleStatusChange(j, e.target.value)}
-                                                                    className={`px-4 py-2 rounded-2xl neo-input-soft font-black text-xs outline-none cursor-pointer border ${statusStyle}`}
-                                                                >
-                                                                    <option value="Joined">🟢 Joined</option>
-                                                                    <option value="Offer Released">🔵 Offer Released</option>
-                                                                    <option value="Revoked">🔴 Revoked</option>
-                                                                </select>
-                                                            </div>
+                                        {joiners.length === 0 ? (
+                                            <p className="text-secondaryText text-center py-8 text-xs font-medium">No candidates in offer/joined status yet.</p>
+                                        ) : (
+                                            <div className="space-y-3">
+                                                {joiners.map((j, idx) => (
+                                                    <div key={idx} className="p-4 rounded-xl neo-input flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                                        <div>
+                                                            <button onClick={() => setSelectedCandidate(j)} className="font-heading font-bold text-primaryText hover:text-primaryAccent text-sm text-left">
+                                                                {j.candidateName}
+                                                            </button>
+                                                            <p className="text-xs text-secondaryText mt-0.5">{j.role} • {j.location} • Exp: {j.totalExp} • Expected CTC: {j.expectedCtc}</p>
                                                         </div>
-                                                    );
-                                                })}
+
+                                                        <div className="flex items-center gap-3">
+                                                            <span className="text-xs font-bold text-secondaryText">Status:</span>
+                                                            <select
+                                                                value={j.status || 'Joined'}
+                                                                onChange={(e) => handleStatusChange(j, e.target.value)}
+                                                                className="px-3 py-1.5 rounded-xl neo-input text-xs font-bold text-primaryText outline-none cursor-pointer"
+                                                            >
+                                                                <option value="Joined">🟢 Joined</option>
+                                                                <option value="Offer Released">🔵 Offer Released</option>
+                                                                <option value="Revoked">🔴 Revoked</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                ))}
                                             </div>
                                         )}
                                     </div>
                                 </div>
                             )}
 
-                            {/* TASK MANAGEMENT PAGE (1. Enter Task, 2. Heading, 3. Modern Calendar, 4. Save + Spillover Logic + Daily/Weekly/Monthly View) */}
+                            {/* TASK MANAGEMENT PAGE */}
                             {activeTab === 'todos' && (
                                 <div className="space-y-6">
                                     
-                                    {/* Task Creation Console */}
-                                    <div className="p-6 rounded-3xl soft-glass-card space-y-4">
-                                        <div className="flex flex-col md:flex-row items-center justify-between gap-4 border-b border-slate-200 pb-4">
+                                    {/* Task Input Console */}
+                                    <div className="p-6 rounded-[20px] neo-card space-y-4">
+                                        <div className="flex flex-col md:flex-row items-center justify-between gap-4 border-b border-darkShadow/20 pb-4">
                                             <div>
-                                                <h2 className="text-2xl font-black text-slate-800">Task Management & Schedule</h2>
-                                                <p className="text-xs text-cyan-600 font-bold mt-0.5">Add, Schedule, and Auto-Rollover Pending Daily Tasks</p>
+                                                <h2 className="font-heading font-bold text-base text-primaryText">Task Creation Console</h2>
+                                                <p className="text-xs text-secondaryText mt-0.5">Schedule tasks with automatic rollover for pending items</p>
                                             </div>
 
-                                            {/* Daily / Weekly / Monthly View Toggles */}
-                                            <div className="flex items-center space-x-2 bg-white/70 p-1.5 rounded-2xl shadow-neoInset">
+                                            {/* Daily / Weekly / Monthly View Controls */}
+                                            <div className="flex items-center space-x-2 p-1 rounded-2xl neo-input">
                                                 {['Daily', 'Weekly', 'Monthly'].map(v => (
                                                     <button
                                                         key={v}
                                                         onClick={() => setTaskViewMode(v)}
-                                                        className={`px-4 py-1.5 rounded-xl text-xs font-extrabold transition ${
+                                                        className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${
                                                             taskViewMode === v 
-                                                                ? 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white shadow-neoSoft' 
-                                                                : 'text-slate-500 hover:text-slate-800'
+                                                                ? 'neo-btn-primary' 
+                                                                : 'text-secondaryText hover:text-primaryText'
                                                         }`}
                                                     >
                                                         {v}
@@ -604,25 +689,25 @@ html
                                             </div>
                                         </div>
 
-                                        {/* Task Form Columns: 1. Task Title | 2. Heading | 3. Modern Calendar UI | 4. Save Button */}
+                                        {/* Task Form Inputs */}
                                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
                                             <div>
-                                                <label className="block text-[10px] font-extrabold uppercase text-slate-400 mb-1">1. Enter Task</label>
+                                                <label className="block text-[11px] font-bold uppercase text-secondaryText mb-1">1. Enter Task</label>
                                                 <input 
                                                     type="text" 
                                                     placeholder="Task description..." 
                                                     value={newTaskTitle} 
                                                     onChange={e => setNewTaskTitle(e.target.value)} 
-                                                    className="w-full p-3 rounded-2xl neo-input-soft text-slate-700 text-xs font-semibold outline-none" 
+                                                    className="w-full p-2.5 rounded-xl neo-input text-primaryText text-xs font-medium" 
                                                 />
                                             </div>
 
                                             <div>
-                                                <label className="block text-[10px] font-extrabold uppercase text-slate-400 mb-1">2. Heading</label>
+                                                <label className="block text-[11px] font-bold uppercase text-secondaryText mb-1">2. Heading</label>
                                                 <select 
                                                     value={newTaskHeading} 
                                                     onChange={e => setNewTaskHeading(e.target.value)} 
-                                                    className="w-full p-3 rounded-2xl neo-input-soft text-slate-700 text-xs font-bold outline-none cursor-pointer"
+                                                    className="w-full p-2.5 rounded-xl neo-input text-primaryText text-xs font-bold cursor-pointer"
                                                 >
                                                     <option value="Interview schedule">Interview schedule</option>
                                                     <option value="Welcome Kit">Welcome Kit</option>
@@ -632,20 +717,20 @@ html
                                             </div>
 
                                             <div>
-                                                <label className="block text-[10px] font-extrabold uppercase text-slate-400 mb-1">3. Calendar (Modern UI)</label>
+                                                <label className="block text-[11px] font-bold uppercase text-secondaryText mb-1">3. Calendar Date</label>
                                                 <input 
                                                     type="date" 
                                                     value={newTaskDate} 
-                                                    onChange={e => setNewnewTaskDate(e.target.value)} 
-                                                    className="w-full p-3 rounded-2xl neo-input-soft text-slate-700 text-xs font-semibold outline-none cursor-pointer" 
+                                                    onChange={e => setNewTaskDate(e.target.value)} 
+                                                    className="w-full p-2.5 rounded-xl neo-input text-primaryText text-xs font-medium cursor-pointer" 
                                                 />
                                             </div>
 
                                             <div>
-                                                <label className="block text-[10px] font-extrabold uppercase text-slate-400 mb-1 opacity-0">Action</label>
+                                                <label className="block text-[11px] font-bold uppercase text-secondaryText mb-1 opacity-0">Action</label>
                                                 <button 
                                                     onClick={handleAddTask} 
-                                                    className="w-full py-3 rounded-2xl neo-btn-active font-black text-cyan-700 text-xs transition shadow-neoSoft"
+                                                    className="w-full py-2.5 neo-btn-primary font-bold text-xs"
                                                 >
                                                     💾 Save Task
                                                 </button>
@@ -653,18 +738,18 @@ html
                                         </div>
                                     </div>
 
-                                    {/* Task Status Filters & Difference Counters */}
-                                    <div className="flex flex-col md:flex-row items-center justify-between gap-4 p-4 rounded-3xl soft-glass-card">
+                                    {/* Filter Status Bar */}
+                                    <div className="flex flex-col md:flex-row items-center justify-between gap-4 p-4 rounded-[20px] neo-card">
                                         <div className="flex items-center space-x-2">
-                                            <span className="text-xs font-extrabold text-slate-500 uppercase mr-2">Filter:</span>
+                                            <span className="text-xs font-bold text-secondaryText uppercase mr-2">Filter Status:</span>
                                             {['All', 'Pending', 'Completed'].map(f => (
                                                 <button
                                                     key={f}
                                                     onClick={() => setTaskFilterStatus(f)}
-                                                    className={`px-4 py-2 rounded-2xl text-xs font-black transition ${
+                                                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${
                                                         taskFilterStatus === f 
-                                                            ? 'neo-btn-active text-cyan-600 shadow-neoSoft' 
-                                                            : 'text-slate-500 hover:text-slate-800'
+                                                            ? 'neo-btn-active' 
+                                                            : 'text-secondaryText hover:text-primaryText'
                                                     }`}
                                                 >
                                                     {f}
@@ -672,54 +757,51 @@ html
                                             ))}
                                         </div>
 
-                                        <div className="flex items-center space-x-4 text-xs font-extrabold">
-                                            <span className="px-3 py-1.5 rounded-2xl bg-amber-100 text-amber-700 border border-amber-300 shadow-neoInset">
+                                        <div className="flex items-center space-x-3 text-xs font-bold">
+                                            <span className="px-3 py-1 rounded-xl bg-softPeach text-warningPeach shadow-neoInset">
                                                 ⏳ Pending: {pendingCount}
                                             </span>
-                                            <span className="px-3 py-1.5 rounded-2xl bg-emerald-100 text-emerald-700 border border-emerald-300 shadow-neoInset">
+                                            <span className="px-3 py-1 rounded-xl bg-mint text-successMint shadow-neoInset">
                                                 ✅ Completed: {completedCount}
                                             </span>
-                                            <span className="px-3 py-1.5 rounded-2xl bg-purple-100 text-purple-700 border border-purple-300 shadow-neoSoft">
-                                                Difference: {completedCount - pendingCount}
+                                            <span className="px-3 py-1 rounded-xl bg-powderBlue text-primaryAccent shadow-neoInset">
+                                                Diff: {completedCount - pendingCount}
                                             </span>
                                         </div>
                                     </div>
 
-                                    {/* Task Views: Daily, Weekly (Day-by-Day), Monthly */}
-                                    <div className="p-6 rounded-3xl soft-glass-card space-y-6">
-                                        <div className="flex justify-between items-center border-b border-slate-200 pb-3">
-                                            <h3 className="font-black text-slate-800 text-base">Task Schedule View ({taskViewMode})</h3>
-                                            <span className="text-xs font-bold text-cyan-600">Active Date Roll-over Enabled</span>
+                                    {/* Task Views (Daily, Weekly, Monthly) */}
+                                    <div className="p-6 rounded-[20px] neo-card space-y-6">
+                                        <div className="flex justify-between items-center border-b border-darkShadow/20 pb-3">
+                                            <h3 className="font-heading font-bold text-sm text-primaryText">Schedule View ({taskViewMode})</h3>
+                                            <span className="text-xs text-primaryAccent font-medium">Automatic Pending Roll-over Enabled</span>
                                         </div>
 
                                         {/* DAILY VIEW */}
                                         {taskViewMode === 'Daily' && (
-                                            <div className="space-y-4">
-                                                <p className="text-xs font-bold text-slate-500">Tasks for Today ({getTodayString()}):</p>
-                                                <div className="space-y-3">
-                                                    {todos.filter(t => t.date === getTodayString() && (taskFilterStatus === 'All' || (taskFilterStatus === 'Completed' ? t.completed : !t.completed))).length === 0 ? (
-                                                        <p className="text-slate-400 text-xs italic py-4">No tasks scheduled for today.</p>
-                                                    ) : (
-                                                        todos.filter(t => t.date === getTodayString() && (taskFilterStatus === 'All' || (taskFilterStatus === 'Completed' ? t.completed : !t.completed))).map(t => (
-                                                            <div key={t.id} className={`p-4 rounded-2xl neo-input-soft flex items-center justify-between ${t.completed ? 'opacity-70 bg-emerald-50/50' : 'border-l-4 border-l-cyan-500'}`}>
-                                                                <div>
-                                                                    <span className="px-2.5 py-0.5 rounded-md bg-cyan-100 text-cyan-700 text-[10px] font-extrabold">{t.heading}</span>
-                                                                    <h4 className={`font-bold text-sm mt-1 ${t.completed ? 'line-through text-slate-400' : 'text-slate-800'}`}>{t.title}</h4>
-                                                                    <p className="text-[10px] font-semibold text-slate-500 mt-0.5">Scheduled Date: {t.date}</p>
-                                                                </div>
-                                                                <div className="flex items-center space-x-2">
-                                                                    <button 
-                                                                        onClick={() => toggleTaskStatus(t.id)} 
-                                                                        className={`px-3 py-1.5 rounded-xl text-xs font-bold ${t.completed ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}
-                                                                    >
-                                                                        {t.completed ? 'Mark Pending' : 'Mark Completed'}
-                                                                    </button>
-                                                                    <button onClick={() => deleteTask(t.id)} className="text-rose-500 text-xs font-bold hover:underline px-2">Delete</button>
-                                                                </div>
+                                            <div className="space-y-3">
+                                                {todos.filter(t => t.date === getTodayString() && (taskFilterStatus === 'All' || (taskFilterStatus === 'Completed' ? t.completed : !t.completed))).length === 0 ? (
+                                                    <p className="text-secondaryText text-xs italic py-4">No tasks scheduled for today.</p>
+                                                ) : (
+                                                    todos.filter(t => t.date === getTodayString() && (taskFilterStatus === 'All' || (taskFilterStatus === 'Completed' ? t.completed : !t.completed))).map(t => (
+                                                        <div key={t.id} className="p-4 rounded-xl neo-input flex items-center justify-between">
+                                                            <div>
+                                                                <span className="px-2 py-0.5 rounded-md bg-powderBlue text-primaryAccent text-[10px] font-bold">{t.heading}</span>
+                                                                <h4 className={`font-bold text-xs mt-1 ${t.completed ? 'line-through text-secondaryText' : 'text-primaryText'}`}>{t.title}</h4>
+                                                                <p className="text-[10px] text-secondaryText mt-0.5">Date: {t.date}</p>
                                                             </div>
-                                                        ))
-                                                    )}
-                                                </div>
+                                                            <div className="flex items-center space-x-2">
+                                                                <button 
+                                                                    onClick={() => toggleTaskStatus(t.id)} 
+                                                                    className={`px-3 py-1.5 rounded-xl text-xs font-bold ${t.completed ? 'bg-softPeach text-warningPeach' : 'bg-mint text-successMint'}`}
+                                                                >
+                                                                    {t.completed ? 'Mark Pending' : 'Mark Completed'}
+                                                                </button>
+                                                                <button onClick={() => deleteTask(t.id)} className="text-dangerRose text-xs font-bold hover:underline px-2">Delete</button>
+                                                            </div>
+                                                        </div>
+                                                    ))
+                                                )}
                                             </div>
                                         )}
 
@@ -729,21 +811,21 @@ html
                                                 {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day, idx) => {
                                                     const dayTasks = todos.filter(t => (taskFilterStatus === 'All' || (taskFilterStatus === 'Completed' ? t.completed : !t.completed)));
                                                     return (
-                                                        <div key={idx} className="p-3 rounded-2xl neo-input-soft space-y-3 min-h-[180px]">
-                                                            <div className="border-b border-slate-200 pb-1.5 flex justify-between items-center">
-                                                                <h4 className="font-extrabold text-xs text-slate-700">{day}</h4>
-                                                                <span className="text-[10px] text-cyan-600 font-bold">Day {idx+1}</span>
+                                                        <div key={idx} className="p-3 rounded-xl neo-input space-y-3 min-h-[160px]">
+                                                            <div className="border-b border-darkShadow/20 pb-1 flex justify-between items-center">
+                                                                <h4 className="font-bold text-xs text-primaryText">{day}</h4>
+                                                                <span className="text-[10px] text-secondaryText">Day {idx+1}</span>
                                                             </div>
                                                             <div className="space-y-2">
                                                                 {dayTasks.map(t => (
-                                                                    <div key={t.id} className={`p-2 rounded-xl text-xs ${t.completed ? 'bg-emerald-100 text-emerald-800' : 'bg-white/80 shadow-neoSoft text-slate-700'}`}>
-                                                                        <span className="block text-[9px] font-black uppercase text-cyan-600">{t.heading}</span>
-                                                                        <p className={`font-semibold mt-0.5 ${t.completed ? 'line-through opacity-70' : ''}`}>{t.title}</p>
-                                                                        <div className="flex justify-between items-center mt-2 pt-1 border-t border-slate-100 text-[10px]">
-                                                                            <button onClick={() => toggleTaskStatus(t.id)} className="font-bold text-cyan-700 hover:underline">
+                                                                    <div key={t.id} className={`p-2 rounded-lg text-xs ${t.completed ? 'bg-mint/50 text-successMint' : 'bg-white/80 shadow-neoRaised text-primaryText'}`}>
+                                                                        <span className="block text-[9px] font-bold text-primaryAccent uppercase">{t.heading}</span>
+                                                                        <p className={`font-medium mt-0.5 ${t.completed ? 'line-through opacity-70' : ''}`}>{t.title}</p>
+                                                                        <div className="flex justify-between items-center mt-2 pt-1 border-t border-darkShadow/10 text-[10px]">
+                                                                            <button onClick={() => toggleTaskStatus(t.id)} className="font-bold text-primaryAccent hover:underline">
                                                                                 {t.completed ? 'Pending' : 'Done'}
                                                                             </button>
-                                                                            <span className="text-slate-400">{t.date}</span>
+                                                                            <span className="text-secondaryText">{t.date}</span>
                                                                         </div>
                                                                     </div>
                                                                 ))}
@@ -756,25 +838,22 @@ html
 
                                         {/* MONTHLY VIEW */}
                                         {taskViewMode === 'Monthly' && (
-                                            <div className="space-y-4">
-                                                <p className="text-xs font-bold text-slate-500">Monthly Task Overview (November 2026):</p>
-                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                    {todos.filter(t => (taskFilterStatus === 'All' || (taskFilterStatus === 'Completed' ? t.completed : !t.completed))).map(t => (
-                                                        <div key={t.id} className="p-4 rounded-2xl neo-input-soft space-y-2">
-                                                            <div className="flex justify-between items-center">
-                                                                <span className="px-2 py-0.5 rounded bg-purple-100 text-purple-700 text-[10px] font-bold">{t.heading}</span>
-                                                                <span className="text-xs font-extrabold text-cyan-600">📅 {t.date}</span>
-                                                            </div>
-                                                            <h4 className={`font-bold text-xs ${t.completed ? 'line-through text-slate-400' : 'text-slate-800'}`}>{t.title}</h4>
-                                                            <div className="flex justify-between items-center pt-2 border-t border-slate-200">
-                                                                <button onClick={() => toggleTaskStatus(t.id)} className={`text-[10px] font-bold px-2 py-1 rounded ${t.completed ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}>
-                                                                    {t.completed ? 'Mark Pending' : 'Mark Completed'}
-                                                                </button>
-                                                                <button onClick={() => deleteTask(t.id)} className="text-rose-500 text-[10px] font-bold">Delete</button>
-                                                            </div>
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                {todos.filter(t => (taskFilterStatus === 'All' || (taskFilterStatus === 'Completed' ? t.completed : !t.completed))).map(t => (
+                                                    <div key={t.id} className="p-4 rounded-xl neo-input space-y-2">
+                                                        <div className="flex justify-between items-center">
+                                                            <span className="px-2 py-0.5 rounded bg-lavender text-secondaryAccent text-[10px] font-bold">{t.heading}</span>
+                                                            <span className="text-xs font-bold text-primaryAccent">📅 {t.date}</span>
                                                         </div>
-                                                    ))}
-                                                </div>
+                                                        <h4 className={`font-bold text-xs ${t.completed ? 'line-through text-secondaryText' : 'text-primaryText'}`}>{t.title}</h4>
+                                                        <div className="flex justify-between items-center pt-2 border-t border-darkShadow/20">
+                                                            <button onClick={() => toggleTaskStatus(t.id)} className={`text-[10px] font-bold px-2.5 py-1 rounded-lg ${t.completed ? 'bg-softPeach text-warningPeach' : 'bg-mint text-successMint'}`}>
+                                                                {t.completed ? 'Mark Pending' : 'Mark Completed'}
+                                                            </button>
+                                                            <button onClick={() => deleteTask(t.id)} className="text-dangerRose text-[10px] font-bold">Delete</button>
+                                                        </div>
+                                                    </div>
+                                                ))}
                                             </div>
                                         )}
                                     </div>
@@ -783,35 +862,35 @@ html
                             )}
 
                         </div>
-                    </div>
+                    </main>
 
                     {/* CANDIDATE DETAIL MODAL */}
                     {selectedCandidate && (
-                        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-4 z-50">
-                            <div className="soft-glass-card p-8 rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto space-y-6 border-2 border-white shadow-2xl">
-                                <div className="flex justify-between items-start border-b border-slate-200 pb-4">
+                        <div className="fixed inset-0 bg-slate-900/30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                            <div className="neo-card p-6 rounded-[22px] max-w-2xl w-full max-h-[90vh] overflow-y-auto space-y-5 border border-white/80 bg-neoBg">
+                                <div className="flex justify-between items-start border-b border-darkShadow/20 pb-3">
                                     <div>
-                                        <h3 className="text-3xl font-black text-slate-800">{selectedCandidate.candidateName}</h3>
-                                        <p className="text-sm font-extrabold text-cyan-600">{selectedCandidate.role} • {selectedCandidate.department}</p>
+                                        <h3 className="font-heading font-extrabold text-2xl text-primaryText">{selectedCandidate.candidateName}</h3>
+                                        <p className="text-xs font-bold text-primaryAccent">{selectedCandidate.role} • {selectedCandidate.department}</p>
                                     </div>
-                                    <button onClick={() => setSelectedCandidate(null)} className="w-10 h-10 rounded-2xl neo-input-soft hover:text-cyan-600 flex items-center justify-center font-bold text-slate-500 text-lg">✕</button>
+                                    <button onClick={() => setSelectedCandidate(null)} className="w-8 h-8 rounded-xl neo-btn-secondary flex items-center justify-center font-bold text-secondaryText text-sm">✕</button>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                                    <div className="p-3.5 rounded-2xl neo-input-soft"><p className="text-xs text-slate-400 font-bold uppercase">CV Source</p><p className="font-extrabold text-slate-700 mt-1">{selectedCandidate.source}</p></div>
-                                    <div className="p-3.5 rounded-2xl neo-input-soft"><p className="text-xs text-slate-400 font-bold uppercase">Contact Number</p><p className="font-extrabold text-slate-700 mt-1">{selectedCandidate.contactNumber}</p></div>
-                                    <div className="p-3.5 rounded-2xl neo-input-soft"><p className="text-xs text-slate-400 font-bold uppercase">Email Address</p><p className="font-extrabold text-slate-700 mt-1 truncate">{selectedCandidate.emailId}</p></div>
-                                    <div className="p-3.5 rounded-2xl neo-input-soft"><p className="text-xs text-slate-400 font-bold uppercase">Current Location</p><p className="font-extrabold text-slate-700 mt-1">{selectedCandidate.location}</p></div>
-                                    <div className="p-3.5 rounded-2xl neo-input-soft"><p className="text-xs text-slate-400 font-bold uppercase">Current Company</p><p className="font-extrabold text-slate-700 mt-1">{selectedCandidate.currentCompany}</p></div>
-                                    <div className="p-3.5 rounded-2xl neo-input-soft"><p className="text-xs text-slate-400 font-bold uppercase">Designation</p><p className="font-extrabold text-slate-700 mt-1">{selectedCandidate.designation}</p></div>
-                                    <div className="p-3.5 rounded-2xl neo-input-soft"><p className="text-xs text-slate-400 font-bold uppercase">Overall Experience</p><p className="font-extrabold text-slate-700 mt-1">{selectedCandidate.totalExp}</p></div>
-                                    <div className="p-3.5 rounded-2xl neo-input-soft"><p className="text-xs text-slate-400 font-bold uppercase">Notice Period</p><p className="font-extrabold text-slate-700 mt-1">{selectedCandidate.noticePeriod}</p></div>
-                                    <div className="p-3.5 rounded-2xl neo-input-soft"><p className="text-xs text-slate-400 font-bold uppercase">Current CTC</p><p className="font-extrabold text-slate-700 mt-1">{selectedCandidate.currentCtc}</p></div>
-                                    <div className="p-3.5 rounded-2xl neo-input-soft"><p className="text-xs text-slate-400 font-bold uppercase">Expected CTC</p><p className="font-extrabold text-slate-700 mt-1">{selectedCandidate.expectedCtc}</p></div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                                    <div className="p-3 rounded-xl neo-input"><p className="text-[10px] text-secondaryText font-bold uppercase">CV Source</p><p className="font-bold text-primaryText mt-0.5">{selectedCandidate.source}</p></div>
+                                    <div className="p-3 rounded-xl neo-input"><p className="text-[10px] text-secondaryText font-bold uppercase">Contact Number</p><p className="font-bold text-primaryText mt-0.5">{selectedCandidate.contactNumber}</p></div>
+                                    <div className="p-3 rounded-xl neo-input"><p className="text-[10px] text-secondaryText font-bold uppercase">Email Address</p><p className="font-bold text-primaryText mt-0.5 truncate">{selectedCandidate.emailId}</p></div>
+                                    <div className="p-3 rounded-xl neo-input"><p className="text-[10px] text-secondaryText font-bold uppercase">Current Location</p><p className="font-bold text-primaryText mt-0.5">{selectedCandidate.location}</p></div>
+                                    <div className="p-3 rounded-xl neo-input"><p className="text-[10px] text-secondaryText font-bold uppercase">Current Company</p><p className="font-bold text-primaryText mt-0.5">{selectedCandidate.currentCompany}</p></div>
+                                    <div className="p-3 rounded-xl neo-input"><p className="text-[10px] text-secondaryText font-bold uppercase">Designation</p><p className="font-bold text-primaryText mt-0.5">{selectedCandidate.designation}</p></div>
+                                    <div className="p-3 rounded-xl neo-input"><p className="text-[10px] text-secondaryText font-bold uppercase">Overall Experience</p><p className="font-bold text-primaryText mt-0.5">{selectedCandidate.totalExp}</p></div>
+                                    <div className="p-3 rounded-xl neo-input"><p className="text-[10px] text-secondaryText font-bold uppercase">Notice Period</p><p className="font-bold text-primaryText mt-0.5">{selectedCandidate.noticePeriod}</p></div>
+                                    <div className="p-3 rounded-xl neo-input"><p className="text-[10px] text-secondaryText font-bold uppercase">Current CTC</p><p className="font-bold text-primaryText mt-0.5">{selectedCandidate.currentCtc}</p></div>
+                                    <div className="p-3 rounded-xl neo-input"><p className="text-[10px] text-secondaryText font-bold uppercase">Expected CTC</p><p className="font-bold text-primaryText mt-0.5">{selectedCandidate.expectedCtc}</p></div>
                                 </div>
 
-                                <div className="flex justify-between items-center pt-4 border-t border-slate-200">
-                                    <button onClick={() => setSelectedCandidate(null)} className="px-6 py-2.5 rounded-2xl neo-btn-active text-xs font-black text-slate-600 hover:text-slate-800 transition">Close</button>
+                                <div className="flex justify-between items-center pt-3 border-t border-darkShadow/20">
+                                    <button onClick={() => setSelectedCandidate(null)} className="px-5 py-2 neo-btn-secondary text-xs font-bold text-secondaryText">Close</button>
                                 </div>
                             </div>
                         </div>
