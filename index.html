@@ -40,7 +40,7 @@
                     boxShadow: {
                         neoRaised: '6px 6px 14px #E2E2E8, -6px -6px 14px #FFFFFF',
                         neoRaisedHover: '8px 8px 18px #D6D6E0, -8px -8px 18px #FFFFFF',
-                        neoInset: 'inset 3px 3px 8px #E2E2E8, inset -3px -3px 8px #FFFFFF',
+                        neoInset: 'inset 3px 3px 8px #E2E8F0, inset -3px -3px 8px #FFFFFF',
                     }
                 }
             }
@@ -182,13 +182,14 @@
             const [newTaskDate, setNewTaskDate] = React.useState(getTodayString());
             const [todos, setTodos] = React.useState([]);
 
-            // Dynamic Formatted Date (e.g. "Tuesday, Nov 10, 2026")
             const formattedCurrentDate = React.useMemo(() => {
                 const options = { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' };
                 return new Date().toLocaleDateString('en-US', options);
             }, []);
 
+            // State for Add / Edit Position Modal
             const [isAddPosOpen, setIsAddPosOpen] = React.useState(false);
+            const [editingPosId, setEditingPosId] = React.useState(null);
             const [newPosTitle, setNewPosTitle] = React.useState('');
             const [newPosExp, setNewPosExp] = React.useState('');
             const [newPosSalary, setNewPosSalary] = React.useState('');
@@ -199,7 +200,7 @@
             const parseSheetData = (data) => {
                 return data.map((item, index) => ({
                     id: index,
-                    candidateName: item['Candidate Name'] || item['candidateName'] || item['NAME'] || 'N/A',
+                    candidateName: item['Candidate Name'] || item['candidateName'] || item['NAME'] || 'N me',
                     source: item['CV -Source-'] || item['CV-Source'] || item['source'] || item['CV SOURCED FROM'] || 'Naukri',
                     location: item['Location'] || item['location'] || 'N/A',
                     role: item['Role'] || item['role'] || 'N/A',
@@ -271,31 +272,99 @@
                 fetchSheetData();
             }, [fetchSheetData]);
 
-            const handleAddPosition = () => {
+            // Format salary to automatically ensure Lakhs per Annum (LPA) suffix
+            const formatSalaryLPA = (val) => {
+                if (!val) return 'Negotiable';
+                const trimmed = val.toString().trim();
+                if (/lpa|lacs|lakhs|per annum/i.test(trimmed)) {
+                    return trimmed;
+                }
+                return `${trimmed} LPA`;
+            };
+
+            // Save or Update Position
+            const handleSavePosition = () => {
                 if (!newPosTitle.trim()) return;
-                const newPos = {
-                    type: 'position',
-                    id: Date.now().toString(),
-                    title: newPosTitle,
-                    exp: newPosExp || '0-2 Yrs',
-                    maxSalary: newPosSalary || 'Negotiable',
-                    department: newPosDept || 'General',
-                    businessUnit: newPosBU || 'Main Unit',
-                    reportingTo: newPosReporting || 'HOD',
-                    createdDate: getTodayString(),
-                    status: 'Open'
-                };
 
-                setPositions(prev => [newPos, ...prev]);
+                const formattedSalary = formatSalaryLPA(newPosSalary);
+
+                if (editingPosId) {
+                    // Updating an existing position
+                    let updatedPos = null;
+                    setPositions(prev => prev.map(p => {
+                        if (p.id === editingPosId) {
+                            updatedPos = {
+                                ...p,
+                                type: 'position',
+                                title: newPosTitle,
+                                exp: newPosExp || '0-2 Yrs',
+                                maxSalary: formattedSalary,
+                                department: newPosDept || 'General',
+                                businessUnit: newPosBU || 'Main Unit',
+                                reportingTo: newPosReporting || 'HOD'
+                            };
+                            return updatedPos;
+                        }
+                        return p;
+                    }));
+
+                    if (updatedPos) {
+                        fetch(WEBHOOK_URL, {
+                            method: 'POST',
+                            mode: 'no-cors',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(updatedPos)
+                        }).catch(err => console.error("Error updating position:", err));
+                    }
+                } else {
+                    // Creating a new position
+                    const newPos = {
+                        type: 'position',
+                        id: Date.now().toString(),
+                        title: newPosTitle,
+                        exp: newPosExp || '0-2 Yrs',
+                        maxSalary: formattedSalary,
+                        department: newPosDept || 'General',
+                        businessUnit: newPosBU || 'Main Unit',
+                        reportingTo: newPosReporting || 'HOD',
+                        createdDate: getTodayString(),
+                        status: 'Open'
+                    };
+
+                    setPositions(prev => [newPos, ...prev]);
+
+                    fetch(WEBHOOK_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(newPos)
+                    }).catch(err => console.error("Error adding position:", err));
+                }
+
+                resetPosModal();
+            };
+
+            // Open Edit Modal prepopulated with existing position data
+            const openEditPosition = (pos) => {
+                setEditingPosId(pos.id);
+                setNewPosTitle(pos.title);
+                setNewPosExp(pos.exp);
+                setNewPosSalary(pos.maxSalary);
+                setNewPosDept(pos.department);
+                setNewPosBU(pos.businessUnit);
+                setNewPosReporting(pos.reportingTo);
+                setIsAddPosOpen(true);
+            };
+
+            const resetPosModal = () => {
                 setIsAddPosOpen(false);
-                setNewPosTitle(''); setNewPosExp(''); setNewPosSalary(''); setNewPosDept(''); setNewPosBU(''); setNewPosReporting('');
-
-                fetch(WEBHOOK_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(newPos)
-                }).catch(err => console.error("Error adding position:", err));
+                setEditingPosId(null);
+                setNewPosTitle(''); 
+                setNewPosExp(''); 
+                setNewPosSalary(''); 
+                setNewPosDept(''); 
+                setNewPosBU(''); 
+                setNewPosReporting('');
             };
 
             const handlePositionStatusChange = (posId, newStatus) => {
@@ -591,7 +660,7 @@
                     {/* Main Workspace Layout */}
                     <main className="flex-1 flex flex-col h-screen overflow-hidden p-4 md:pl-0">
                         
-                        {/* Top Global Bar with Dynamic Date */}
+                        {/* Top Global Bar */}
                         <header className="p-4 rounded-[20px] neo-card mb-4 flex flex-col md:flex-row items-center justify-between gap-4">
                             <div className="flex items-center space-x-3">
                                 <div>
@@ -623,7 +692,7 @@
 
                             {activeTab === 'positions' && (
                                 <button 
-                                    onClick={() => setIsAddPosOpen(true)}
+                                    onClick={() => { resetPosModal(); setIsAddPosOpen(true); }}
                                     className="px-4 py-2.5 neo-btn-primary text-xs font-bold flex items-center gap-2"
                                 >
                                     ➕ Add Position
@@ -737,16 +806,17 @@
                                                         <th className="p-3.5">Position Name</th>
                                                         <th className="p-3.5">Dept / BU</th>
                                                         <th className="p-3.5">Exp Required</th>
-                                                        <th className="p-3.5">Max Salary</th>
+                                                        <th className="p-3.5">Max Salary (LPA)</th>
                                                         <th className="p-3.5">Reporting To</th>
-                                                        <th className="p-3.5 text-center">Ageing (Days)</th>
+                                                        <th className="p-3.5 text-center">Ageing</th>
                                                         <th className="p-3.5 text-center">Profiles Shared</th>
                                                         <th className="p-3.5 text-center">Status</th>
+                                                        <th className="p-3.5 text-center">Actions</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody className="text-xs">
                                                     {positions.length === 0 ? (
-                                                        <tr><td colSpan="8" className="text-center p-8 text-navyMuted font-medium">No open positions added yet. Click "Add Position" above to get started.</td></tr>
+                                                        <tr><td colSpan="9" className="text-center p-8 text-navyMuted font-medium">No open positions added yet. Click "Add Position" above to get started.</td></tr>
                                                     ) : (
                                                         positions.map((pos, idx) => {
                                                             const sharedCount = getProfilesSharedCount(pos.title, pos.createdDate);
@@ -778,6 +848,14 @@
                                                                             <option value="Closed" className="bg-white text-successMint">🔵 Closed</option>
                                                                             <option value="Hold" className="bg-white text-warningAmber">🟡 Hold</option>
                                                                         </select>
+                                                                    </td>
+                                                                    <td className="p-3.5 text-center">
+                                                                        <button 
+                                                                            onClick={() => openEditPosition(pos)} 
+                                                                            className="px-3 py-1.5 neo-btn-secondary text-[11px] font-bold text-midnightNavy hover:text-solarOrange flex items-center justify-center gap-1 mx-auto"
+                                                                        >
+                                                                            ✏️ Edit
+                                                                        </button>
                                                                     </td>
                                                                 </tr>
                                                             );
@@ -1195,13 +1273,15 @@
                         </div>
                     </main>
 
-                    {/* ADD POSITION MODAL */}
+                    {/* ADD / EDIT POSITION MODAL */}
                     {isAddPosOpen && (
                         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
                             <div className="neo-card p-6 rounded-[22px] max-w-lg w-full space-y-4 border border-slate-200 bg-white">
                                 <div className="flex justify-between items-center border-b border-slate-200 pb-3">
-                                    <h3 className="font-heading font-extrabold text-lg text-midnightNavy">Add New Open Position</h3>
-                                    <button onClick={() => setIsAddPosOpen(false)} className="w-8 h-8 rounded-xl neo-btn-secondary flex items-center justify-center font-bold text-navyMuted text-sm">✕</button>
+                                    <h3 className="font-heading font-extrabold text-lg text-midnightNavy">
+                                        {editingPosId ? '✏️ Edit Open Position' : '➕ Add New Open Position'}
+                                    </h3>
+                                    <button onClick={resetPosModal} className="w-8 h-8 rounded-xl neo-btn-secondary flex items-center justify-center font-bold text-navyMuted text-sm">✕</button>
                                 </div>
 
                                 <div className="space-y-3 text-xs">
@@ -1216,8 +1296,8 @@
                                             <input type="text" placeholder="e.g. 3-5 Years" value={newPosExp} onChange={e => setNewPosExp(e.target.value)} className="w-full p-2.5 rounded-xl neo-input text-midnightNavy font-medium placeholder-navyMuted" />
                                         </div>
                                         <div>
-                                            <label className="block font-bold text-navyMuted mb-1">Max Salary</label>
-                                            <input type="text" placeholder="e.g. 12 LPA" value={newPosSalary} onChange={e => setNewPosSalary(e.target.value)} className="w-full p-2.5 rounded-xl neo-input text-midnightNavy font-medium placeholder-navyMuted" />
+                                            <label className="block font-bold text-navyMuted mb-1">Max Salary (Lakhs per Annum)</label>
+                                            <input type="text" placeholder="e.g. 12 (or 12 LPA)" value={newPosSalary} onChange={e => setNewPosSalary(e.target.value)} className="w-full p-2.5 rounded-xl neo-input text-midnightNavy font-medium placeholder-navyMuted" />
                                         </div>
                                     </div>
 
@@ -1239,8 +1319,10 @@
                                 </div>
 
                                 <div className="flex justify-end space-x-3 pt-3 border-t border-slate-200">
-                                    <button onClick={() => setIsAddPosOpen(false)} className="px-4 py-2 neo-btn-secondary text-xs font-bold text-navyMuted">Cancel</button>
-                                    <button onClick={handleAddPosition} className="px-5 py-2 neo-btn-primary text-xs font-bold">Save Position</button>
+                                    <button onClick={resetPosModal} className="px-4 py-2 neo-btn-secondary text-xs font-bold text-navyMuted">Cancel</button>
+                                    <button onClick={handleSavePosition} className="px-5 py-2 neo-btn-primary text-xs font-bold">
+                                        {editingPosId ? 'Update Position' : 'Save Position'}
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -1262,7 +1344,6 @@
                                     <div className="p-3 rounded-xl neo-input"><p className="text-[10px] text-navyMuted font-bold uppercase">CV Source</p><p className="font-bold text-midnightNavy mt-0.5">{selectedCandidate.source}</p></div>
                                     <div className="p-3 rounded-xl neo-input"><p className="text-[10px] text-navyMuted font-bold uppercase">Contact Number</p><p className="font-bold text-midnightNavy mt-0.5">{selectedCandidate.contactNumber}</p></div>
                                     <div className="p-3 rounded-xl neo-input"><p className="text-[10px] text-navyMuted font-bold uppercase">Email Address</p><p className="font-bold text-midnightNavy mt-0.5 truncate">{selectedCandidate.emailId}</p></div>
-                                    <div className="p-3 rounded-xl neo-input"><p className="text-[10px] text-navyMuted font-bold uppercase">Current Location</p><p className="font-bold text-midnightNavy mt-0.5">{selectedCandidate.location}</p></div>
                                     <div className="p-3 rounded-xl neo-input"><p className="text-[10px] text-navyMuted font-bold uppercase">Current Location</p><p className="font-bold text-midnightNavy mt-0.5">{selectedCandidate.location}</p></div>
                                     <div className="p-3 rounded-xl neo-input"><p className="text-[10px] text-navyMuted font-bold uppercase">Current Company</p><p className="font-bold text-midnightNavy mt-0.5">{selectedCandidate.currentCompany}</p></div>
                                     <div className="p-3 rounded-xl neo-input"><p className="text-[10px] text-navyMuted font-bold uppercase">Designation</p><p className="font-bold text-midnightNavy mt-0.5">{selectedCandidate.designation}</p></div>
