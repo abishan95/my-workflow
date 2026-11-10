@@ -9,7 +9,7 @@
     <link rel="apple-touch-icon" href="./logo.jpeg">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#F97316">
+    <meta name="theme-color" content="#111111">
     <!-- Google Fonts: Manrope (Headings) & Inter (Body) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -17,7 +17,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -27,42 +27,30 @@
                         heading: ['Manrope', 'sans-serif'],
                     },
                     colors: {
-                        neoBg: '#E9EEF5',
-                        neoSurface: '#E9EEF5',
-                        neoWhite: '#FFFFFF',
-                        powderBlue: '#FFEDD5',
-                        lavender: '#FFF7ED',
-                        mint: '#DFF5F0',
-                        softPeach: '#FFEBDD',
-                        primaryAccent: '#F97316',
-                        secondaryAccent: '#FB923C',
-                        successMint: '#71CDB3',
-                        warningPeach: '#F0BE83',
-                        dangerRose: '#E9949B',
-                        primaryText: '#34415B',
-                        secondaryText: '#8290A6',
-                        darkShadow: '#CBD3DF',
-                        lightShadow: '#FFFFFF',
+                        carbonBlack: '#111111',
+                        carbonSurface: '#1A1A1A',
+                        carbonCard: '#222222',
+                        pearlWhite: '#F8F9FA',
+                        pearlMuted: '#A0A0A0',
+                        rossoCorsa: '#D40000',
+                        rossoHover: '#B00000',
+                        successMint: '#2ECC71',
+                        warningAmber: '#F1C40F',
                     },
                     boxShadow: {
-                        neoRaised: '7px 7px 16px #CBD3DF, -7px -7px 16px #FFFFFF',
-                        neoRaisedHover: '10px 10px 22px #C2CBE0, -10px -10px 22px #FFFFFF',
-                        neoInset: 'inset 4px 4px 9px #CBD3DF, inset -4px -4px 9px #FFFFFF',
-                        neoInsetFocus: 'inset 4px 4px 9px #CBD3DF, 0 0 0 3px rgba(249, 115, 22, 0.3)',
+                        darkRaised: '6px 6px 16px #0A0A0A, -6px -6px 16px #282828',
+                        darkRaisedHover: '8px 8px 20px #050505, -8px -8px 20px #303030',
+                        darkInset: 'inset 4px 4px 10px #0A0A0A, inset -4px -4px 10px #2A2A2A',
+                        darkInsetFocus: 'inset 4px 4px 10px #0A0A0A, 0 0 0 2px #D40000',
                     }
                 }
             }
         }
     </script>
     <style>
-        :root {
-            --neo-bg: #E9EEF5;
-            --primary-accent: #F97316;
-            --primary-text: #34415B;
-        }
         body {
-            background-color: #E9EEF5;
-            color: #34415B;
+            background-color: #111111;
+            color: #F8F9FA;
             font-family: 'Inter', sans-serif;
             overflow-x: hidden;
             -webkit-tap-highlight-color: transparent;
@@ -71,66 +59,74 @@
             font-family: 'Manrope', sans-serif;
         }
         .neo-card {
-            background-color: #E9EEF5;
+            background-color: #1A1A1A;
             border-radius: 20px;
-            box-shadow: 7px 7px 16px #CBD3DF, -7px -7px 16px #FFFFFF;
+            box-shadow: 6px 6px 16px #0A0A0A, -6px -6px 16px #282828;
+            border: 1px solid #2C2C2C;
             transition: all 0.2s ease-in-out;
         }
         .neo-card:hover {
-            box-shadow: 10px 10px 22px #C2CBE0, -10px -10px 22px #FFFFFF;
+            box-shadow: 8px 8px 20px #050505, -8px -8px 20px #303030;
+            border-color: #383838;
             transform: translateY(-2px);
         }
         .neo-card-flat {
-            background-color: #E9EEF5;
+            background-color: #1A1A1A;
             border-radius: 20px;
-            box-shadow: 7px 7px 16px #CBD3DF, -7px -7px 16px #FFFFFF;
+            box-shadow: 6px 6px 16px #0A0A0A, -6px -6px 16px #282828;
+            border: 1px solid #2C2C2C;
         }
         .neo-input {
-            background-color: #E9EEF5;
+            background-color: #141414;
+            color: #F8F9FA;
             border-radius: 14px;
-            box-shadow: inset 4px 4px 9px #CBD3DF, inset -4px -4px 9px #FFFFFF;
-            border: 1px solid transparent;
+            box-shadow: inset 4px 4px 10px #0A0A0A, inset -4px -4px 10px #222222;
+            border: 1px solid #2C2C2C;
             transition: all 0.2s ease;
         }
         .neo-input:focus {
             outline: none;
-            border-color: rgba(249, 115, 22, 0.6);
-            box-shadow: inset 4px 4px 9px #CBD3DF, 0 0 0 3px rgba(249, 115, 22, 0.25);
+            border-color: #D40000;
+            box-shadow: inset 4px 4px 10px #0A0A0A, 0 0 0 2px rgba(212, 0, 0, 0.4);
         }
         .neo-btn-primary {
-            background: linear-gradient(135deg, #F97316 0%, #EA580C 100%);
-            color: #FFFFFF;
+            background: linear-gradient(135deg, #D40000 0%, #990000 100%);
+            color: #F8F9FA;
             border-radius: 14px;
-            box-shadow: 5px 5px 12px #CBD3DF, -5px -5px 12px #FFFFFF;
+            box-shadow: 4px 4px 10px #0A0A0A, -4px -4px 10px #2A2A2A;
             transition: all 0.18s ease;
         }
         .neo-btn-primary:hover {
-            box-shadow: 7px 7px 16px #CBD3DF, -7px -7px 16px #FFFFFF;
+            background: linear-gradient(135deg, #E60000 0%, #B00000 100%);
+            box-shadow: 6px 6px 14px #050505, -6px -6px 14px #303030;
             transform: translateY(-1px);
         }
         .neo-btn-primary:active {
-            box-shadow: inset 3px 3px 6px rgba(0,0,0,0.2);
+            box-shadow: inset 3px 3px 6px rgba(0,0,0,0.5);
             transform: translateY(1px);
         }
         .neo-btn-secondary {
-            background-color: #E9EEF5;
-            color: #34415B;
+            background-color: #1A1A1A;
+            color: #F8F9FA;
             border-radius: 14px;
-            box-shadow: 5px 5px 12px #CBD3DF, -5px -5px 12px #FFFFFF;
+            box-shadow: 4px 4px 10px #0A0A0A, -4px -4px 10px #282828;
+            border: 1px solid #2C2C2C;
             transition: all 0.18s ease;
         }
         .neo-btn-secondary:hover {
-            box-shadow: 7px 7px 16px #C2CBE0, -7px -7px 16px #FFFFFF;
-            color: #F97316;
+            box-shadow: 6px 6px 14px #050505, -6px -6px 14px #303030;
+            color: #D40000;
+            border-color: #404040;
         }
         .neo-btn-secondary:active {
-            box-shadow: inset 3px 3px 6px #CBD3DF, inset -3px -3px 6px #FFFFFF;
+            box-shadow: inset 3px 3px 6px #0A0A0A, inset -3px -3px 6px #2A2A2A;
         }
         .neo-btn-active {
-            background: #FFEDD5;
-            color: #F97316;
+            background: #261414;
+            color: #D40000;
+            border: 1px solid #5C1D1D;
             border-radius: 14px;
-            box-shadow: inset 3px 3px 7px #C5D0E3, inset -3px -3px 7px #FFFFFF;
+            box-shadow: inset 3px 3px 7px #0F0505, inset -3px -3px 7px #381A1A;
             font-weight: 700;
         }
         ::-webkit-scrollbar {
@@ -138,18 +134,18 @@
             height: 6px;
         }
         ::-webkit-scrollbar-track {
-            background: #E9EEF5;
+            background: #111111;
         }
         ::-webkit-scrollbar-thumb {
-            background: #CBD3DF;
+            background: #333333;
             border-radius: 10px;
         }
         ::-webkit-scrollbar-thumb:hover {
-            background: #8290A6;
+            background: #D40000;
         }
     </style>
 </head>
-<body class="bg-neoBg text-primaryText min-h-screen">
+<body class="bg-carbonBlack text-pearlWhite min-h-screen">
     <div id="root"></div>
 
     <script type="text/babel">
@@ -187,7 +183,6 @@
             const [newTaskDate, setNewTaskDate] = React.useState(getTodayString());
             const [todos, setTodos] = React.useState([]);
 
-            // Modal & State for Add Position
             const [isAddPosOpen, setIsAddPosOpen] = React.useState(false);
             const [newPosTitle, setNewPosTitle] = React.useState('');
             const [newPosExp, setNewPosExp] = React.useState('');
@@ -271,7 +266,6 @@
                 fetchSheetData();
             }, [fetchSheetData]);
 
-            // Add Position Handler
             const handleAddPosition = () => {
                 if (!newPosTitle.trim()) return;
                 const newPos = {
@@ -299,7 +293,6 @@
                 }).catch(err => console.error("Error adding position:", err));
             };
 
-            // Change Position Status
             const handlePositionStatusChange = (posId, newStatus) => {
                 let updatedPos = null;
                 setPositions(prev => prev.map(p => {
@@ -320,7 +313,6 @@
                 }
             };
 
-            // Calculate Ageing (Days since post creation)
             const calculateAgeing = (createdDateStr) => {
                 if (!createdDateStr || createdDateStr === 'N/A') return 0;
                 const created = new Date(createdDateStr);
@@ -329,7 +321,6 @@
                 return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
             };
 
-            // Profiles Shared Count (Candidates added for position AFTER post creation date)
             const getProfilesSharedCount = (posTitle, posCreatedDate) => {
                 const allCandidates = [...profiles, ...joiners];
                 return allCandidates.filter(c => {
@@ -477,22 +468,22 @@
             };
 
             return (
-                <div className="flex flex-col md:flex-row h-screen overflow-hidden bg-neoBg text-primaryText">
+                <div className="flex flex-col md:flex-row h-screen overflow-hidden bg-carbonBlack text-pearlWhite">
                     
                     {/* Mobile Header Toggle */}
                     <div className="md:hidden flex items-center justify-between p-4 neo-card m-3 mb-0 z-30">
                         <div className="flex items-center space-x-3">
-                            <img src="./logo.jpeg" alt="Logo" className="w-8 h-8 rounded-xl object-cover" />
-                            <span className="font-heading font-extrabold text-sm">My Work Flow</span>
+                            <img src="./logo.jpeg" alt="Logo" className="w-8 h-8 rounded-xl object-cover border border-[#333]" />
+                            <span className="font-heading font-extrabold text-sm text-pearlWhite">My Work Flow</span>
                         </div>
-                        <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-2 neo-input rounded-xl text-primaryAccent">
+                        <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-2 neo-input rounded-xl text-rossoCorsa">
                             <Icons.Menu />
                         </button>
                     </div>
 
                     {/* Mobile Dropdown Menu */}
                     {mobileMenuOpen && (
-                        <div className="md:hidden absolute top-16 left-4 right-4 z-40 neo-card p-4 space-y-2 bg-neoBg border border-white/80 shadow-2xl">
+                        <div className="md:hidden absolute top-16 left-4 right-4 z-40 neo-card p-4 space-y-2 bg-carbonSurface border border-[#333] shadow-2xl">
                             {[
                                 { id: 'dashboard', label: 'Dashboard', icon: Icons.Dashboard },
                                 { id: 'positions', label: 'Open Positions', icon: Icons.Positions, count: positions.filter(p => p.status === 'Open').length },
@@ -503,42 +494,42 @@
                                 <button
                                     key={tab.id}
                                     onClick={() => { setActiveTab(tab.id); setMobileMenuOpen(false); }}
-                                    className={`w-full flex items-center justify-between px-4 py-3 rounded-xl font-semibold text-xs ${activeTab === tab.id ? 'neo-btn-active' : 'text-secondaryText'}`}
+                                    className={`w-full flex items-center justify-between px-4 py-3 rounded-xl font-semibold text-xs ${activeTab === tab.id ? 'neo-btn-active' : 'text-pearlMuted'}`}
                                 >
                                     <span>{tab.label}</span>
-                                    {tab.count !== undefined && <span className="px-2 py-0.5 rounded-full text-[10px] bg-white/80">{tab.count}</span>}
+                                    {tab.count !== undefined && <span className="px-2 py-0.5 rounded-full text-[10px] bg-[#222] text-pearlWhite">{tab.count}</span>}
                                 </button>
                             ))}
                         </div>
                     )}
 
                     {/* Desktop / Tablet Sidebar */}
-                    <aside className="w-64 p-5 flex-col justify-between hidden md:flex z-20 m-4 rounded-[22px] neo-card-flat border border-white/60">
+                    <aside className="w-64 p-5 flex-col justify-between hidden md:flex z-20 m-4 rounded-[22px] neo-card-flat border border-[#2C2C2C]">
                         <div>
                             {/* Logo & Branding */}
                             <div className="flex items-center space-x-3 mb-8 px-2">
                                 <img 
                                     src="./logo.jpeg" 
                                     alt="My Workflow" 
-                                    className="w-11 h-11 rounded-2xl object-cover shadow-neoRaised border border-white/80" 
+                                    className="w-11 h-11 rounded-2xl object-cover shadow-darkRaised border border-[#333]" 
                                     onError={(e) => {
-                                        e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44' viewBox='0 0 24 24' fill='none' stroke='%23F97316' stroke-width='2'%3E%3Cpath d='M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6'/%3E%3C/svg%3E";
+                                        e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44' viewBox='0 0 24 24' fill='none' stroke='%23D40000' stroke-width='2'%3E%3Cpath d='M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6'/%3E%3C/svg%3E";
                                     }}
                                 />
                                 <div>
-                                    <h1 className="font-heading font-extrabold text-base text-primaryText leading-tight">My Work Flow</h1>
-                                    <p className="text-[11px] text-secondaryText font-medium">Personal Workspace</p>
+                                    <h1 className="font-heading font-extrabold text-base text-pearlWhite leading-tight">My Work Flow</h1>
+                                    <p className="text-[11px] text-pearlMuted font-medium">Personal Workspace</p>
                                 </div>
                             </div>
 
                             {/* User Profile Pill */}
                             <div className="p-3 mb-6 rounded-2xl neo-card flex items-center space-x-3">
-                                <div className="w-9 h-9 rounded-xl bg-orange-100 flex items-center justify-center text-primaryAccent font-heading font-bold text-sm shadow-neoInset">
+                                <div className="w-9 h-9 rounded-xl bg-[#2A1010] flex items-center justify-center text-rossoCorsa font-heading font-bold text-sm shadow-darkInset border border-[#5C1D1D]">
                                     A
                                 </div>
                                 <div className="overflow-hidden">
-                                    <h2 className="font-heading font-bold text-xs text-primaryText truncate">Abishan</h2>
-                                    <p className="text-[10px] text-secondaryText font-medium">Talent Acquisition</p>
+                                    <h2 className="font-heading font-bold text-xs text-pearlWhite truncate">Abishan</h2>
+                                    <p className="text-[10px] text-pearlMuted font-medium">Talent Acquisition</p>
                                 </div>
                             </div>
 
@@ -560,16 +551,16 @@
                                             className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl font-semibold text-xs transition-all ${
                                                 isActive 
                                                     ? 'neo-btn-active' 
-                                                    : 'text-secondaryText hover:text-primaryText hover:bg-white/40'
+                                                    : 'text-pearlMuted hover:text-pearlWhite hover:bg-[#222]'
                                             }`}
                                         >
                                             <div className="flex items-center space-x-3">
-                                                <span className={isActive ? 'text-primaryAccent' : 'text-secondaryText'}><IconComp /></span>
+                                                <span className={isActive ? 'text-rossoCorsa' : 'text-pearlMuted'}><IconComp /></span>
                                                 <span className="font-heading">{tab.label}</span>
                                             </div>
                                             {tab.count !== undefined && (
                                                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                                                    isActive ? 'bg-primaryAccent text-white' : 'bg-white/80 text-secondaryText shadow-neoInset'
+                                                    isActive ? 'bg-rossoCorsa text-pearlWhite' : 'bg-[#222] text-pearlMuted shadow-darkInset'
                                                 }`}>
                                                     {tab.count}
                                                 </span>
@@ -581,12 +572,12 @@
                         </div>
                         
                         {/* Live Sync Badge */}
-                        <div className="p-3 rounded-2xl neo-input text-[11px] font-semibold text-secondaryText flex items-center justify-between">
+                        <div className="p-3 rounded-2xl neo-input text-[11px] font-semibold text-pearlMuted flex items-center justify-between">
                             <span className="flex items-center gap-2 truncate">
                                 <span className="w-2 h-2 rounded-full bg-successMint animate-pulse"></span>
                                 <span className="truncate">{syncStatus}</span>
                             </span>
-                            <button onClick={fetchSheetData} className="text-primaryAccent hover:underline text-[10px] font-bold">
+                            <button onClick={fetchSheetData} className="text-rossoCorsa hover:underline text-[10px] font-bold">
                                 Refresh
                             </button>
                         </div>
@@ -599,14 +590,14 @@
                         <header className="p-4 rounded-[20px] neo-card mb-4 flex flex-col md:flex-row items-center justify-between gap-4">
                             <div className="flex items-center space-x-3">
                                 <div>
-                                    <h1 className="font-heading font-extrabold text-lg text-primaryText">
+                                    <h1 className="font-heading font-extrabold text-lg text-pearlWhite">
                                         {activeTab === 'dashboard' && 'Personal Overview'}
                                         {activeTab === 'positions' && 'Open Positions Management'}
                                         {activeTab === 'profiles' && 'Sourced Candidates Directory'}
                                         {activeTab === 'joiners' && 'Joiners & Offers'}
                                         {activeTab === 'todos' && 'Task Workflow Console'}
                                     </h1>
-                                    <p className="text-[11px] text-secondaryText font-medium">
+                                    <p className="text-[11px] text-pearlMuted font-medium">
                                         Friday, Nov 6, 2026 • Welcome back, Abishan
                                     </p>
                                 </div>
@@ -614,13 +605,13 @@
 
                             {activeTab === 'profiles' && (
                                 <div className="w-full md:w-80 relative">
-                                    <span className="absolute left-3.5 top-3 text-secondaryText"><Icons.Search /></span>
+                                    <span className="absolute left-3.5 top-3 text-pearlMuted"><Icons.Search /></span>
                                     <input
                                         type="text"
                                         placeholder="Search candidate, role, location..."
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
-                                        className="w-full pl-10 pr-4 py-2.5 rounded-xl neo-input text-primaryText text-xs font-medium placeholder-secondaryText"
+                                        className="w-full pl-10 pr-4 py-2.5 rounded-xl neo-input text-pearlWhite text-xs font-medium placeholder-pearlMuted"
                                     />
                                 </div>
                             )}
@@ -641,45 +632,42 @@
                             {/* OPEN POSITIONS PAGE */}
                             {activeTab === 'positions' && (
                                 <div className="space-y-6">
-                                    
-                                    {/* Top Metrics Cards */}
                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                                        <div className="p-5 rounded-[20px] neo-card bg-orange-50 border border-white/60">
-                                            <p className="text-xs font-bold text-secondaryText uppercase tracking-wider">Active Openings persistence</p>
-                                            <h3 className="font-heading text-3xl font-extrabold text-primaryAccent mt-2">
+                                        <div className="p-5 rounded-[20px] neo-card bg-[#201111] border border-[#3A1A1A]">
+                                            <p className="text-xs font-bold text-pearlMuted uppercase tracking-wider">Active Openings</p>
+                                            <h3 className="font-heading text-3xl font-extrabold text-rossoCorsa mt-2">
                                                 {positions.filter(p => p.status === 'Open').length}
                                             </h3>
-                                            <p className="text-[11px] text-secondaryText font-medium mt-1">Currently recruiting</p>
+                                            <p className="text-[11px] text-pearlMuted font-medium mt-1">Currently recruiting</p>
                                         </div>
 
-                                        <div className="p-5 rounded-[20px] neo-card bg-mint/40 border border-white/60">
-                                            <p className="text-xs font-bold text-secondaryText uppercase tracking-wider">Closed Positions</p>
+                                        <div className="p-5 rounded-[20px] neo-card bg-[#112215] border border-[#1E4427]">
+                                            <p className="text-xs font-bold text-pearlMuted uppercase tracking-wider">Closed Positions</p>
                                             <h3 className="font-heading text-3xl font-extrabold text-successMint mt-2">
                                                 {positions.filter(p => p.status === 'Closed').length}
                                             </h3>
                                             <p className="text-[11px] text-successMint font-medium mt-1">Successfully fulfilled</p>
                                         </div>
 
-                                        <div className="p-5 rounded-[20px] neo-card bg-softPeach/40 border border-white/60">
-                                            <p className="text-xs font-bold text-secondaryText uppercase tracking-wider">On Hold</p>
-                                            <h3 className="font-heading text-3xl font-extrabold text-warningPeach mt-2">
+                                        <div className="p-5 rounded-[20px] neo-card bg-[#222011] border border-[#443E1B]">
+                                            <p className="text-xs font-bold text-pearlMuted uppercase tracking-wider">On Hold</p>
+                                            <h3 className="font-heading text-3xl font-extrabold text-warningAmber mt-2">
                                                 {positions.filter(p => p.status === 'Hold').length}
                                             </h3>
-                                            <p className="text-[11px] text-warningPeach font-medium mt-1">Temporarily paused</p>
+                                            <p className="text-[11px] text-warningAmber font-medium mt-1">Temporarily paused</p>
                                         </div>
                                     </div>
 
                                     {/* Graphical Reports Section */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        {/* Chart 1: Profiles Shared per Position */}
                                         <div className="p-6 rounded-[20px] neo-card space-y-4">
-                                            <h3 className="font-heading font-bold text-sm text-primaryText border-b border-darkShadow/20 pb-3 flex justify-between items-center">
+                                            <h3 className="font-heading font-bold text-sm text-pearlWhite border-b border-[#333] pb-3 flex justify-between items-center">
                                                 <span>Profiles Shared per Position</span>
-                                                <span className="text-xs text-primaryAccent font-semibold">Post-Creation Counts</span>
+                                                <span className="text-xs text-rossoCorsa font-semibold">Post-Creation Counts</span>
                                             </h3>
                                             <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
                                                 {positions.length === 0 ? (
-                                                    <p className="text-xs text-secondaryText italic text-center py-4">No position data available.</p>
+                                                    <p className="text-xs text-pearlMuted italic text-center py-4">No position data available.</p>
                                                 ) : (
                                                     positions.map((pos, idx) => {
                                                         const sharedCount = getProfilesSharedCount(pos.title, pos.createdDate);
@@ -688,11 +676,11 @@
                                                         return (
                                                             <div key={idx} className="space-y-1">
                                                                 <div className="flex justify-between text-xs font-bold">
-                                                                    <span className="text-primaryText truncate">{pos.title}</span>
-                                                                    <span className="text-primaryAccent">{sharedCount} Candidates</span>
+                                                                    <span className="text-pearlWhite truncate">{pos.title}</span>
+                                                                    <span className="text-rossoCorsa">{sharedCount} Candidates</span>
                                                                 </div>
                                                                 <div className="w-full h-3 rounded-full neo-input overflow-hidden flex">
-                                                                    <div className="h-full bg-gradient-to-r from-orange-400 to-primaryAccent rounded-full transition-all duration-500" style={{ width: `${pct}%` }}></div>
+                                                                    <div className="h-full bg-gradient-to-r from-rossoCorsa to-[#FF3333] rounded-full transition-all duration-500" style={{ width: `${pct}%` }}></div>
                                                                 </div>
                                                             </div>
                                                         );
@@ -701,23 +689,22 @@
                                             </div>
                                         </div>
 
-                                        {/* Chart 2: Status & Closure Metrics */}
                                         <div className="p-6 rounded-[20px] neo-card space-y-4">
-                                            <h3 className="font-heading font-bold text-sm text-primaryText border-b border-darkShadow/20 pb-3 flex justify-between items-center">
+                                            <h3 className="font-heading font-bold text-sm text-pearlWhite border-b border-[#333] pb-3 flex justify-between items-center">
                                                 <span>Position Closure Breakdown</span>
-                                                <span className="text-xs text-secondaryAccent font-semibold">Fulfillment Rates</span>
+                                                <span className="text-xs text-pearlMuted font-semibold">Fulfillment Rates</span>
                                             </h3>
                                             <div className="space-y-4">
                                                 {['Open', 'Closed', 'Hold'].map((st, i) => {
                                                     const count = positions.filter(p => p.status === st).length;
                                                     const total = positions.length || 1;
                                                     const pct = Math.round((count / total) * 100);
-                                                    const colorClass = st === 'Open' ? 'bg-primaryAccent' : st === 'Closed' ? 'bg-successMint' : 'bg-warningPeach';
+                                                    const colorClass = st === 'Open' ? 'bg-rossoCorsa' : st === 'Closed' ? 'bg-successMint' : 'bg-warningAmber';
                                                     return (
                                                         <div key={i} className="space-y-1">
                                                             <div className="flex justify-between text-xs font-bold">
-                                                                <span className="text-primaryText">{st} Positions</span>
-                                                                <span className="text-secondaryText">{count} ({pct}%)</span>
+                                                                <span className="text-pearlWhite">{st} Positions</span>
+                                                                <span className="text-pearlMuted">{count} ({pct}%)</span>
                                                             </div>
                                                             <div className="w-full h-3 rounded-full neo-input overflow-hidden">
                                                                 <div className={`h-full ${colorClass} rounded-full transition-all duration-500`} style={{ width: `${pct}%` }}></div>
@@ -731,17 +718,17 @@
 
                                     {/* Positions Table */}
                                     <div className="p-6 rounded-[20px] neo-card space-y-4">
-                                        <div className="flex justify-between items-center border-b border-darkShadow/20 pb-4">
+                                        <div className="flex justify-between items-center border-b border-[#333] pb-4">
                                             <div>
-                                                <h2 className="font-heading font-bold text-base text-primaryText">Current Open Positions ({positions.length})</h2>
-                                                <p className="text-xs text-secondaryText mt-0.5">Real-time candidate profile counts & post ageing</p>
+                                                <h2 className="font-heading font-bold text-base text-pearlWhite">Current Open Positions ({positions.length})</h2>
+                                                <p className="text-xs text-pearlMuted mt-0.5">Real-time candidate profile counts & post ageing</p>
                                             </div>
                                         </div>
 
                                         <div className="overflow-x-auto">
                                             <table className="w-full text-left border-collapse">
                                                 <thead>
-                                                    <tr className="border-b border-darkShadow/20 text-xs text-secondaryText font-bold uppercase tracking-wider">
+                                                    <tr className="border-b border-[#333] text-xs text-pearlMuted font-bold uppercase tracking-wider">
                                                         <th className="p-3.5">Position Name</th>
                                                         <th className="p-3.5">Dept / BU</th>
                                                         <th className="p-3.5">Exp Required</th>
@@ -754,23 +741,23 @@
                                                 </thead>
                                                 <tbody className="text-xs">
                                                     {positions.length === 0 ? (
-                                                        <tr><td colSpan="8" className="text-center p-8 text-secondaryText font-medium">No open positions added yet. Click "Add Position" above to get started.</td></tr>
+                                                        <tr><td colSpan="8" className="text-center p-8 text-pearlMuted font-medium">No open positions added yet. Click "Add Position" above to get started.</td></tr>
                                                     ) : (
                                                         positions.map((pos, idx) => {
                                                             const sharedCount = getProfilesSharedCount(pos.title, pos.createdDate);
                                                             const ageingDays = calculateAgeing(pos.createdDate);
                                                             return (
-                                                                <tr key={idx} className="border-b border-darkShadow/10 hover:bg-white/40 transition">
-                                                                    <td className="p-3.5 font-bold text-primaryText">{pos.title}</td>
-                                                                    <td className="p-3.5 text-secondaryText">{pos.department} • <span className="font-semibold">{pos.businessUnit}</span></td>
-                                                                    <td className="p-3.5 text-secondaryText">{pos.exp}</td>
-                                                                    <td className="p-3.5 text-primaryAccent font-bold">{pos.maxSalary}</td>
-                                                                    <td className="p-3.5 text-secondaryText">{pos.reportingTo}</td>
-                                                                    <td className="p-3.5 text-center font-extrabold text-warningPeach">
+                                                                <tr key={idx} className="border-b border-[#222] hover:bg-[#202020] transition">
+                                                                    <td className="p-3.5 font-bold text-pearlWhite">{pos.title}</td>
+                                                                    <td className="p-3.5 text-pearlMuted">{pos.department} • <span className="font-semibold text-pearlWhite">{pos.businessUnit}</span></td>
+                                                                    <td className="p-3.5 text-pearlMuted">{pos.exp}</td>
+                                                                    <td className="p-3.5 text-rossoCorsa font-bold">{pos.maxSalary}</td>
+                                                                    <td className="p-3.5 text-pearlMuted">{pos.reportingTo}</td>
+                                                                    <td className="p-3.5 text-center font-extrabold text-warningAmber">
                                                                         <span className="px-2.5 py-1 rounded-md neo-input text-[11px] font-bold">{ageingDays} d</span>
                                                                     </td>
                                                                     <td className="p-3.5 text-center">
-                                                                        <span className="px-3 py-1 rounded-full bg-orange-100 text-primaryAccent text-xs font-extrabold shadow-neoInset">
+                                                                        <span className="px-3 py-1 rounded-full bg-[#2A1010] text-rossoCorsa text-xs font-extrabold shadow-darkInset border border-[#5C1D1D]">
                                                                             {sharedCount}
                                                                         </span>
                                                                     </td>
@@ -779,12 +766,12 @@
                                                                             value={pos.status || 'Open'}
                                                                             onChange={(e) => handlePositionStatusChange(pos.id, e.target.value)}
                                                                             className={`px-3 py-1.5 rounded-xl neo-input text-xs font-bold outline-none cursor-pointer ${
-                                                                                pos.status === 'Open' ? 'text-primaryAccent' : pos.status === 'Closed' ? 'text-successMint' : 'text-warningPeach'
+                                                                                pos.status === 'Open' ? 'text-rossoCorsa' : pos.status === 'Closed' ? 'text-successMint' : 'text-warningAmber'
                                                                             }`}
                                                                         >
-                                                                            <option value="Open">🟢 Open</option>
-                                                                            <option value="Closed">🔵 Closed</option>
-                                                                            <option value="Hold">🟡 Hold</option>
+                                                                            <option value="Open" className="bg-[#141414] text-rossoCorsa">🟢 Open</option>
+                                                                            <option value="Closed" className="bg-[#141414] text-successMint">🔵 Closed</option>
+                                                                            <option value="Hold" className="bg-[#141414] text-warningAmber">🟡 Hold</option>
                                                                         </select>
                                                                     </td>
                                                                 </tr>
@@ -803,87 +790,87 @@
                             {activeTab === 'dashboard' && (
                                 <div className="space-y-6">
                                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5">
-                                        <div className="p-5 rounded-[20px] neo-card bg-orange-50 border border-white/60">
-                                            <p className="text-xs font-bold text-secondaryText uppercase tracking-wider">Total Pipeline</p>
-                                            <h3 className="font-heading text-3xl font-extrabold text-primaryText mt-2">{totalDatasetCount}</h3>
-                                            <p className="text-[11px] text-primaryAccent font-medium mt-1">100% Sourced Records</p>
+                                        <div className="p-5 rounded-[20px] neo-card bg-[#201111] border border-[#3A1A1A]">
+                                            <p className="text-xs font-bold text-pearlMuted uppercase tracking-wider">Total Pipeline</p>
+                                            <h3 className="font-heading text-3xl font-extrabold text-pearlWhite mt-2">{totalDatasetCount}</h3>
+                                            <p className="text-[11px] text-rossoCorsa font-medium mt-1">100% Sourced Records</p>
                                         </div>
 
-                                        <div className="p-5 rounded-[20px] neo-card bg-orange-50/50 border border-white/60">
-                                            <p className="text-xs font-bold text-secondaryText uppercase tracking-wider">Active Screening</p>
-                                            <h3 className="font-heading text-3xl font-extrabold text-secondaryAccent mt-2">{profiles.length}</h3>
-                                            <p className="text-[11px] text-secondaryText font-medium mt-1">Candidates in evaluation</p>
+                                        <div className="p-5 rounded-[20px] neo-card bg-[#1A1A1A]">
+                                            <p className="text-xs font-bold text-pearlMuted uppercase tracking-wider">Active Screening</p>
+                                            <h3 className="font-heading text-3xl font-extrabold text-pearlWhite mt-2">{profiles.length}</h3>
+                                            <p className="text-[11px] text-pearlMuted font-medium mt-1">Candidates in evaluation</p>
                                         </div>
 
-                                        <div className="p-5 rounded-[20px] neo-card bg-mint/40 border border-white/60">
-                                            <p className="text-xs font-bold text-secondaryText uppercase tracking-wider">Offers & Joiners</p>
+                                        <div className="p-5 rounded-[20px] neo-card bg-[#112215] border border-[#1E4427]">
+                                            <p className="text-xs font-bold text-pearlMuted uppercase tracking-wider">Offers & Joiners</p>
                                             <h3 className="font-heading text-3xl font-extrabold text-successMint mt-2">{joiners.length}</h3>
                                             <p className="text-[11px] text-successMint font-medium mt-1">Successful onboardings</p>
                                         </div>
 
-                                        <div className="p-5 rounded-[20px] neo-card bg-softPeach/40 border border-white/60">
-                                            <p className="text-xs font-bold text-secondaryText uppercase tracking-wider">Pending Tasks</p>
-                                            <h3 className="font-heading text-3xl font-extrabold text-warningPeach mt-2">{pendingCount}</h3>
-                                            <p className="text-[11px] text-warningPeach font-medium mt-1">Actions requiring focus</p>
+                                        <div className="p-5 rounded-[20px] neo-card bg-[#222011] border border-[#443E1B]">
+                                            <p className="text-xs font-bold text-pearlMuted uppercase tracking-wider">Pending Tasks</p>
+                                            <h3 className="font-heading text-3xl font-extrabold text-warningAmber mt-2">{pendingCount}</h3>
+                                            <p className="text-[11px] text-warningAmber font-medium mt-1">Actions requiring focus</p>
                                         </div>
                                     </div>
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div className="p-6 rounded-[20px] neo-card space-y-4">
-                                            <h3 className="font-heading font-bold text-sm text-primaryText border-b border-darkShadow/20 pb-3 flex justify-between items-center">
+                                            <h3 className="font-heading font-bold text-sm text-pearlWhite border-b border-[#333] pb-3 flex justify-between items-center">
                                                 <span>CV Sourced Channels</span>
-                                                <span className="text-xs text-primaryAccent font-semibold">{getBreakdown('source').length} Channels</span>
+                                                <span className="text-xs text-rossoCorsa font-semibold">{getBreakdown('source').length} Channels</span>
                                             </h3>
                                             <div className="space-y-3 max-h-56 overflow-y-auto pr-1">
                                                 {getBreakdown('source').map(([src, count], idx) => (
                                                     <div key={idx} className="flex justify-between items-center p-3 rounded-xl neo-input">
-                                                        <span className="text-xs font-medium text-primaryText truncate">{src}</span>
-                                                        <span className="px-2.5 py-1 rounded-lg bg-orange-100 text-primaryAccent text-xs font-bold shadow-neoInset">{count}</span>
+                                                        <span className="text-xs font-medium text-pearlWhite truncate">{src}</span>
+                                                        <span className="px-2.5 py-1 rounded-lg bg-[#2A1010] text-rossoCorsa text-xs font-bold shadow-darkInset border border-[#5C1D1D]">{count}</span>
                                                     </div>
                                                 ))}
                                             </div>
                                         </div>
 
                                         <div className="p-6 rounded-[20px] neo-card space-y-4">
-                                            <h3 className="font-heading font-bold text-sm text-primaryText border-b border-darkShadow/20 pb-3 flex justify-between items-center">
+                                            <h3 className="font-heading font-bold text-sm text-pearlWhite border-b border-[#333] pb-3 flex justify-between items-center">
                                                 <span>Location Distribution</span>
-                                                <span className="text-xs text-secondaryAccent font-semibold">{getBreakdown('location').length} Cities</span>
+                                                <span className="text-xs text-pearlMuted font-semibold">{getBreakdown('location').length} Cities</span>
                                             </h3>
                                             <div className="space-y-3 max-h-56 overflow-y-auto pr-1">
                                                 {getBreakdown('location').map(([loc, count], idx) => (
                                                     <div key={idx} className="flex justify-between items-center p-3 rounded-xl neo-input">
-                                                        <span className="text-xs font-medium text-primaryText truncate">{loc}</span>
-                                                        <span className="px-2.5 py-1 rounded-lg bg-orange-50 text-secondaryAccent text-xs font-bold shadow-neoInset">{count}</span>
+                                                        <span className="text-xs font-medium text-pearlWhite truncate">{loc}</span>
+                                                        <span className="px-2.5 py-1 rounded-lg bg-[#222] text-pearlWhite text-xs font-bold shadow-darkInset">{count}</span>
                                                     </div>
                                                 ))}
                                             </div>
                                         </div>
 
                                         <div className="p-6 rounded-[20px] neo-card space-y-4">
-                                            <h3 className="font-heading font-bold text-sm text-primaryText border-b border-darkShadow/20 pb-3 flex justify-between items-center">
+                                            <h3 className="font-heading font-bold text-sm text-pearlWhite border-b border-[#333] pb-3 flex justify-between items-center">
                                                 <span>Role Breakdown</span>
-                                                <span className="text-xs text-primaryAccent font-semibold">{getBreakdown('role').length} Roles</span>
+                                                <span className="text-xs text-rossoCorsa font-semibold">{getBreakdown('role').length} Roles</span>
                                             </h3>
                                             <div className="space-y-3 max-h-56 overflow-y-auto pr-1">
                                                 {getBreakdown('role').map(([role, count], idx) => (
                                                     <div key={idx} className="flex justify-between items-center p-3 rounded-xl neo-input">
-                                                        <span className="text-xs font-medium text-primaryText truncate">{role}</span>
-                                                        <span className="px-2.5 py-1 rounded-lg bg-orange-100 text-primaryAccent text-xs font-bold">{count}</span>
+                                                        <span className="text-xs font-medium text-pearlWhite truncate">{role}</span>
+                                                        <span className="px-2.5 py-1 rounded-lg bg-[#2A1010] text-rossoCorsa text-xs font-bold border border-[#5C1D1D]">{count}</span>
                                                     </div>
                                                 ))}
                                             </div>
                                         </div>
 
                                         <div className="p-6 rounded-[20px] neo-card space-y-4">
-                                            <h3 className="font-heading font-bold text-sm text-primaryText border-b border-darkShadow/20 pb-3 flex justify-between items-center">
+                                            <h3 className="font-heading font-bold text-sm text-pearlWhite border-b border-[#333] pb-3 flex justify-between items-center">
                                                 <span>Department Breakdown</span>
-                                                <span className="text-xs text-warningPeach font-semibold">{getBreakdown('department').length} Departments</span>
+                                                <span className="text-xs text-warningAmber font-semibold">{getBreakdown('department').length} Departments</span>
                                             </h3>
                                             <div className="space-y-3 max-h-56 overflow-y-auto pr-1">
                                                 {getBreakdown('department').map(([dept, count], idx) => (
                                                     <div key={idx} className="flex justify-between items-center p-3 rounded-xl neo-input">
-                                                        <span className="text-xs font-medium text-primaryText truncate">{dept}</span>
-                                                        <span className="px-2.5 py-1 rounded-lg bg-softPeach text-warningPeach text-xs font-bold">{count}</span>
+                                                        <span className="text-xs font-medium text-pearlWhite truncate">{dept}</span>
+                                                        <span className="px-2.5 py-1 rounded-lg bg-[#222011] text-warningAmber text-xs font-bold border border-[#443E1B]">{count}</span>
                                                     </div>
                                                 ))}
                                             </div>
@@ -896,10 +883,10 @@
                             {activeTab === 'profiles' && (
                                 <div className="space-y-6">
                                     <div className="p-6 rounded-[20px] neo-card">
-                                        <div className="flex justify-between items-center border-b border-darkShadow/20 pb-4 mb-4">
+                                        <div className="flex justify-between items-center border-b border-[#333] pb-4 mb-4">
                                             <div>
-                                                <h2 className="font-heading font-bold text-base text-primaryText">Sourced Candidates List</h2>
-                                                <p className="text-xs text-secondaryText mt-0.5">Showing {filteredProfiles.length} active candidate records</p>
+                                                <h2 className="font-heading font-bold text-base text-pearlWhite">Sourced Candidates List</h2>
+                                                <p className="text-xs text-pearlMuted mt-0.5">Showing {filteredProfiles.length} active candidate records</p>
                                             </div>
                                             <button onClick={fetchSheetData} className="px-4 py-2 neo-btn-secondary text-xs font-bold flex items-center gap-2">
                                                 <Icons.Sync /> Sync Webhook
@@ -909,7 +896,7 @@
                                         <div className="overflow-x-auto">
                                             <table className="w-full text-left border-collapse">
                                                 <thead>
-                                                    <tr className="border-b border-darkShadow/20 text-xs text-secondaryText font-bold uppercase tracking-wider">
+                                                    <tr className="border-b border-[#333] text-xs text-pearlMuted font-bold uppercase tracking-wider">
                                                         <th className="p-3.5">Candidate Name</th>
                                                         <th className="p-3.5">Source</th>
                                                         <th className="p-3.5">Role</th>
@@ -921,20 +908,20 @@
                                                 </thead>
                                                 <tbody className="text-xs">
                                                     {filteredProfiles.length === 0 ? (
-                                                        <tr><td colSpan="7" className="text-center p-8 text-secondaryText font-medium">{isLoading ? 'Loading records...' : 'No candidate records match your search.'}</td></tr>
+                                                        <tr><td colSpan="7" className="text-center p-8 text-pearlMuted font-medium">{isLoading ? 'Loading records...' : 'No candidate records match your search.'}</td></tr>
                                                     ) : (
                                                         filteredProfiles.map((p, idx) => (
-                                                            <tr key={idx} className="border-b border-darkShadow/10 hover:bg-white/40 transition">
+                                                            <tr key={idx} className="border-b border-[#222] hover:bg-[#202020] transition">
                                                                 <td className="p-3.5">
-                                                                    <button onClick={() => setSelectedCandidate(p)} className="font-bold text-primaryAccent hover:underline text-left">
+                                                                    <button onClick={() => setSelectedCandidate(p)} className="font-bold text-rossoCorsa hover:underline text-left">
                                                                         {p.candidateName}
                                                                     </button>
                                                                 </td>
-                                                                <td className="p-3.5"><span className="px-2.5 py-1 rounded-md neo-input text-[11px] font-medium text-secondaryText">{p.source}</span></td>
-                                                                <td className="p-3.5 font-medium text-primaryText">{p.role}</td>
-                                                                <td className="p-3.5 text-secondaryText">{p.location}</td>
-                                                                <td className="p-3.5 text-secondaryText">{p.totalExp}</td>
-                                                                <td className="p-3.5 text-secondaryText">{p.noticePeriod}</td>
+                                                                <td className="p-3.5"><span className="px-2.5 py-1 rounded-md neo-input text-[11px] font-medium text-pearlMuted">{p.source}</span></td>
+                                                                <td className="p-3.5 font-medium text-pearlWhite">{p.role}</td>
+                                                                <td className="p-3.5 text-pearlMuted">{p.location}</td>
+                                                                <td className="p-3.5 text-pearlMuted">{p.totalExp}</td>
+                                                                <td className="p-3.5 text-pearlMuted">{p.noticePeriod}</td>
                                                                 <td className="p-3.5 text-center">
                                                                     <button onClick={() => handleMarkJoined(p)} className="px-3.5 py-1.5 neo-btn-primary text-[11px] font-bold">
                                                                         Mark Joined
@@ -954,10 +941,10 @@
                             {activeTab === 'joiners' && (
                                 <div className="space-y-6">
                                     <div className="p-6 rounded-[20px] neo-card">
-                                        <div className="flex justify-between items-center border-b border-darkShadow/20 pb-4 mb-4">
+                                        <div className="flex justify-between items-center border-b border-[#333] pb-4 mb-4">
                                             <div>
-                                                <h2 className="font-heading font-bold text-base text-primaryText">Joiners & Offer Directory ({joiners.length})</h2>
-                                                <p className="text-xs text-secondaryText mt-0.5">Candidates with released offers or confirmed joining</p>
+                                                <h2 className="font-heading font-bold text-base text-pearlWhite">Joiners & Offer Directory ({joiners.length})</h2>
+                                                <p className="text-xs text-pearlMuted mt-0.5">Candidates with released offers or confirmed joining</p>
                                             </div>
                                             <button onClick={fetchSheetData} className="px-4 py-2 neo-btn-secondary text-xs font-bold flex items-center gap-2">
                                                 <Icons.Sync /> Refresh Sheet
@@ -965,28 +952,28 @@
                                         </div>
 
                                         {joiners.length === 0 ? (
-                                            <p className="text-secondaryText text-center py-8 text-xs font-medium">No candidates in offer/joined status yet.</p>
+                                            <p className="text-pearlMuted text-center py-8 text-xs font-medium">No candidates in offer/joined status yet.</p>
                                         ) : (
                                             <div className="space-y-3">
                                                 {joiners.map((j, idx) => (
                                                     <div key={idx} className="p-4 rounded-xl neo-input flex flex-col md:flex-row md:items-center justify-between gap-4">
                                                         <div>
-                                                            <button onClick={() => setSelectedCandidate(j)} className="font-heading font-bold text-primaryText hover:text-primaryAccent text-sm text-left">
+                                                            <button onClick={() => setSelectedCandidate(j)} className="font-heading font-bold text-pearlWhite hover:text-rossoCorsa text-sm text-left">
                                                                 {j.candidateName}
                                                             </button>
-                                                            <p className="text-xs text-secondaryText mt-0.5">{j.role} • {j.location} • Exp: {j.totalExp} • Expected CTC: {j.expectedCtc}</p>
+                                                            <p className="text-xs text-pearlMuted mt-0.5">{j.role} • {j.location} • Exp: {j.totalExp} • Expected CTC: {j.expectedCtc}</p>
                                                         </div>
 
                                                         <div className="flex items-center gap-3">
-                                                            <span className="text-xs font-bold text-secondaryText">Status:</span>
+                                                            <span className="text-xs font-bold text-pearlMuted">Status:</span>
                                                             <select
                                                                 value={j.status || 'Joined'}
                                                                 onChange={(e) => handleStatusChange(j, e.target.value)}
-                                                                className="px-3 py-1.5 rounded-xl neo-input text-xs font-bold text-primaryText outline-none cursor-pointer"
+                                                                className="px-3 py-1.5 rounded-xl neo-input text-xs font-bold text-pearlWhite outline-none cursor-pointer"
                                                             >
-                                                                <option value="Joined">🟢 Joined</option>
-                                                                <option value="Offer Released">🔵 Offer Released</option>
-                                                                <option value="Revoked">🔴 Revoked</option>
+                                                                <option value="Joined" className="bg-[#141414]">🟢 Joined</option>
+                                                                <option value="Offer Released" className="bg-[#141414]">🔵 Offer Released</option>
+                                                                <option value="Revoked" className="bg-[#141414]">🔴 Revoked</option>
                                                             </select>
                                                         </div>
                                                     </div>
@@ -1001,10 +988,10 @@
                             {activeTab === 'todos' && (
                                 <div className="space-y-6">
                                     <div className="p-6 rounded-[20px] neo-card space-y-4">
-                                        <div className="flex flex-col md:flex-row items-center justify-between gap-4 border-b border-darkShadow/20 pb-4">
+                                        <div className="flex flex-col md:flex-row items-center justify-between gap-4 border-b border-[#333] pb-4">
                                             <div>
-                                                <h2 className="font-heading font-bold text-base text-primaryText">Task Creation Console</h2>
-                                                <p className="text-xs text-secondaryText mt-0.5">Add new tasks, reminders, or custom workflow items</p>
+                                                <h2 className="font-heading font-bold text-base text-pearlWhite">Task Creation Console</h2>
+                                                <p className="text-xs text-pearlMuted mt-0.5">Add new tasks, reminders, or custom workflow items</p>
                                             </div>
 
                                             <div className="flex items-center space-x-2 p-1 rounded-2xl neo-input">
@@ -1015,7 +1002,7 @@
                                                         className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${
                                                             taskViewMode === v 
                                                                 ? 'neo-btn-primary' 
-                                                                : 'text-secondaryText hover:text-primaryText'
+                                                                : 'text-pearlMuted hover:text-pearlWhite'
                                                         }`}
                                                     >
                                                         {v}
@@ -1026,42 +1013,42 @@
 
                                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
                                             <div>
-                                                <label className="block text-[11px] font-bold uppercase text-secondaryText mb-1">1. Enter Task</label>
+                                                <label className="block text-[11px] font-bold uppercase text-pearlMuted mb-1">1. Enter Task</label>
                                                 <input 
                                                     type="text" 
                                                     placeholder="Task description..." 
                                                     value={newTaskTitle} 
                                                     onChange={e => setNewTaskTitle(e.target.value)} 
-                                                    className="w-full p-2.5 rounded-xl neo-input text-primaryText text-xs font-medium" 
+                                                    className="w-full p-2.5 rounded-xl neo-input text-pearlWhite text-xs font-medium placeholder-pearlMuted" 
                                                 />
                                             </div>
 
                                             <div>
-                                                <label className="block text-[11px] font-bold uppercase text-secondaryText mb-1">2. Heading</label>
+                                                <label className="block text-[11px] font-bold uppercase text-pearlMuted mb-1">2. Heading</label>
                                                 <select 
                                                     value={newTaskHeading} 
                                                     onChange={e => setNewTaskHeading(e.target.value)} 
-                                                    className="w-full p-2.5 rounded-xl neo-input text-primaryText text-xs font-bold cursor-pointer"
+                                                    className="w-full p-2.5 rounded-xl neo-input text-pearlWhite text-xs font-bold cursor-pointer"
                                                 >
-                                                    <option value="Interview schedule">Interview schedule</option>
-                                                    <option value="Welcome Kit">Welcome Kit</option>
-                                                    <option value="Reminders">Reminders</option>
-                                                    <option value="Custom task">Custom task</option>
+                                                    <option value="Interview schedule" className="bg-[#141414]">Interview schedule</option>
+                                                    <option value="Welcome Kit" className="bg-[#141414]">Welcome Kit</option>
+                                                    <option value="Reminders" className="bg-[#141414]">Reminders</option>
+                                                    <option value="Custom task" className="bg-[#141414]">Custom task</option>
                                                 </select>
                                             </div>
 
                                             <div>
-                                                <label className="block text-[11px] font-bold uppercase text-secondaryText mb-1">3. Calendar Date</label>
+                                                <label className="block text-[11px] font-bold uppercase text-pearlMuted mb-1">3. Calendar Date</label>
                                                 <input 
                                                     type="date" 
                                                     value={newTaskDate} 
                                                     onChange={e => setNewTaskDate(e.target.value)} 
-                                                    className="w-full p-2.5 rounded-xl neo-input text-primaryText text-xs font-medium cursor-pointer" 
+                                                    className="w-full p-2.5 rounded-xl neo-input text-pearlWhite text-xs font-medium cursor-pointer" 
                                                 />
                                             </div>
 
                                             <div>
-                                                <label className="block text-[11px] font-bold uppercase text-secondaryText mb-1 opacity-0">Action</label>
+                                                <label className="block text-[11px] font-bold uppercase text-pearlMuted mb-1 opacity-0">Action</label>
                                                 <button 
                                                     onClick={handleAddTask} 
                                                     className="w-full py-2.5 neo-btn-primary font-bold text-xs"
@@ -1074,7 +1061,7 @@
 
                                     <div className="flex flex-col md:flex-row items-center justify-between gap-4 p-4 rounded-[20px] neo-card">
                                         <div className="flex items-center space-x-2">
-                                            <span className="text-xs font-bold text-secondaryText uppercase mr-2">Filter Status:</span>
+                                            <span className="text-xs font-bold text-pearlMuted uppercase mr-2">Filter Status:</span>
                                             {['All', 'Pending', 'Completed'].map(f => (
                                                 <button
                                                     key={f}
@@ -1082,7 +1069,7 @@
                                                     className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${
                                                         taskFilterStatus === f 
                                                             ? 'neo-btn-active' 
-                                                            : 'text-secondaryText hover:text-primaryText'
+                                                            : 'text-pearlMuted hover:text-pearlWhite'
                                                     }`}
                                                 >
                                                     {f}
@@ -1091,44 +1078,44 @@
                                         </div>
 
                                         <div className="flex items-center space-x-3 text-xs font-bold">
-                                            <span className="px-3 py-1 rounded-xl bg-softPeach text-warningPeach shadow-neoInset">
+                                            <span className="px-3 py-1 rounded-xl bg-[#222011] text-warningAmber border border-[#443E1B] shadow-darkInset">
                                                 ⏳ Pending: {pendingCount}
                                             </span>
-                                            <span className="px-3 py-1 rounded-xl bg-mint text-successMint shadow-neoInset">
+                                            <span className="px-3 py-1 rounded-xl bg-[#112215] text-successMint border border-[#1E4427] shadow-darkInset">
                                                 ✅ Completed: {completedCount}
                                             </span>
-                                            <span className="px-3 py-1 rounded-xl bg-orange-100 text-primaryAccent shadow-neoInset">
+                                            <span className="px-3 py-1 rounded-xl bg-[#2A1010] text-rossoCorsa border border-[#5C1D1D] shadow-darkInset">
                                                 Diff: {completedCount - pendingCount}
                                             </span>
                                         </div>
                                     </div>
 
                                     <div className="p-6 rounded-[20px] neo-card space-y-6">
-                                        <div className="flex justify-between items-center border-b border-darkShadow/20 pb-3">
-                                            <h3 className="font-heading font-bold text-sm text-primaryText">Schedule View ({taskViewMode})</h3>
-                                            <span className="text-xs text-primaryAccent font-medium">Automatic Pending Roll-over Enabled</span>
+                                        <div className="flex justify-between items-center border-b border-[#333] pb-3">
+                                            <h3 className="font-heading font-bold text-sm text-pearlWhite">Schedule View ({taskViewMode})</h3>
+                                            <span className="text-xs text-rossoCorsa font-medium">Automatic Pending Roll-over Enabled</span>
                                         </div>
 
                                         {taskViewMode === 'Daily' && (
                                             <div className="space-y-3">
                                                 {todos.filter(t => t.date === getTodayString() && (taskFilterStatus === 'All' || (taskFilterStatus === 'Completed' ? t.completed : !t.completed))).length === 0 ? (
-                                                    <p className="text-secondaryText text-xs italic py-8 text-center">No tasks scheduled for today.</p>
+                                                    <p className="text-pearlMuted text-xs italic py-8 text-center">No tasks scheduled for today.</p>
                                                 ) : (
                                                     todos.filter(t => t.date === getTodayString() && (taskFilterStatus === 'All' || (taskFilterStatus === 'Completed' ? t.completed : !t.completed))).map(t => (
                                                         <div key={t.id} className="p-4 rounded-xl neo-input flex items-center justify-between">
                                                             <div>
-                                                                <span className="px-2 py-0.5 rounded-md bg-orange-100 text-primaryAccent text-[10px] font-bold">{t.heading}</span>
-                                                                <h4 className={`font-bold text-xs mt-1 ${t.completed ? 'line-through text-secondaryText' : 'text-primaryText'}`}>{t.title}</h4>
-                                                                <p className="text-[10px] text-secondaryText mt-0.5">Date: {t.date}</p>
+                                                                <span className="px-2 py-0.5 rounded-md bg-[#2A1010] text-rossoCorsa text-[10px] font-bold border border-[#5C1D1D]">{t.heading}</span>
+                                                                <h4 className={`font-bold text-xs mt-1 ${t.completed ? 'line-through text-pearlMuted' : 'text-pearlWhite'}`}>{t.title}</h4>
+                                                                <p className="text-[10px] text-pearlMuted mt-0.5">Date: {t.date}</p>
                                                             </div>
                                                             <div className="flex items-center space-x-2">
                                                                 <button 
                                                                     onClick={() => toggleTaskStatus(t.id)} 
-                                                                    className={`px-3 py-1.5 rounded-xl text-xs font-bold ${t.completed ? 'bg-softPeach text-warningPeach' : 'bg-mint text-successMint'}`}
+                                                                    className={`px-3 py-1.5 rounded-xl text-xs font-bold ${t.completed ? 'bg-[#222011] text-warningAmber border border-[#443E1B]' : 'bg-[#112215] text-successMint border border-[#1E4427]'}`}
                                                                 >
                                                                     {t.completed ? 'Mark Pending' : 'Mark Completed'}
                                                                 </button>
-                                                                <button onClick={() => deleteTask(t.id)} className="text-dangerRose text-xs font-bold hover:underline px-2">Delete</button>
+                                                                <button onClick={() => deleteTask(t.id)} className="text-rossoCorsa text-xs font-bold hover:underline px-2">Delete</button>
                                                             </div>
                                                         </div>
                                                     ))
@@ -1142,23 +1129,23 @@
                                                     const dayTasks = todos.filter(t => t.date === dayObj.dateStr && (taskFilterStatus === 'All' || (taskFilterStatus === 'Completed' ? t.completed : !t.completed)));
                                                     return (
                                                         <div key={idx} className="p-3 rounded-xl neo-input space-y-3 min-h-[180px]">
-                                                            <div className="border-b border-darkShadow/20 pb-1 flex flex-col">
-                                                                <h4 className="font-bold text-xs text-primaryText">{dayObj.name}</h4>
-                                                                <span className="text-[9px] text-primaryAccent font-bold">{dayObj.dateStr}</span>
+                                                            <div className="border-b border-[#333] pb-1 flex flex-col">
+                                                                <h4 className="font-bold text-xs text-pearlWhite">{dayObj.name}</h4>
+                                                                <span className="text-[9px] text-rossoCorsa font-bold">{dayObj.dateStr}</span>
                                                             </div>
                                                             <div className="space-y-2">
                                                                 {dayTasks.length === 0 ? (
-                                                                    <p className="text-[10px] text-secondaryText italic text-center py-4">No tasks</p>
+                                                                    <p className="text-[10px] text-pearlMuted italic text-center py-4">No tasks</p>
                                                                 ) : (
                                                                     dayTasks.map(t => (
-                                                                        <div key={t.id} className={`p-2 rounded-lg text-xs ${t.completed ? 'bg-mint/50 text-successMint' : 'bg-white/80 shadow-neoRaised text-primaryText'}`}>
-                                                                            <span className="block text-[9px] font-bold text-primaryAccent uppercase">{t.heading}</span>
+                                                                        <div key={t.id} className={`p-2 rounded-lg text-xs ${t.completed ? 'bg-[#112215]/50 text-successMint border border-[#1E4427]' : 'bg-[#1A1A1A] shadow-darkRaised text-pearlWhite border border-[#333]'}`}>
+                                                                            <span className="block text-[9px] font-bold text-rossoCorsa uppercase">{t.heading}</span>
                                                                             <p className={`font-medium mt-0.5 ${t.completed ? 'line-through opacity-70' : ''}`}>{t.title}</p>
-                                                                            <div className="flex justify-between items-center mt-2 pt-1 border-t border-darkShadow/10 text-[10px]">
-                                                                                <button onClick={() => toggleTaskStatus(t.id)} className="font-bold text-primaryAccent hover:underline">
+                                                                            <div className="flex justify-between items-center mt-2 pt-1 border-t border-[#333] text-[10px]">
+                                                                                <button onClick={() => toggleTaskStatus(t.id)} className="font-bold text-rossoCorsa hover:underline">
                                                                                     {t.completed ? 'Pending' : 'Done'}
                                                                                 </button>
-                                                                                <span className="text-secondaryText">{t.date}</span>
+                                                                                <span className="text-pearlMuted">{t.date}</span>
                                                                             </div>
                                                                         </div>
                                                                     ))
@@ -1173,21 +1160,21 @@
                                         {taskViewMode === 'Monthly' && (
                                             <div>
                                                 {todos.filter(t => (taskFilterStatus === 'All' || (taskFilterStatus === 'Completed' ? t.completed : !t.completed))).length === 0 ? (
-                                                    <p className="text-secondaryText text-xs italic py-8 text-center">No tasks added yet for this month.</p>
+                                                    <p className="text-pearlMuted text-xs italic py-8 text-center">No tasks added yet for this month.</p>
                                                 ) : (
                                                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                                                         {todos.filter(t => (taskFilterStatus === 'All' || (taskFilterStatus === 'Completed' ? t.completed : !t.completed))).map(t => (
                                                             <div key={t.id} className="p-4 rounded-xl neo-input space-y-2">
                                                                 <div className="flex justify-between items-center">
-                                                                    <span className="px-2 py-0.5 rounded bg-orange-100 text-primaryAccent text-[10px] font-bold">{t.heading}</span>
-                                                                    <span className="text-xs font-bold text-primaryAccent">📅 {t.date}</span>
+                                                                    <span className="px-2 py-0.5 rounded bg-[#2A1010] text-rossoCorsa text-[10px] font-bold border border-[#5C1D1D]">{t.heading}</span>
+                                                                    <span className="text-xs font-bold text-rossoCorsa">📅 {t.date}</span>
                                                                 </div>
-                                                                <h4 className={`font-bold text-xs ${t.completed ? 'line-through text-secondaryText' : 'text-primaryText'}`}>{t.title}</h4>
-                                                                <div className="flex justify-between items-center pt-2 border-t border-darkShadow/20">
-                                                                    <button onClick={() => toggleTaskStatus(t.id)} className={`text-[10px] font-bold px-2.5 py-1 rounded-lg ${t.completed ? 'bg-softPeach text-warningPeach' : 'bg-mint text-successMint'}`}>
+                                                                <h4 className={`font-bold text-xs ${t.completed ? 'line-through text-pearlMuted' : 'text-pearlWhite'}`}>{t.title}</h4>
+                                                                <div className="flex justify-between items-center pt-2 border-t border-[#333]">
+                                                                    <button onClick={() => toggleTaskStatus(t.id)} className={`text-[10px] font-bold px-2.5 py-1 rounded-lg ${t.completed ? 'bg-[#222011] text-warningAmber border border-[#443E1B]' : 'bg-[#112215] text-successMint border border-[#1E4427]'}`}>
                                                                         {t.completed ? 'Mark Pending' : 'Mark Completed'}
                                                                     </button>
-                                                                    <button onClick={() => deleteTask(t.id)} className="text-dangerRose text-[10px] font-bold">Delete</button>
+                                                                    <button onClick={() => deleteTask(t.id)} className="text-rossoCorsa text-[10px] font-bold">Delete</button>
                                                                 </div>
                                                             </div>
                                                         ))}
@@ -1205,49 +1192,49 @@
 
                     {/* ADD POSITION MODAL */}
                     {isAddPosOpen && (
-                        <div className="fixed inset-0 bg-slate-900/30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                            <div className="neo-card p-6 rounded-[22px] max-w-lg w-full space-y-4 border border-white/80 bg-neoBg">
-                                <div className="flex justify-between items-center border-b border-darkShadow/20 pb-3">
-                                    <h3 className="font-heading font-extrabold text-lg text-primaryText">Add New Open Position</h3>
-                                    <button onClick={() => setIsAddPosOpen(false)} className="w-8 h-8 rounded-xl neo-btn-secondary flex items-center justify-center font-bold text-secondaryText text-sm">✕</button>
+                        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                            <div className="neo-card p-6 rounded-[22px] max-w-lg w-full space-y-4 border border-[#333] bg-carbonSurface">
+                                <div className="flex justify-between items-center border-b border-[#333] pb-3">
+                                    <h3 className="font-heading font-extrabold text-lg text-pearlWhite">Add New Open Position</h3>
+                                    <button onClick={() => setIsAddPosOpen(false)} className="w-8 h-8 rounded-xl neo-btn-secondary flex items-center justify-center font-bold text-pearlMuted text-sm">✕</button>
                                 </div>
 
                                 <div className="space-y-3 text-xs">
                                     <div>
-                                        <label className="block font-bold text-secondaryText mb-1">Position Name</label>
-                                        <input type="text" placeholder="e.g. Sales Manager" value={newPosTitle} onChange={e => setNewPosTitle(e.target.value)} className="w-full p-2.5 rounded-xl neo-input text-primaryText font-medium" />
+                                        <label className="block font-bold text-pearlMuted mb-1">Position Name</label>
+                                        <input type="text" placeholder="e.g. Sales Manager" value={newPosTitle} onChange={e => setNewPosTitle(e.target.value)} className="w-full p-2.5 rounded-xl neo-input text-pearlWhite font-medium placeholder-pearlMuted" />
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-3">
                                         <div>
-                                            <label className="block font-bold text-secondaryText mb-1">Exp Required</label>
-                                            <input type="text" placeholder="e.g. 3-5 Years" value={newPosExp} onChange={e => setNewPosExp(e.target.value)} className="w-full p-2.5 rounded-xl neo-input text-primaryText font-medium" />
+                                            <label className="block font-bold text-pearlMuted mb-1">Exp Required</label>
+                                            <input type="text" placeholder="e.g. 3-5 Years" value={newPosExp} onChange={e => setNewPosExp(e.target.value)} className="w-full p-2.5 rounded-xl neo-input text-pearlWhite font-medium placeholder-pearlMuted" />
                                         </div>
                                         <div>
-                                            <label className="block font-bold text-secondaryText mb-1">Max Salary</label>
-                                            <input type="text" placeholder="e.g. 12 LPA" value={newPosSalary} onChange={e => setNewPosSalary(e.target.value)} className="w-full p-2.5 rounded-xl neo-input text-primaryText font-medium" />
+                                            <label className="block font-bold text-pearlMuted mb-1">Max Salary</label>
+                                            <input type="text" placeholder="e.g. 12 LPA" value={newPosSalary} onChange={e => setNewPosSalary(e.target.value)} className="w-full p-2.5 rounded-xl neo-input text-pearlWhite font-medium placeholder-pearlMuted" />
                                         </div>
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-3">
                                         <div>
-                                            <label className="block font-bold text-secondaryText mb-1">Department</label>
-                                            <input type="text" placeholder="e.g. Sales" value={newPosDept} onChange={e => setNewPosDept(e.target.value)} className="w-full p-2.5 rounded-xl neo-input text-primaryText font-medium" />
+                                            <label className="block font-bold text-pearlMuted mb-1">Department</label>
+                                            <input type="text" placeholder="e.g. Sales" value={newPosDept} onChange={e => setNewPosDept(e.target.value)} className="w-full p-2.5 rounded-xl neo-input text-pearlWhite font-medium placeholder-pearlMuted" />
                                         </div>
                                         <div>
-                                            <label className="block font-bold text-secondaryText mb-1">Business Unit</label>
-                                            <input type="text" placeholder="e.g. AWPs" value={newPosBU} onChange={e => setNewPosBU(e.target.value)} className="w-full p-2.5 rounded-xl neo-input text-primaryText font-medium" />
+                                            <label className="block font-bold text-pearlMuted mb-1">Business Unit</label>
+                                            <input type="text" placeholder="e.g. AWPs" value={newPosBU} onChange={e => setNewPosBU(e.target.value)} className="w-full p-2.5 rounded-xl neo-input text-pearlWhite font-medium placeholder-pearlMuted" />
                                         </div>
                                     </div>
 
                                     <div>
-                                        <label className="block font-bold text-secondaryText mb-1">Reporting To</label>
-                                        <input type="text" placeholder="e.g. VP Sales" value={newPosReporting} onChange={e => setNewPosReporting(e.target.value)} className="w-full p-2.5 rounded-xl neo-input text-primaryText font-medium" />
+                                        <label className="block font-bold text-pearlMuted mb-1">Reporting To</label>
+                                        <input type="text" placeholder="e.g. VP Sales" value={newPosReporting} onChange={e => setNewPosReporting(e.target.value)} className="w-full p-2.5 rounded-xl neo-input text-pearlWhite font-medium placeholder-pearlMuted" />
                                     </div>
                                 </div>
 
-                                <div className="flex justify-end space-x-3 pt-3 border-t border-darkShadow/20">
-                                    <button onClick={() => setIsAddPosOpen(false)} className="px-4 py-2 neo-btn-secondary text-xs font-bold text-secondaryText">Cancel</button>
+                                <div className="flex justify-end space-x-3 pt-3 border-t border-[#333]">
+                                    <button onClick={() => setIsAddPosOpen(false)} className="px-4 py-2 neo-btn-secondary text-xs font-bold text-pearlMuted">Cancel</button>
                                     <button onClick={handleAddPosition} className="px-5 py-2 neo-btn-primary text-xs font-bold">Save Position</button>
                                 </div>
                             </div>
@@ -1256,31 +1243,31 @@
 
                     {/* CANDIDATE DETAIL MODAL */}
                     {selectedCandidate && (
-                        <div className="fixed inset-0 bg-slate-900/30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                            <div className="neo-card p-6 rounded-[22px] max-w-2xl w-full max-h-[90vh] overflow-y-auto space-y-5 border border-white/80 bg-neoBg">
-                                <div className="flex justify-between items-start border-b border-darkShadow/20 pb-3">
+                        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                            <div className="neo-card p-6 rounded-[22px] max-w-2xl w-full max-h-[90vh] overflow-y-auto space-y-5 border border-[#333] bg-carbonSurface">
+                                <div className="flex justify-between items-start border-b border-[#333] pb-3">
                                     <div>
-                                        <h3 className="font-heading font-extrabold text-2xl text-primaryText">{selectedCandidate.candidateName}</h3>
-                                        <p className="text-xs font-bold text-primaryAccent">{selectedCandidate.role} • {selectedCandidate.department}</p>
+                                        <h3 className="font-heading font-extrabold text-2xl text-pearlWhite">{selectedCandidate.candidateName}</h3>
+                                        <p className="text-xs font-bold text-rossoCorsa">{selectedCandidate.role} • {selectedCandidate.department}</p>
                                     </div>
-                                    <button onClick={() => setSelectedCandidate(null)} className="w-8 h-8 rounded-xl neo-btn-secondary flex items-center justify-center font-bold text-secondaryText text-sm">✕</button>
+                                    <button onClick={() => setSelectedCandidate(null)} className="w-8 h-8 rounded-xl neo-btn-secondary flex items-center justify-center font-bold text-pearlMuted text-sm">✕</button>
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-                                    <div className="p-3 rounded-xl neo-input"><p className="text-[10px] text-secondaryText font-bold uppercase">CV Source</p><p className="font-bold text-primaryText mt-0.5">{selectedCandidate.source}</p></div>
-                                    <div className="p-3 rounded-xl neo-input"><p className="text-[10px] text-secondaryText font-bold uppercase">Contact Number</p><p className="font-bold text-primaryText mt-0.5">{selectedCandidate.contactNumber}</p></div>
-                                    <div className="p-3 rounded-xl neo-input"><p className="text-[10px] text-secondaryText font-bold uppercase">Email Address</p><p className="font-bold text-primaryText mt-0.5 truncate">{selectedCandidate.emailId}</p></div>
-                                    <div className="p-3 rounded-xl neo-input"><p className="text-[10px] text-secondaryText font-bold uppercase">Current Location</p><p className="font-bold text-primaryText mt-0.5">{selectedCandidate.location}</p></div>
-                                    <div className="p-3 rounded-xl neo-input"><p className="text-[10px] text-secondaryText font-bold uppercase">Current Company</p><p className="font-bold text-primaryText mt-0.5">{selectedCandidate.currentCompany}</p></div>
-                                    <div className="p-3 rounded-xl neo-input"><p className="text-[10px] text-secondaryText font-bold uppercase">Designation</p><p className="font-bold text-primaryText mt-0.5">{selectedCandidate.designation}</p></div>
-                                    <div className="p-3 rounded-xl neo-input"><p className="text-[10px] text-secondaryText font-bold uppercase">Overall Experience</p><p className="font-bold text-primaryText mt-0.5">{selectedCandidate.totalExp}</p></div>
-                                    <div className="p-3 rounded-xl neo-input"><p className="text-[10px] text-secondaryText font-bold uppercase">Notice Period</p><p className="font-bold text-primaryText mt-0.5">{selectedCandidate.noticePeriod}</p></div>
-                                    <div className="p-3 rounded-xl neo-input"><p className="text-[10px] text-secondaryText font-bold uppercase">Current CTC</p><p className="font-bold text-primaryText mt-0.5">{selectedCandidate.currentCtc}</p></div>
-                                    <div className="p-3 rounded-xl neo-input"><p className="text-[10px] text-secondaryText font-bold uppercase">Expected CTC</p><p className="font-bold text-primaryText mt-0.5">{selectedCandidate.expectedCtc}</p></div>
+                                    <div className="p-3 rounded-xl neo-input"><p className="text-[10px] text-pearlMuted font-bold uppercase">CV Source</p><p className="font-bold text-pearlWhite mt-0.5">{selectedCandidate.source}</p></div>
+                                    <div className="p-3 rounded-xl neo-input"><p className="text-[10px] text-pearlMuted font-bold uppercase">Contact Number</p><p className="font-bold text-pearlWhite mt-0.5">{selectedCandidate.contactNumber}</p></div>
+                                    <div className="p-3 rounded-xl neo-input"><p className="text-[10px] text-pearlMuted font-bold uppercase">Email Address</p><p className="font-bold text-pearlWhite mt-0.5 truncate">{selectedCandidate.emailId}</p></div>
+                                    <div className="p-3 rounded-xl neo-input"><p className="text-[10px] text-pearlMuted font-bold uppercase">Current Location</p><p className="font-bold text-pearlWhite mt-0.5">{selectedCandidate.location}</p></div>
+                                    <div className="p-3 rounded-xl neo-input"><p className="text-[10px] text-pearlMuted font-bold uppercase">Current Company</p><p className="font-bold text-pearlWhite mt-0.5">{selectedCandidate.currentCompany}</p></div>
+                                    <div className="p-3 rounded-xl neo-input"><p className="text-[10px] text-pearlMuted font-bold uppercase">Designation</p><p className="font-bold text-pearlWhite mt-0.5">{selectedCandidate.designation}</p></div>
+                                    <div className="p-3 rounded-xl neo-input"><p className="text-[10px] text-pearlMuted font-bold uppercase">Overall Experience</p><p className="font-bold text-pearlWhite mt-0.5">{selectedCandidate.totalExp}</p></div>
+                                    <div className="p-3 rounded-xl neo-input"><p className="text-[10px] text-pearlMuted font-bold uppercase">Notice Period</p><p className="font-bold text-pearlWhite mt-0.5">{selectedCandidate.noticePeriod}</p></div>
+                                    <div className="p-3 rounded-xl neo-input"><p className="text-[10px] text-pearlMuted font-bold uppercase">Current CTC</p><p className="font-bold text-pearlWhite mt-0.5">{selectedCandidate.currentCtc}</p></div>
+                                    <div className="p-3 rounded-xl neo-input"><p className="text-[10px] text-pearlMuted font-bold uppercase">Expected CTC</p><p className="font-bold text-pearlWhite mt-0.5">{selectedCandidate.expectedCtc}</p></div>
                                 </div>
 
-                                <div className="flex justify-between items-center pt-3 border-t border-darkShadow/20">
-                                    <button onClick={() => setSelectedCandidate(null)} className="px-5 py-2 neo-btn-secondary text-xs font-bold text-secondaryText">Close</button>
+                                <div className="flex justify-between items-center pt-3 border-t border-[#333]">
+                                    <button onClick={() => setSelectedCandidate(null)} className="px-5 py-2 neo-btn-secondary text-xs font-bold text-pearlMuted">Close</button>
                                 </div>
                             </div>
                         </div>
