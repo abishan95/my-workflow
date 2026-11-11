@@ -136,9 +136,6 @@
             const [searchTerm, setSearchTerm] = React.useState('');
             const [selectedCandidate, setSelectedCandidate] = React.useState(null);
 
-            const [taskViewMode, setTaskViewMode] = React.useState('Weekly');
-            const [taskFilterStatus, setTaskFilterStatus] = React.useState('All');
-
             const getTodayString = () => new Date().toISOString().split('T')[0];
             const [newTaskTitle, setNewTaskTitle] = React.useState('');
             const [newTaskHeading, setNewTaskHeading] = React.useState('Interview schedule');
@@ -164,7 +161,6 @@
                 setDeferredPrompt(null);
             };
 
-            // Dynamic Formatted Date
             const formattedCurrentDate = React.useMemo(() => {
                 const options = { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' };
                 return new Date().toLocaleDateString('en-US', options);
@@ -252,7 +248,6 @@
 
             React.useEffect(() => { fetchSheetData(); }, [fetchSheetData]);
 
-            // Auto-format salary with "LPA"
             const formatSalaryLPA = (val) => {
                 if (!val) return 'Negotiable';
                 const trimmed = val.toString().trim();
@@ -362,66 +357,6 @@
                 return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
             };
 
-            const getProfilesSharedCount = (posTitle, posCreatedDate) => {
-                const allCandidates = [...profiles, ...joiners];
-                return allCandidates.filter(c => {
-                    const matchesRole = c.role.toLowerCase().includes(posTitle.toLowerCase()) || posTitle.toLowerCase().includes(c.role.toLowerCase());
-                    if (!matchesRole) return false;
-                    if (c.screenDate && c.screenDate !== 'N/A') return c.screenDate >= posCreatedDate;
-                    return true;
-                }).length;
-            };
-
-            const handleStatusChange = (candidate, newStatus) => {
-                if (window.confirm(`Change status of ${candidate.candidateName} to "${newStatus}"?`)) {
-                    const updated = { ...candidate, status: newStatus };
-                    setJoiners(prev => prev.map(item => item.candidateName === candidate.candidateName ? updated : item));
-                    fetch(WEBHOOK_URL, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(updated)
-                    });
-                }
-            };
-
-            const handleMarkJoined = (candidate) => {
-                if (window.confirm(`Mark ${candidate.candidateName} as JOINED?`)) {
-                    const updated = { ...candidate, status: 'Joined' };
-                    setProfiles(prev => prev.filter(p => p.candidateName !== candidate.candidateName));
-                    setJoiners(prev => [updated, ...prev]);
-                    fetch(WEBHOOK_URL, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(updated)
-                    });
-                }
-            };
-
-            const handleAddTask = () => {
-                if (!newTaskTitle.trim()) return;
-                const newTask = {
-                    type: 'task',
-                    id: Date.now().toString(),
-                    title: newTaskTitle,
-                    heading: newTaskHeading,
-                    date: newTaskDate || getTodayString(),
-                    completed: false
-                };
-
-                setTodos(prev => [...prev, newTask]);
-                setNewTaskTitle('');
-                setNewTaskDate(getTodayString());
-
-                fetch(WEBHOOK_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(newTask)
-                }).catch(err => console.error("Error saving task:", err));
-            };
-
             const toggleTaskStatus = (id) => {
                 let updatedTask = null;
                 setTodos(prev => prev.map(t => {
@@ -442,25 +377,9 @@
                 }
             };
 
-            const deleteTask = (id) => {
-                setTodos(prev => prev.filter(t => t.id !== id));
-                fetch(WEBHOOK_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ type: 'task', action: 'delete_task', id: id })
-                }).catch(err => console.error("Error deleting task:", err));
-            };
-
-            const filteredProfiles = profiles.filter(p => {
-                const term = searchTerm.toLowerCase();
-                return (
-                    p.candidateName.toLowerCase().includes(term) ||
-                    p.role.toLowerCase().includes(term) ||
-                    p.source.toLowerCase().includes(term) ||
-                    p.location.toLowerCase().includes(term)
-                );
-            });
+            const totalPipelineCount = profiles.length + joiners.length;
+            const joinerRate = totalPipelineCount > 0 ? Math.round((joiners.length / totalPipelineCount) * 100) : 0;
+            const activePendingTasks = todos.filter(t => !t.completed);
 
             const navItems = [
                 { id: 'dashboard', label: 'Home', icon: Icons.Dashboard },
@@ -530,7 +449,7 @@
                     {/* Main Workspace Layout */}
                     <main className="flex-1 flex flex-col h-screen overflow-hidden p-3 md:p-4 md:pl-0">
                         
-                        {/* Top Global Bar */}
+                        {/* Header */}
                         <header className="p-3.5 rounded-2xl app-card mb-3 flex flex-col md:flex-row md:items-center justify-between gap-3">
                             <div className="flex items-center justify-between w-full md:w-auto">
                                 <div className="flex items-center space-x-2.5">
@@ -560,37 +479,36 @@
                                     </button>
                                 </div>
                             </div>
-
-                            {activeTab === 'profiles' && (
-                                <div className="w-full md:w-72 relative">
-                                    <span className="absolute left-3 top-2.5 text-navyMuted"><Icons.Search /></span>
-                                    <input
-                                        type="text"
-                                        placeholder="Search candidate..."
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
-                                        className="w-full pl-9 pr-3 py-2 rounded-xl app-input text-xs font-medium"
-                                    />
-                                </div>
-                            )}
-
-                            {activeTab === 'positions' && (
-                                <button onClick={() => { resetPosModal(); setIsAddPosOpen(true); }} className="px-3.5 py-2 app-btn-primary text-xs font-bold flex items-center gap-1.5 self-start md:self-auto">
-                                    ➕ Add Position
-                                </button>
-                            )}
                         </header>
 
-                        {/* Scrollable Page Body */}
+                        {/* Scrollable Workspace Body */}
                         <div className="flex-1 overflow-y-auto pr-0.5 space-y-4 pb-12 md:pb-6">
 
-                            {/* DASHBOARD PAGE */}
+                            {/* DASHBOARD PAGE (FEATURE RICH UI) */}
                             {activeTab === 'dashboard' && (
                                 <div className="space-y-4">
+                                    
+                                    {/* 1. Quick Action Hub */}
+                                    <div className="p-3.5 rounded-2xl app-card flex items-center justify-between gap-2 bg-gradient-to-r from-orange-50/50 to-white">
+                                        <div className="hidden sm:block">
+                                            <h4 className="font-heading font-extrabold text-xs text-midnightNavy">Quick Actions</h4>
+                                            <p className="text-[10px] text-navyMuted">Create roles or tasks in 1 click</p>
+                                        </div>
+                                        <div className="flex items-center gap-2 w-full sm:w-auto">
+                                            <button onClick={() => { resetPosModal(); setIsAddPosOpen(true); }} className="flex-1 sm:flex-initial px-3 py-2 app-btn-primary text-xs font-bold flex items-center justify-center gap-1">
+                                                ➕ New Position
+                                            </button>
+                                            <button onClick={() => setActiveTab('todos')} className="flex-1 sm:flex-initial px-3 py-2 app-btn-secondary text-xs font-bold flex items-center justify-center gap-1">
+                                                ⚡ Add Task
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* 2. Primary 4-Metric Grid */}
                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 md:gap-4">
                                         <div className="p-3.5 rounded-2xl app-card bg-gradient-to-br from-orange-50/80 to-white border-orange-100">
                                             <p className="text-[10px] font-bold text-navyMuted uppercase tracking-wider">Total Pipeline</p>
-                                            <h3 className="font-heading text-xl md:text-3xl font-extrabold text-midnightNavy mt-1">{profiles.length + joiners.length}</h3>
+                                            <h3 className="font-heading text-xl md:text-3xl font-extrabold text-midnightNavy mt-1">{totalPipelineCount}</h3>
                                             <p className="text-[9px] text-solarOrange font-medium mt-0.5">Sourced Records</p>
                                         </div>
 
@@ -608,150 +526,82 @@
 
                                         <div className="p-3.5 rounded-2xl app-card bg-amber-50/60 border-amber-100">
                                             <p className="text-[10px] font-bold text-navyMuted uppercase tracking-wider">Pending Tasks</p>
-                                            <h3 className="font-heading text-xl md:text-3xl font-extrabold text-warningAmber mt-1">{todos.filter(t => !t.completed).length}</h3>
+                                            <h3 className="font-heading text-xl md:text-3xl font-extrabold text-warningAmber mt-1">{activePendingTasks.length}</h3>
                                             <p className="text-[9px] text-warningAmber font-medium mt-0.5">Requires focus</p>
                                         </div>
                                     </div>
-                                </div>
-                            )}
 
-                            {/* OPEN POSITIONS PAGE */}
-                            {activeTab === 'positions' && (
-                                <div className="space-y-4">
-                                    <div className="p-4 rounded-2xl app-card space-y-3">
-                                        <h2 className="font-heading font-bold text-sm text-midnightNavy">Current Open Positions ({positions.length})</h2>
-                                        
-                                        <div className="overflow-x-auto">
-                                            <table className="w-full text-left border-collapse">
-                                                <thead>
-                                                    <tr className="border-b border-slate-200 text-[11px] text-navyMuted font-bold uppercase tracking-wider">
-                                                        <th className="p-3">Position Name</th>
-                                                        <th className="p-3">Dept / BU</th>
-                                                        <th className="p-3">Max Salary (LPA)</th>
-                                                        <th className="p-3 text-center">Ageing</th>
-                                                        <th className="p-3 text-center">Status</th>
-                                                        <th className="p-3 text-center">Action</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody className="text-xs">
-                                                    {positions.length === 0 ? (
-                                                        <tr><td colSpan="6" className="text-center p-6 text-navyMuted font-medium">No open positions added yet.</td></tr>
-                                                    ) : (
-                                                        positions.map((pos, idx) => (
-                                                            <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50">
-                                                                <td className="p-3 font-bold text-midnightNavy">{pos.title}</td>
-                                                                <td className="p-3 text-navyMuted">{pos.department} • <span className="font-semibold text-midnightNavy">{pos.businessUnit}</span></td>
-                                                                <td className="p-3 text-solarOrange font-bold">{pos.maxSalary}</td>
-                                                                <td className="p-3 text-center font-bold text-warningAmber">{calculateAgeing(pos.createdDate)} d</td>
-                                                                <td className="p-3 text-center">
-                                                                    <select
-                                                                        value={pos.status || 'Open'}
-                                                                        onChange={(e) => handlePositionStatusChange(pos.id, e.target.value)}
-                                                                        className="px-2 py-1 rounded-lg app-input text-[11px] font-bold outline-none cursor-pointer"
-                                                                    >
-                                                                        <option value="Open">🟢 Open</option>
-                                                                        <option value="Closed">🔵 Closed</option>
-                                                                        <option value="Hold">🟡 Hold</option>
-                                                                    </select>
-                                                                </td>
-                                                                <td className="p-3 text-center">
-                                                                    <button onClick={() => openEditPosition(pos)} className="px-2.5 py-1 app-btn-secondary text-[11px] font-bold hover:text-solarOrange">✏️ Edit</button>
-                                                                </td>
-                                                            </tr>
-                                                        ))
-                                                    )}
-                                                </tbody>
-                                            </table>
+                                    {/* 3. Conversion Funnel Progress Bar */}
+                                    <div className="p-4 rounded-2xl app-card space-y-2">
+                                        <div className="flex justify-between items-center text-xs font-bold">
+                                            <span className="text-midnightNavy">Candidate Joining Conversion Rate</span>
+                                            <span className="text-solarOrange">{joinerRate}% Conversion</span>
+                                        </div>
+                                        <div className="w-full h-2.5 rounded-full app-input overflow-hidden flex">
+                                            <div className="h-full bg-gradient-to-r from-solarOrange to-emerald-500 transition-all duration-500" style={{ width: `${Math.max(joinerRate, 4)}%` }}></div>
                                         </div>
                                     </div>
-                                </div>
-                            )}
 
-                            {/* SOURCED DIRECTORY PAGE */}
-                            {activeTab === 'profiles' && (
-                                <div className="p-4 rounded-2xl app-card space-y-3">
-                                    <h2 className="font-heading font-bold text-sm text-midnightNavy">Sourced Candidates List ({filteredProfiles.length})</h2>
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full text-left border-collapse">
-                                            <thead>
-                                                <tr className="border-b border-slate-200 text-[11px] text-navyMuted font-bold uppercase tracking-wider">
-                                                    <th className="p-3">Candidate Name</th>
-                                                    <th className="p-3">Role</th>
-                                                    <th className="p-3">Location</th>
-                                                    <th className="p-3 text-center">Action</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="text-xs">
-                                                {filteredProfiles.length === 0 ? (
-                                                    <tr><td colSpan="4" className="text-center p-6 text-navyMuted font-medium">No candidate records.</td></tr>
+                                    {/* 4. Priority Dashboard Split (Activity + Priority Tasks) */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        
+                                        {/* Recent Candidates Activity Feed */}
+                                        <div className="p-4 rounded-2xl app-card space-y-3">
+                                            <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+                                                <h3 className="font-heading font-bold text-xs text-midnightNavy">Recent Candidates Sourced</h3>
+                                                <button onClick={() => setActiveTab('profiles')} className="text-[11px] text-solarOrange font-bold hover:underline">View All</button>
+                                            </div>
+                                            <div className="space-y-2">
+                                                {profiles.length === 0 ? (
+                                                    <p className="text-xs text-navyMuted italic text-center py-4">No recent candidates screened.</p>
                                                 ) : (
-                                                    filteredProfiles.map((p, idx) => (
-                                                        <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50">
-                                                            <td className="p-3">
-                                                                <button onClick={() => setSelectedCandidate(p)} className="font-bold text-solarOrange hover:underline text-left">
-                                                                    {p.candidateName}
-                                                                </button>
-                                                            </td>
-                                                            <td className="p-3 font-medium text-midnightNavy">{p.role}</td>
-                                                            <td className="p-3 text-navyMuted">{p.location}</td>
-                                                            <td className="p-3 text-center">
-                                                                <button onClick={() => handleMarkJoined(p)} className="px-3 py-1 app-btn-primary text-[11px] font-bold">Mark Joined</button>
-                                                            </td>
-                                                        </tr>
+                                                    profiles.slice(0, 4).map((p, i) => (
+                                                        <div key={i} className="p-2.5 rounded-xl app-input flex items-center justify-between text-xs">
+                                                            <div>
+                                                                <button onClick={() => setSelectedCandidate(p)} className="font-bold text-midnightNavy hover:text-solarOrange text-left">{p.candidateName}</button>
+                                                                <p className="text-[10px] text-navyMuted">{p.role} • {p.location}</p>
+                                                            </div>
+                                                            <span className="px-2 py-0.5 rounded-md bg-orange-100 text-solarOrange text-[10px] font-bold">{p.source}</span>
+                                                        </div>
                                                     ))
                                                 )}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* JOINERS DIRECTORY PAGE */}
-                            {activeTab === 'joiners' && (
-                                <div className="p-4 rounded-2xl app-card space-y-3">
-                                    <h2 className="font-heading font-bold text-sm text-midnightNavy">Joiners Directory ({joiners.length})</h2>
-                                    <div className="space-y-2">
-                                        {joiners.map((j, idx) => (
-                                            <div key={idx} className="p-3 rounded-xl app-input flex justify-between items-center text-xs">
-                                                <div>
-                                                    <button onClick={() => setSelectedCandidate(j)} className="font-bold text-midnightNavy hover:text-solarOrange text-left">{j.candidateName}</button>
-                                                    <p className="text-[11px] text-navyMuted">{j.role} • {j.location}</p>
-                                                </div>
-                                                <select value={j.status || 'Joined'} onChange={(e) => handleStatusChange(j, e.target.value)} className="px-2 py-1 rounded-lg app-input text-[11px] font-bold">
-                                                    <option value="Joined">🟢 Joined</option>
-                                                    <option value="Offer Released">🔵 Offer Released</option>
-                                                    <option value="Revoked">🔴 Revoked</option>
-                                                </select>
                                             </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* TASK MANAGEMENT PAGE */}
-                            {activeTab === 'todos' && (
-                                <div className="space-y-4">
-                                    <div className="p-4 rounded-2xl app-card space-y-3">
-                                        <h2 className="font-heading font-bold text-sm text-midnightNavy">Task Creation Console</h2>
-                                        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-center text-xs">
-                                            <input type="text" placeholder="Task description..." value={newTaskTitle} onChange={e => setNewTaskTitle(e.target.value)} className="p-2.5 rounded-xl app-input font-medium" />
-                                            <select value={newTaskHeading} onChange={e => setNewTaskHeading(e.target.value)} className="p-2.5 rounded-xl app-input font-bold cursor-pointer">
-                                                <option value="Interview schedule">Interview schedule</option>
-                                                <option value="Welcome Kit">Welcome Kit</option>
-                                                <option value="Reminders">Reminders</option>
-                                                <option value="Custom task">Custom task</option>
-                                            </select>
-                                            <input type="date" value={newTaskDate} onChange={e => setNewTaskDate(e.target.value)} className="p-2.5 rounded-xl app-input font-medium cursor-pointer" />
-                                            <button onClick={handleAddTask} className="py-2.5 app-btn-primary font-bold">💾 Save Task</button>
                                         </div>
+
+                                        {/* Today's Priority Tasks */}
+                                        <div className="p-4 rounded-2xl app-card space-y-3">
+                                            <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+                                                <h3 className="font-heading font-bold text-xs text-midnightNavy">Today's Focus Tasks</h3>
+                                                <button onClick={() => setActiveTab('todos')} className="text-[11px] text-solarOrange font-bold hover:underline">View Console</button>
+                                            </div>
+                                            <div className="space-y-2">
+                                                {activePendingTasks.length === 0 ? (
+                                                    <p className="text-xs text-navyMuted italic text-center py-4">All pending tasks completed!</p>
+                                                ) : (
+                                                    activePendingTasks.slice(0, 4).map((t) => (
+                                                        <div key={t.id} className="p-2.5 rounded-xl app-input flex items-center justify-between text-xs">
+                                                            <div>
+                                                                <span className="block text-[9px] font-bold text-solarOrange uppercase">{t.heading}</span>
+                                                                <p className="font-medium text-midnightNavy">{t.title}</p>
+                                                            </div>
+                                                            <button onClick={() => toggleTaskStatus(t.id)} className="px-2.5 py-1 rounded-lg bg-emerald-50 text-successMint font-bold text-[10px] border border-emerald-200">
+                                                                Done
+                                                            </button>
+                                                        </div>
+                                                    ))
+                                                )}
+                                            </div>
+                                        </div>
+
                                     </div>
+
                                 </div>
                             )}
 
                         </div>
                     </main>
 
-                    {/* Mobile Native Bottom Bar */}
+                    {/* Mobile Bottom Bar */}
                     <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 flex items-center justify-around py-2 px-1 md:hidden">
                         {navItems.map(tab => {
                             const IconComp = tab.icon;
