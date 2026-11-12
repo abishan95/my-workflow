@@ -211,13 +211,18 @@
                         setJoiners(formatted.filter(p => p.status === 'Joined' || p.status === 'Offer Released' || p.status === 'Revoked'));
 
                         if (rawTasks.length > 0) {
-                            setTodos(rawTasks.map(t => ({
-                                id: t.id ? t.id.toString() : Date.now().toString(),
-                                title: t.title || '',
-                                heading: t.heading && t.heading.trim() !== '' ? t.heading : 'Interview schedule',
-                                date: t.date || getTodayString(),
-                                completed: t.completed === true || t.completed === 'TRUE' || t.completed === 'true'
-                            })));
+                            // Properly map fields and filter out completely empty blank tasks
+                            const mappedTasks = rawTasks
+                                .map(t => ({
+                                    id: t.id ? t.id.toString() : (Math.random() * 100000).toString(),
+                                    title: t.title || t.Task || t.TASK || '',
+                                    heading: t.heading && t.heading.trim() !== '' ? t.heading : 'Interview schedule',
+                                    date: t.date || getTodayString(),
+                                    completed: t.completed === true || t.completed === 'TRUE' || t.completed === 'true'
+                                }))
+                                .filter(t => t.title.trim() !== '');
+
+                            setTodos(mappedTasks);
                         }
 
                         if (rawPositions.length > 0) {
@@ -382,7 +387,6 @@
                 }
             };
 
-            // Fixed Task Handler with Double-Click Protection & Explicit Heading
             const handleAddTask = () => {
                 if (!newTaskTitle.trim() || isSavingTask) return;
                 setIsSavingTask(true);
