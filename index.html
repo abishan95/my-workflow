@@ -139,6 +139,7 @@
             const [newTaskTitle, setNewTaskTitle] = React.useState('');
             const [newTaskHeading, setNewTaskHeading] = React.useState('Interview schedule');
             const [newTaskDate, setNewTaskDate] = React.useState(getTodayString());
+            const [isSavingTask, setIsSavingTask] = React.useState(false);
 
             const [deferredPrompt, setDeferredPrompt] = React.useState(null);
             const [isInstallable, setIsInstallable] = React.useState(false);
@@ -213,7 +214,7 @@
                             setTodos(rawTasks.map(t => ({
                                 id: t.id ? t.id.toString() : Date.now().toString(),
                                 title: t.title || '',
-                                heading: t.heading || 'Custom task',
+                                heading: t.heading && t.heading.trim() !== '' ? t.heading : 'Interview schedule',
                                 date: t.date || getTodayString(),
                                 completed: t.completed === true || t.completed === 'TRUE' || t.completed === 'true'
                             })));
@@ -381,13 +382,18 @@
                 }
             };
 
+            // Fixed Task Handler with Double-Click Protection & Explicit Heading
             const handleAddTask = () => {
-                if (!newTaskTitle.trim()) return;
+                if (!newTaskTitle.trim() || isSavingTask) return;
+                setIsSavingTask(true);
+
+                const selectedHeading = newTaskHeading && newTaskHeading.trim() !== '' ? newTaskHeading : 'Interview schedule';
+
                 const newTask = {
                     type: 'task',
                     id: Date.now().toString(),
-                    title: newTaskTitle,
-                    heading: newTaskHeading,
+                    title: newTaskTitle.trim(),
+                    heading: selectedHeading,
                     date: newTaskDate || getTodayString(),
                     completed: false
                 };
@@ -401,7 +407,11 @@
                     mode: 'no-cors',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(newTask)
-                }).catch(err => console.error("Error saving task:", err));
+                })
+                .catch(err => console.error("Error saving task:", err))
+                .finally(() => {
+                    setTimeout(() => setIsSavingTask(false), 400);
+                });
             };
 
             const toggleTaskStatus = (id) => {
@@ -802,7 +812,9 @@
                                                 <option value="Custom task">Custom task</option>
                                             </select>
                                             <input type="date" value={newTaskDate} onChange={e => setNewTaskDate(e.target.value)} className="p-2.5 rounded-xl app-input font-medium cursor-pointer" />
-                                            <button onClick={handleAddTask} className="py-2.5 app-btn-primary font-bold">💾 Save Task</button>
+                                            <button onClick={handleAddTask} disabled={isSavingTask} className="py-2.5 app-btn-primary font-bold">
+                                                {isSavingTask ? 'Saving...' : '💾 Save Task'}
+                                            </button>
                                         </div>
                                     </div>
 
