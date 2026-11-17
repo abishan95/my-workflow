@@ -3,15 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>My Work Flow - Premium Personal Workspace</title>
-    <!-- PWA Manifest & Mobile Capability Tags -->
+    <title>My Work Flow - Real-Time Firebase Workspace</title>
     <link rel="manifest" href="./manifest.json">
     <link rel="icon" type="image/jpeg" href="./logo.jpeg">
     <link rel="apple-touch-icon" href="./logo.jpeg">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="theme-color" content="#F8FAFC">
-    <!-- Google Fonts: Manrope & Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
@@ -19,85 +17,36 @@
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Firebase Compat SDKs for Direct CDN Usage -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
     <script>
         tailwind.config = {
             theme: {
                 extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                        heading: ['Manrope', 'sans-serif'],
-                    },
+                    fontFamily: { sans: ['Inter', 'sans-serif'], heading: ['Manrope', 'sans-serif'] },
                     colors: {
-                        porcelain: '#F8FAFC',
-                        midnightNavy: '#0F172A',
-                        navyMuted: '#64748B',
-                        solarOrange: '#F97316',
-                        solarHover: '#EA580C',
-                        successMint: '#10B981',
-                        warningAmber: '#F59E0B',
+                        porcelain: '#F8FAFC', midnightNavy: '#0F172A', navyMuted: '#64748B',
+                        solarOrange: '#F97316', solarHover: '#EA580C', successMint: '#10B981', warningAmber: '#F59E0B',
                     }
                 }
             }
         }
     </script>
     <style>
-        body {
-            background-color: #F8FAFC;
-            color: #0F172A;
-            font-family: 'Inter', sans-serif;
-            overflow-x: hidden;
-            -webkit-tap-highlight-color: transparent;
-        }
-        h1, h2, h3, h4, .font-heading {
-            font-family: 'Manrope', sans-serif;
-        }
-        .app-card {
-            background-color: #FFFFFF;
-            border-radius: 18px;
-            border: 1px solid #E2E8F0;
-            box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.04);
-            transition: all 0.2s ease-in-out;
-        }
-        .app-input {
-            background-color: #F8FAFC;
-            color: #0F172A;
-            border-radius: 12px;
-            border: 1px solid #E2E8F0;
-            transition: all 0.2s ease;
-        }
-        .app-input:focus {
-            outline: none;
-            border-color: #F97316;
-            box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
-        }
-        .app-btn-primary {
-            background: linear-gradient(135deg, #F97316 0%, #EA580C 100%);
-            color: #FFFFFF;
-            border-radius: 12px;
-            transition: all 0.18s ease;
-        }
-        .app-btn-primary:active {
-            transform: scale(0.98);
-        }
-        .app-btn-secondary {
-            background-color: #FFFFFF;
-            color: #0F172A;
-            border-radius: 12px;
-            border: 1px solid #E2E8F0;
-            transition: all 0.18s ease;
-        }
-        .app-btn-secondary:hover {
-            color: #F97316;
-            border-color: #CBD5E1;
-        }
-        ::-webkit-scrollbar {
-            width: 4px;
-            height: 4px;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #CBD5E1;
-            border-radius: 10px;
-        }
+        body { background-color: #F8FAFC; color: #0F172A; font-family: 'Inter', sans-serif; overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
+        h1, h2, h3, h4, .font-heading { font-family: 'Manrope', sans-serif; }
+        .app-card { background-color: #FFFFFF; border-radius: 18px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.04); transition: all 0.2s ease-in-out; }
+        .app-input { background-color: #F8FAFC; color: #0F172A; border-radius: 12px; border: 1px solid #E2E8F0; transition: all 0.2s ease; }
+        .app-input:focus { outline: none; border-color: #F97316; box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15); }
+        .app-btn-primary { background: linear-gradient(135deg, #F97316 0%, #EA580C 100%); color: #FFFFFF; border-radius: 12px; transition: all 0.18s ease; }
+        .app-btn-primary:active { transform: scale(0.98); }
+        .app-btn-secondary { background-color: #FFFFFF; color: #0F172A; border-radius: 12px; border: 1px solid #E2E8F0; transition: all 0.18s ease; }
+        .app-btn-secondary:hover { color: #F97316; border-color: #CBD5E1; }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 10px; }
     </style>
 </head>
 <body class="bg-porcelain text-midnightNavy min-h-screen pb-24 md:pb-0">
@@ -110,7 +59,34 @@
             });
         }
 
-        const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzg0o4r0RboJGr75shmuf-6fglCaa3xoBTsf6CHUmqe_nNUu5WXAutbCdNJSmgNDlGe/exec";
+        // =========================================================================
+        // 1. PASTE YOUR FIREBASE CONFIG & GOOGLE SHEET WEBHOOK URL HERE
+        // =========================================================================
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        const SHEET_WEBHOOK_URL = "YOUR_NEW_APPS_SCRIPT_WEB_APP_URL";
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // Helper to mirror UI writes back to Google Sheets in background
+        const mirrorToSheet = (payload) => {
+            if (!SHEET_WEBHOOK_URL || SHEET_WEBHOOK_URL.includes("YOUR_NEW")) return;
+            fetch(SHEET_WEBHOOK_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).catch(err => console.error("Sheet mirror warning:", err));
+        };
 
         const Icons = {
             Dashboard: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>,
@@ -118,15 +94,14 @@
             Joiners: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
             Tasks: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>,
             Positions: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>,
+            Calculator: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>,
             Search: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>,
-            Sync: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
             Download: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
         };
 
         function App() {
             const [activeTab, setActiveTab] = React.useState('dashboard');
-            const [isLoading, setIsLoading] = React.useState(true);
-            const [syncStatus, setSyncStatus] = React.useState('Syncing...');
+            const [syncStatus, setSyncStatus] = React.useState('Connecting...');
             const [profiles, setProfiles] = React.useState([]);
             const [joiners, setJoiners] = React.useState([]);
             const [positions, setPositions] = React.useState([]);
@@ -140,6 +115,19 @@
             const [newTaskHeading, setNewTaskHeading] = React.useState('Interview schedule');
             const [newTaskDate, setNewTaskDate] = React.useState(getTodayString());
             const [isSavingTask, setIsSavingTask] = React.useState(false);
+
+            // =========================================================================
+            // CALCULATOR STATES (AGE & HIKE)
+            // =========================================================================
+            const [dobInput, setDobInput] = React.useState('');
+            
+            // Hike Mode 1: Current Salary + Hike % -> New Salary
+            const [currentSalInput, setCurrentSalInput] = React.useState('');
+            const [hikePercentInput, setHikePercentInput] = React.useState('');
+
+            // Hike Mode 2: Old Salary + New Salary -> Exact Hike % & Amount
+            const [oldSalCompare, setOldSalCompare] = React.useState('');
+            const [newSalCompare, setNewSalCompare] = React.useState('');
 
             const [deferredPrompt, setDeferredPrompt] = React.useState(null);
             const [isInstallable, setIsInstallable] = React.useState(false);
@@ -174,82 +162,124 @@
             const [newPosBU, setNewPosBU] = React.useState('');
             const [newPosReporting, setNewPosReporting] = React.useState('');
 
-            const parseSheetData = (data) => {
-                return data.map((item, index) => ({
-                    id: index,
-                    candidateName: item['Candidate Name'] || item['candidateName'] || item['NAME'] || 'N/A',
-                    source: item['CV -Source-'] || item['source'] || 'Naukri',
-                    location: item['Location'] || 'N/A',
-                    role: item['Role'] || 'N/A',
-                    department: item['Department'] || 'N/A',
-                    businessUnit: item['Business Unit'] || 'N/A',
-                    contactNumber: item['Contact Number'] || 'N/A',
-                    currentCompany: item['Current Company'] || 'N/A',
-                    designation: item['Designation'] || 'N/A',
-                    totalExp: item['Overall Experience'] || 'N/A',
-                    currentCtc: item['Current CTC'] || 'N/A',
-                    expectedCtc: item['Expected CTC'] || 'N/A',
-                    noticePeriod: item['Notice Period'] || 'N/A',
-                    emailId: item['Email'] || 'N/A',
-                    screenDate: item['CV Screen Date'] || 'N/A',
-                    status: item['Status'] || 'Sourced'
-                }));
-            };
-
-            const fetchSheetData = React.useCallback(() => {
-                setIsLoading(true);
-                setSyncStatus('Fetching...');
-                fetch(WEBHOOK_URL)
-                    .then(res => res.json())
-                    .then(data => {
-                        const rawCandidates = Array.isArray(data) ? data : (data.candidates || []);
-                        const rawTasks = !Array.isArray(data) && data.tasks ? data.tasks : [];
-                        const rawPositions = !Array.isArray(data) && data.positions ? data.positions : [];
-
-                        const formatted = parseSheetData(rawCandidates);
-                        setProfiles(formatted.filter(p => p.status !== 'Joined' && p.status !== 'Offer Released' && p.status !== 'Revoked'));
-                        setJoiners(formatted.filter(p => p.status === 'Joined' || p.status === 'Offer Released' || p.status === 'Revoked'));
-
-                        if (rawTasks.length > 0) {
-                            // Properly map fields and filter out completely empty blank tasks
-                            const mappedTasks = rawTasks
-                                .map(t => ({
-                                    id: t.id ? t.id.toString() : (Math.random() * 100000).toString(),
-                                    title: t.title || t.Task || t.TASK || '',
-                                    heading: t.heading && t.heading.trim() !== '' ? t.heading : 'Interview schedule',
-                                    date: t.date || getTodayString(),
-                                    completed: t.completed === true || t.completed === 'TRUE' || t.completed === 'true'
-                                }))
-                                .filter(t => t.title.trim() !== '');
-
-                            setTodos(mappedTasks);
-                        }
-
-                        if (rawPositions.length > 0) {
-                            setPositions(rawPositions.map(p => ({
-                                id: p.id ? p.id.toString() : Date.now().toString(),
-                                title: p.title || 'N/A',
-                                exp: p.exp || 'N/A',
-                                maxSalary: p.maxSalary || 'N/A',
-                                department: p.department || 'N/A',
-                                businessUnit: p.businessUnit || 'N/A',
-                                reportingTo: p.reportingTo || 'N/A',
-                                createdDate: p.createdDate || getTodayString(),
-                                status: p.status || 'Open'
-                            })));
-                        }
-
-                        setSyncStatus(`Live (${formatted.length})`);
-                        setIsLoading(false);
-                    })
-                    .catch(err => {
-                        console.error('Fetch error:', err);
-                        setSyncStatus('Offline');
-                        setIsLoading(false);
+            // =========================================================================
+            // REAL-TIME FIRESTORE LISTENERS
+            // =========================================================================
+            React.useEffect(() => {
+                const unsubCandidates = db.collection("candidates").onSnapshot((snapshot) => {
+                    const allCands = snapshot.docs.map(doc => {
+                        const item = doc.data();
+                        return {
+                            docId: doc.id,
+                            rowNumber: item.rowNumber || null,
+                            candidateName: item['Candidate Name'] || item['candidateName'] || item['NAME'] || 'N/A',
+                            source: item['CV -Source-'] || item['source'] || 'Naukri',
+                            location: item['Location'] || 'N/A',
+                            role: item['Role'] || 'N/A',
+                            department: item['Department'] || 'N/A',
+                            businessUnit: item['Business Unit'] || 'N/A',
+                            contactNumber: item['Contact Number'] || 'N/A',
+                            currentCompany: item['Current Company'] || 'N/A',
+                            designation: item['Designation'] || 'N/A',
+                            totalExp: item['Overall Experience'] || 'N/A',
+                            currentCtc: item['Current CTC'] || 'N/A',
+                            expectedCtc: item['Expected CTC'] || 'N/A',
+                            noticePeriod: item['Notice Period'] || 'N/A',
+                            emailId: item['Email'] || 'N/A',
+                            screenDate: item['CV Screen Date'] || 'N/A',
+                            status: item['Status'] || 'Sourced'
+                        };
                     });
+
+                    setProfiles(allCands.filter(p => p.status !== 'Joined' && p.status !== 'Offer Released' && p.status !== 'Revoked'));
+                    setJoiners(allCands.filter(p => p.status === 'Joined' || p.status === 'Offer Released' || p.status === 'Revoked'));
+                    setSyncStatus(`Live (${allCands.length})`);
+                }, (error) => {
+                    console.error("Firestore candidates error:", error);
+                    setSyncStatus("DB Error");
+                });
+
+                const unsubTasks = db.collection("tasks").orderBy("createdAt", "desc").onSnapshot((snapshot) => {
+                    const loadedTasks = snapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }));
+                    setTodos(loadedTasks);
+                });
+
+                const unsubPositions = db.collection("positions").orderBy("createdAt", "desc").onSnapshot((snapshot) => {
+                    const loadedPositions = snapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }));
+                    setPositions(loadedPositions);
+                });
+
+                return () => {
+                    unsubCandidates();
+                    unsubTasks();
+                    unsubPositions();
+                };
             }, []);
 
-            React.useEffect(() => { fetchSheetData(); }, [fetchSheetData]);
+            // =========================================================================
+            // AGE CALCULATION LOGIC
+            // =========================================================================
+            const ageResult = React.useMemo(() => {
+                if (!dobInput) return null;
+                const birthDate = new Date(dobInput + 'T00:00:00');
+                const today = new Date();
+                if (isNaN(birthDate.getTime()) || birthDate > today) return { invalid: true };
+
+                let years = today.getFullYear() - birthDate.getFullYear();
+                let months = today.getMonth() - birthDate.getMonth();
+                let days = today.getDate() - birthDate.getDate();
+
+                if (days < 0) {
+                    months--;
+                    const prevMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+                    days += prevMonth.getDate();
+                }
+                if (months < 0) {
+                    years--;
+                    months += 12;
+                }
+
+                const totalDays = Math.floor((today - birthDate) / (1000 * 60 * 60 * 24));
+                const totalMonths = years * 12 + months;
+
+                return { invalid: false, years, months, days, totalDays, totalMonths };
+            }, [dobInput]);
+
+            // =========================================================================
+            // HIKE CALCULATION LOGIC
+            // =========================================================================
+            const hikeByPercentResult = React.useMemo(() => {
+                const curr = parseFloat(currentSalInput);
+                const pct = parseFloat(hikePercentInput);
+                if (isNaN(curr) || isNaN(pct) || curr < 0) return null;
+
+                const hikeAmount = (curr * pct) / 100;
+                const newSalary = curr + hikeAmount;
+                return {
+                    hikeAmount: hikeAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 }),
+                    newSalary: newSalary.toLocaleString('en-IN', { maximumFractionDigits: 2 })
+                };
+            }, [currentSalInput, hikePercentInput]);
+
+            const hikeBySalaryResult = React.useMemo(() => {
+                const oldVal = parseFloat(oldSalCompare);
+                const newVal = parseFloat(newSalCompare);
+                if (isNaN(oldVal) || isNaN(newVal) || oldVal <= 0) return null;
+
+                const diffAmount = newVal - oldVal;
+                const percentChange = (diffAmount / oldVal) * 100;
+                return {
+                    diffAmount: diffAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 }),
+                    percentChange: percentChange.toFixed(2),
+                    isPositive: diffAmount >= 0
+                };
+            }, [oldSalCompare, newSalCompare]);
 
             const formatSalaryLPA = (val) => {
                 if (!val) return 'Negotiable';
@@ -258,60 +288,42 @@
                 return `${trimmed} LPA`;
             };
 
-            const handleSavePosition = () => {
+            // =========================================================================
+            // POSITION ACTIONS
+            // =========================================================================
+            const handleSavePosition = async () => {
                 if (!newPosTitle.trim()) return;
                 const formattedSalary = formatSalaryLPA(newPosSalary);
 
                 if (editingPosId) {
-                    let updatedPos = null;
-                    setPositions(prev => prev.map(p => {
-                        if (p.id === editingPosId) {
-                            updatedPos = {
-                                ...p,
-                                type: 'position',
-                                title: newPosTitle,
-                                exp: newPosExp || '0-2 Yrs',
-                                maxSalary: formattedSalary,
-                                department: newPosDept || 'General',
-                                businessUnit: newPosBU || 'Main Unit',
-                                reportingTo: newPosReporting || 'HOD'
-                            };
-                            return updatedPos;
-                        }
-                        return p;
-                    }));
-
-                    if (updatedPos) {
-                        fetch(WEBHOOK_URL, {
-                            method: 'POST',
-                            mode: 'no-cors',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(updatedPos)
-                        }).catch(err => console.error("Error updating position:", err));
-                    }
+                    const existing = positions.find(p => p.id === editingPosId);
+                    const updatedData = {
+                        title: newPosTitle.trim(),
+                        exp: newPosExp || '0-2 Yrs',
+                        maxSalary: formattedSalary,
+                        department: newPosDept || 'General',
+                        businessUnit: newPosBU || 'Main Unit',
+                        reportingTo: newPosReporting || 'HOD'
+                    };
+                    await db.collection("positions").doc(editingPosId).update(updatedData);
+                    mirrorToSheet({ type: 'position', id: editingPosId, createdDate: existing?.createdDate || getTodayString(), status: existing?.status || 'Open', ...updatedData });
                 } else {
+                    const newId = "pos_" + Date.now();
                     const newPos = {
-                        type: 'position',
-                        id: Date.now().toString(),
-                        title: newPosTitle,
+                        id: newId,
+                        title: newPosTitle.trim(),
                         exp: newPosExp || '0-2 Yrs',
                         maxSalary: formattedSalary,
                         department: newPosDept || 'General',
                         businessUnit: newPosBU || 'Main Unit',
                         reportingTo: newPosReporting || 'HOD',
                         createdDate: getTodayString(),
-                        status: 'Open'
+                        status: 'Open',
+                        createdAt: Date.now()
                     };
-
-                    setPositions(prev => [newPos, ...prev]);
-                    fetch(WEBHOOK_URL, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(newPos)
-                    }).catch(err => console.error("Error adding position:", err));
+                    await db.collection("positions").doc(newId).set(newPos);
+                    mirrorToSheet({ type: 'position', ...newPos });
                 }
-
                 resetPosModal();
             };
 
@@ -332,24 +344,9 @@
                 setNewPosTitle(''); setNewPosExp(''); setNewPosSalary(''); setNewPosDept(''); setNewPosBU(''); setNewPosReporting('');
             };
 
-            const handlePositionStatusChange = (posId, newStatus) => {
-                let updatedPos = null;
-                setPositions(prev => prev.map(p => {
-                    if (p.id === posId) {
-                        updatedPos = { ...p, type: 'position', status: newStatus };
-                        return updatedPos;
-                    }
-                    return p;
-                }));
-
-                if (updatedPos) {
-                    fetch(WEBHOOK_URL, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(updatedPos)
-                    }).catch(err => console.error("Error updating position status:", err));
-                }
+            const handlePositionStatusChange = async (pos, newStatus) => {
+                await db.collection("positions").doc(pos.id).update({ status: newStatus });
+                mirrorToSheet({ type: 'position', ...pos, status: newStatus });
             };
 
             const calculateAgeing = (createdDateStr) => {
@@ -360,92 +357,62 @@
                 return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
             };
 
-            const handleStatusChange = (candidate, newStatus) => {
+            // =========================================================================
+            // CANDIDATE STATUS ACTIONS
+            // =========================================================================
+            const handleStatusChange = async (candidate, newStatus) => {
                 if (window.confirm(`Change status of ${candidate.candidateName} to "${newStatus}"?`)) {
-                    const updated = { ...candidate, status: newStatus };
-                    setJoiners(prev => prev.map(item => item.candidateName === candidate.candidateName ? updated : item));
-                    fetch(WEBHOOK_URL, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(updated)
-                    });
+                    await db.collection("candidates").doc(candidate.docId).update({ Status: newStatus });
+                    mirrorToSheet({ type: 'candidate_status', rowNumber: candidate.rowNumber, status: newStatus });
                 }
             };
 
-            const handleMarkJoined = (candidate) => {
+            const handleMarkJoined = async (candidate) => {
                 if (window.confirm(`Mark ${candidate.candidateName} as JOINED?`)) {
-                    const updated = { ...candidate, status: 'Joined' };
-                    setProfiles(prev => prev.filter(p => p.candidateName !== candidate.candidateName));
-                    setJoiners(prev => [updated, ...prev]);
-                    fetch(WEBHOOK_URL, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(updated)
-                    });
+                    await db.collection("candidates").doc(candidate.docId).update({ Status: 'Joined' });
+                    mirrorToSheet({ type: 'candidate_status', rowNumber: candidate.rowNumber, status: 'Joined' });
                 }
             };
 
-            const handleAddTask = () => {
+            // =========================================================================
+            // TASK ACTIONS
+            // =========================================================================
+            const handleAddTask = async () => {
                 if (!newTaskTitle.trim() || isSavingTask) return;
                 setIsSavingTask(true);
 
-                const selectedHeading = newTaskHeading && newTaskHeading.trim() !== '' ? newTaskHeading : 'Interview schedule';
+                try {
+                    const taskId = "task_" + Date.now();
+                    const newTask = {
+                        id: taskId,
+                        title: newTaskTitle.trim(),
+                        heading: newTaskHeading,
+                        date: newTaskDate || getTodayString(),
+                        completed: false,
+                        createdAt: Date.now()
+                    };
 
-                const newTask = {
-                    type: 'task',
-                    id: Date.now().toString(),
-                    title: newTaskTitle.trim(),
-                    heading: selectedHeading,
-                    date: newTaskDate || getTodayString(),
-                    completed: false
-                };
+                    await db.collection("tasks").doc(taskId).set(newTask);
+                    mirrorToSheet({ type: 'task', ...newTask });
 
-                setTodos(prev => [...prev, newTask]);
-                setNewTaskTitle('');
-                setNewTaskDate(getTodayString());
-
-                fetch(WEBHOOK_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(newTask)
-                })
-                .catch(err => console.error("Error saving task:", err))
-                .finally(() => {
-                    setTimeout(() => setIsSavingTask(false), 400);
-                });
-            };
-
-            const toggleTaskStatus = (id) => {
-                let updatedTask = null;
-                setTodos(prev => prev.map(t => {
-                    if (t.id === id) {
-                        updatedTask = { ...t, type: 'task', completed: !t.completed };
-                        return updatedTask;
-                    }
-                    return t;
-                }));
-
-                if (updatedTask) {
-                    fetch(WEBHOOK_URL, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(updatedTask)
-                    }).catch(err => console.error("Error updating task status:", err));
+                    setNewTaskTitle('');
+                    setNewTaskDate(getTodayString());
+                } catch (err) {
+                    console.error("Error adding task:", err);
+                } finally {
+                    setIsSavingTask(false);
                 }
             };
 
-            const deleteTask = (id) => {
-                setTodos(prev => prev.filter(t => t.id !== id));
-                fetch(WEBHOOK_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ type: 'task', action: 'delete_task', id: id })
-                }).catch(err => console.error("Error deleting task:", err));
+            const toggleTaskStatus = async (task) => {
+                const newCompleted = !task.completed;
+                await db.collection("tasks").doc(task.id).update({ completed: newCompleted });
+                mirrorToSheet({ type: 'task', ...task, completed: newCompleted });
+            };
+
+            const deleteTask = async (task) => {
+                await db.collection("tasks").doc(task.id).delete();
+                mirrorToSheet({ type: 'task', action: 'delete_task', id: task.id });
             };
 
             const filteredProfiles = profiles.filter(p => {
@@ -467,7 +434,8 @@
                 { id: 'positions', label: 'Positions', icon: Icons.Positions, count: positions.filter(p => p.status === 'Open').length },
                 { id: 'profiles', label: 'Sourced', icon: Icons.Directory, count: profiles.length },
                 { id: 'joiners', label: 'Joiners', icon: Icons.Joiners, count: joiners.length },
-                { id: 'todos', label: 'Tasks', icon: Icons.Tasks, count: todos.length }
+                { id: 'todos', label: 'Tasks', icon: Icons.Tasks, count: todos.length },
+                { id: 'calculators', label: 'Calculators', icon: Icons.Calculator }
             ];
 
             return (
@@ -480,7 +448,7 @@
                                 <img src="./logo.jpeg" alt="Logo" className="w-10 h-10 rounded-xl object-cover border border-slate-200" />
                                 <div>
                                     <h1 className="font-heading font-extrabold text-base leading-tight">My Work Flow</h1>
-                                    <p className="text-[11px] text-navyMuted">Talent Acquisition</p>
+                                    <p className="text-[11px] text-navyMuted">Firebase Real-Time</p>
                                 </div>
                             </div>
 
@@ -522,7 +490,7 @@
                                     <span className="w-2 h-2 rounded-full bg-successMint animate-pulse"></span>
                                     <span>{syncStatus}</span>
                                 </span>
-                                <button onClick={fetchSheetData} className="text-solarOrange font-bold hover:underline">Sync</button>
+                                <span className="text-[10px] text-successMint font-bold">Auto-Sync</span>
                             </div>
                         </div>
                     </aside>
@@ -542,6 +510,7 @@
                                             {activeTab === 'profiles' && 'Sourced Candidates Directory'}
                                             {activeTab === 'joiners' && 'Joiners & Offers'}
                                             {activeTab === 'todos' && 'Task Workflow Console'}
+                                            {activeTab === 'calculators' && 'HR & Recruitment Calculators'}
                                         </h1>
                                         <p className="text-[10px] md:text-[11px] text-navyMuted">
                                             {formattedCurrentDate} • Welcome back, Abishan
@@ -555,9 +524,9 @@
                                             Install
                                         </button>
                                     )}
-                                    <button onClick={fetchSheetData} className="p-2 app-input text-solarOrange rounded-xl">
-                                        <Icons.Sync />
-                                    </button>
+                                    <span className="px-2.5 py-1 rounded-lg bg-emerald-50 text-successMint text-[10px] font-bold border border-emerald-200">
+                                        ● Live
+                                    </span>
                                 </div>
                             </div>
 
@@ -590,7 +559,7 @@
                                     <div className="p-3.5 rounded-2xl app-card flex items-center justify-between gap-2 bg-gradient-to-r from-orange-50/50 to-white">
                                         <div className="hidden sm:block">
                                             <h4 className="font-heading font-extrabold text-xs text-midnightNavy">Quick Actions</h4>
-                                            <p className="text-[10px] text-navyMuted">Create roles or tasks in 1 click</p>
+                                            <p className="text-[10px] text-navyMuted">Create roles, tasks, or use calculators in 1 click</p>
                                         </div>
                                         <div className="flex items-center gap-2 w-full sm:w-auto">
                                             <button onClick={() => { resetPosModal(); setIsAddPosOpen(true); }} className="flex-1 sm:flex-initial px-3 py-2 app-btn-primary text-xs font-bold flex items-center justify-center gap-1">
@@ -598,6 +567,9 @@
                                             </button>
                                             <button onClick={() => setActiveTab('todos')} className="flex-1 sm:flex-initial px-3 py-2 app-btn-secondary text-xs font-bold flex items-center justify-center gap-1">
                                                 ⚡ Add Task
+                                            </button>
+                                            <button onClick={() => setActiveTab('calculators')} className="flex-1 sm:flex-initial px-3 py-2 app-btn-secondary text-xs font-bold flex items-center justify-center gap-1">
+                                                🧮 Calculators
                                             </button>
                                         </div>
                                     </div>
@@ -676,7 +648,7 @@
                                                                 <span className="block text-[9px] font-bold text-solarOrange uppercase">{t.heading}</span>
                                                                 <p className="font-medium text-midnightNavy">{t.title}</p>
                                                             </div>
-                                                            <button onClick={() => toggleTaskStatus(t.id)} className="px-2.5 py-1 rounded-lg bg-emerald-50 text-successMint font-bold text-[10px] border border-emerald-200">
+                                                            <button onClick={() => toggleTaskStatus(t)} className="px-2.5 py-1 rounded-lg bg-emerald-50 text-successMint font-bold text-[10px] border border-emerald-200">
                                                                 Done
                                                             </button>
                                                         </div>
@@ -717,7 +689,7 @@
                                                             <td className="p-3 text-center">
                                                                 <select
                                                                     value={pos.status || 'Open'}
-                                                                    onChange={(e) => handlePositionStatusChange(pos.id, e.target.value)}
+                                                                    onChange={(e) => handlePositionStatusChange(pos, e.target.value)}
                                                                     className="px-2 py-1 rounded-lg app-input text-[11px] font-bold outline-none cursor-pointer"
                                                                 >
                                                                     <option value="Open">🟢 Open</option>
@@ -836,10 +808,10 @@
                                                             <span className="text-[10px] text-navyMuted">Date: {t.date}</span>
                                                         </div>
                                                         <div className="flex items-center space-x-2">
-                                                            <button onClick={() => toggleTaskStatus(t.id)} className={`px-3 py-1 rounded-lg text-[11px] font-bold ${t.completed ? 'bg-amber-50 text-warningAmber border border-amber-200' : 'bg-emerald-50 text-successMint border border-emerald-200'}`}>
+                                                            <button onClick={() => toggleTaskStatus(t)} className={`px-3 py-1 rounded-lg text-[11px] font-bold ${t.completed ? 'bg-amber-50 text-warningAmber border border-amber-200' : 'bg-emerald-50 text-successMint border border-emerald-200'}`}>
                                                                 {t.completed ? 'Mark Pending' : 'Mark Done'}
                                                             </button>
-                                                            <button onClick={() => deleteTask(t.id)} className="text-solarOrange text-[11px] font-bold">Delete</button>
+                                                            <button onClick={() => deleteTask(t)} className="text-solarOrange text-[11px] font-bold">Delete</button>
                                                         </div>
                                                     </div>
                                                 ))
@@ -849,11 +821,188 @@
                                 </div>
                             )}
 
+                            {/* CALCULATORS PAGE (AGE + HIKE CALCULATORS) */}
+                            {activeTab === 'calculators' && (
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                    
+                                    {/* CARD 1: CANDIDATE AGE CALCULATOR */}
+                                    <div className="p-5 rounded-2xl app-card space-y-4">
+                                        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                                            <div>
+                                                <h2 className="font-heading font-extrabold text-sm text-midnightNavy">🎂 Candidate Age Calculator</h2>
+                                                <p className="text-[11px] text-navyMuted">Select Date of Birth to calculate exact age</p>
+                                            </div>
+                                            {dobInput && (
+                                                <button onClick={() => setDobInput('')} className="text-[11px] font-bold text-solarOrange hover:underline">Reset</button>
+                                            )}
+                                        </div>
+
+                                        <div className="space-y-1.5 text-xs">
+                                            <label className="block font-bold text-navyMuted">Candidate Date of Birth (DOB)</label>
+                                            <input
+                                                type="date"
+                                                value={dobInput}
+                                                max={getTodayString()}
+                                                onChange={(e) => setDobInput(e.target.value)}
+                                                className="w-full p-3 rounded-xl app-input font-semibold text-midnightNavy cursor-pointer"
+                                            />
+                                        </div>
+
+                                        {ageResult ? (
+                                            ageResult.invalid ? (
+                                                <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-xs text-red-600 font-semibold">
+                                                    Please select a valid Date of Birth in the past.
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-3 pt-1">
+                                                    <div className="p-4 rounded-2xl bg-gradient-to-br from-orange-50 to-amber-50/40 border border-orange-100 text-center">
+                                                        <p className="text-[10px] font-bold text-solarOrange uppercase tracking-wider">Exact Candidate Age</p>
+                                                        <h3 className="font-heading text-2xl md:text-3xl font-extrabold text-midnightNavy mt-1">
+                                                            {ageResult.years} <span className="text-sm font-bold text-navyMuted">Yrs</span>, {ageResult.months} <span className="text-sm font-bold text-navyMuted">Mos</span>, {ageResult.days} <span className="text-sm font-bold text-navyMuted">Days</span>
+                                                        </h3>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-2 gap-2.5 text-center text-xs">
+                                                        <div className="p-3 rounded-xl app-input">
+                                                            <p className="text-[10px] text-navyMuted font-bold uppercase">Total Months</p>
+                                                            <p className="font-heading font-extrabold text-base text-midnightNavy mt-0.5">{ageResult.totalMonths.toLocaleString()}</p>
+                                                        </div>
+                                                        <div className="p-3 rounded-xl app-input">
+                                                            <p className="text-[10px] text-navyMuted font-bold uppercase">Total Days</p>
+                                                            <p className="font-heading font-extrabold text-base text-midnightNavy mt-0.5">{ageResult.totalDays.toLocaleString()}</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )
+                                        ) : (
+                                            <div className="p-6 rounded-xl app-input text-center text-xs text-navyMuted italic">
+                                                Choose a birth date above to see the exact age breakdown.
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* CARD 2: SALARY HIKE CALCULATOR (2 MODES) */}
+                                    <div className="p-5 rounded-2xl app-card space-y-5">
+                                        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                                            <div>
+                                                <h2 className="font-heading font-extrabold text-sm text-midnightNavy">💰 Salary Hike Calculator</h2>
+                                                <p className="text-[11px] text-navyMuted">Works for LPA (e.g. 6.5) or exact numbers (e.g. 50000)</p>
+                                            </div>
+                                            {(currentSalInput || hikePercentInput || oldSalCompare || newSalCompare) && (
+                                                <button
+                                                    onClick={() => { setCurrentSalInput(''); setHikePercentInput(''); setOldSalCompare(''); setNewSalCompare(''); }}
+                                                    className="text-[11px] font-bold text-solarOrange hover:underline"
+                                                >
+                                                    Clear All
+                                                </button>
+                                            )}
+                                        </div>
+
+                                        {/* MODE A: Current Salary + Hike % -> New Salary */}
+                                        <div className="space-y-2.5">
+                                            <h3 className="font-heading font-bold text-xs text-midnightNavy flex items-center gap-1.5">
+                                                <span className="w-5 h-5 rounded-md bg-orange-100 text-solarOrange flex items-center justify-center text-[10px] font-extrabold">1</span>
+                                                Calculate New Salary by Hike %
+                                            </h3>
+                                            <div className="grid grid-cols-2 gap-2.5 text-xs">
+                                                <div>
+                                                    <label className="block font-bold text-navyMuted mb-1">Current Salary</label>
+                                                    <input
+                                                        type="number"
+                                                        step="any"
+                                                        placeholder="e.g. 6.5"
+                                                        value={currentSalInput}
+                                                        onChange={(e) => setCurrentSalInput(e.target.value)}
+                                                        className="w-full p-2.5 rounded-xl app-input font-semibold"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block font-bold text-navyMuted mb-1">Hike Percentage (%)</label>
+                                                    <input
+                                                        type="number"
+                                                        step="any"
+                                                        placeholder="e.g. 30"
+                                                        value={hikePercentInput}
+                                                        onChange={(e) => setHikePercentInput(e.target.value)}
+                                                        className="w-full p-2.5 rounded-xl app-input font-semibold"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {hikeByPercentResult && (
+                                                <div className="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200 flex items-center justify-between text-xs">
+                                                    <div>
+                                                        <p className="text-[10px] font-bold text-navyMuted uppercase">Hike Value (+{hikePercentInput}%)</p>
+                                                        <p className="font-heading font-extrabold text-sm text-successMint">+{hikeByPercentResult.hikeAmount}</p>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <p className="text-[10px] font-bold text-navyMuted uppercase">New Expected Salary</p>
+                                                        <p className="font-heading font-extrabold text-base text-midnightNavy">{hikeByPercentResult.newSalary}</p>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <hr className="border-slate-100" />
+
+                                        {/* MODE B: Old Salary vs New Salary -> Exact Hike % & Amount */}
+                                        <div className="space-y-2.5">
+                                            <h3 className="font-heading font-bold text-xs text-midnightNavy flex items-center gap-1.5">
+                                                <span className="w-5 h-5 rounded-md bg-orange-100 text-solarOrange flex items-center justify-center text-[10px] font-extrabold">2</span>
+                                                Calculate Exact Hike % (Old vs. New Salary)
+                                            </h3>
+                                            <div className="grid grid-cols-2 gap-2.5 text-xs">
+                                                <div>
+                                                    <label className="block font-bold text-navyMuted mb-1">Old / Current Salary</label>
+                                                    <input
+                                                        type="number"
+                                                        step="any"
+                                                        placeholder="e.g. 5.0"
+                                                        value={oldSalCompare}
+                                                        onChange={(e) => setOldSalCompare(e.target.value)}
+                                                        className="w-full p-2.5 rounded-xl app-input font-semibold"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block font-bold text-navyMuted mb-1">New / Offered Salary</label>
+                                                    <input
+                                                        type="number"
+                                                        step="any"
+                                                        placeholder="e.g. 6.8"
+                                                        value={newSalCompare}
+                                                        onChange={(e) => setNewSalCompare(e.target.value)}
+                                                        className="w-full p-2.5 rounded-xl app-input font-semibold"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {hikeBySalaryResult && (
+                                                <div className={`p-3 rounded-xl border flex items-center justify-between text-xs ${hikeBySalaryResult.isPositive ? 'bg-orange-50/70 border-orange-200' : 'bg-red-50/70 border-red-200'}`}>
+                                                    <div>
+                                                        <p className="text-[10px] font-bold text-navyMuted uppercase">Exact Hike Value</p>
+                                                        <p className={`font-heading font-extrabold text-sm ${hikeBySalaryResult.isPositive ? 'text-midnightNavy' : 'text-red-600'}`}>
+                                                            {hikeBySalaryResult.isPositive ? `+${hikeBySalaryResult.diffAmount}` : hikeBySalaryResult.diffAmount}
+                                                        </p>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <p className="text-[10px] font-bold text-navyMuted uppercase">Exact Hike %</p>
+                                                        <p className={`font-heading font-extrabold text-base ${hikeBySalaryResult.isPositive ? 'text-solarOrange' : 'text-red-600'}`}>
+                                                            {hikeBySalaryResult.isPositive ? `+${hikeBySalaryResult.percentChange}%` : `${hikeBySalaryResult.percentChange}%`}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                </div>
+                            )}
+
                         </div>
                     </main>
 
                     {/* Modern Floating Mobile Bottom Nav Bar */}
-                    <nav className="fixed bottom-3 left-4 right-4 z-40 bg-midnightNavy/95 backdrop-blur-md rounded-2xl shadow-xl border border-slate-800 flex items-center justify-around py-2 px-1 md:hidden">
+                    <nav className="fixed bottom-3 left-3 right-3 z-40 bg-midnightNavy/95 backdrop-blur-md rounded-2xl shadow-xl border border-slate-800 flex items-center justify-around py-2 px-1 md:hidden">
                         {navItems.map(tab => {
                             const IconComp = tab.icon;
                             const isActive = activeTab === tab.id;
@@ -861,7 +1010,7 @@
                                 <button
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id)}
-                                    className={`relative flex flex-col items-center justify-center py-1.5 px-3 rounded-xl transition-all ${
+                                    className={`relative flex flex-col items-center justify-center py-1.5 px-2 rounded-xl transition-all ${
                                         isActive ? 'text-solarOrange font-bold scale-105' : 'text-slate-400 hover:text-white'
                                     }`}
                                 >
