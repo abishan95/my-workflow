@@ -7,7 +7,7 @@
     <link rel="manifest" href="./manifest.json">
     <link rel="icon" type="image/jpeg" href="./logo.jpeg">
     <link rel="apple-touch-icon" href="./logo.jpeg">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="theme-color" content="#F8FAFC">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,7 +18,7 @@
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
-    <!-- Firebase Compat SDKs for Direct CDN Usage -->
+    <!-- Firebase Compat SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
@@ -62,22 +62,20 @@
         // =========================================================================
         // 1. PASTE YOUR FIREBASE CONFIG & GOOGLE SHEET WEBHOOK URL HERE
         // =========================================================================
-   const firebaseConfig = {
-    apiKey: "YOUR_ACTUAL_API_KEY_FROM_WEB_APP",
-    authDomain: "my-work-flow-e5eb1.firebaseapp.com",
-    projectId: "my-work-flow-e5eb1",
-    storageBucket: "my-work-flow-e5eb1.firebasestorage.app", // or .appspot.com (match what Firebase shows)
-    messagingSenderId: "888982928867",
-    appId: "YOUR_ACTUAL_APP_ID_FROM_WEB_APP"
-};
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "my-work-flow-e5eb1.firebaseapp.com",
+            projectId: "my-work-flow-e5eb1",
+            storageBucket: "my-work-flow-e5eb1.firebasestorage.app",
+            messagingSenderId: "888982928867",
+            appId: "YOUR_APP_ID"
+        };
 
-        const SHEET_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbyzeyanKZT_0c_83gsbM9CXe9EWDSEZbl4zNiXoalnMKt760qnsWZ6EvIBPpiAEpgUo/exec";
+        const SHEET_WEBHOOK_URL = "YOUR_NEW_APPS_SCRIPT_WEB_APP_URL";
 
-        // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // Helper to mirror UI writes back to Google Sheets in background
         const mirrorToSheet = (payload) => {
             if (!SHEET_WEBHOOK_URL || SHEET_WEBHOOK_URL.includes("YOUR_NEW")) return;
             fetch(SHEET_WEBHOOK_URL, {
@@ -90,6 +88,7 @@
 
         const Icons = {
             Dashboard: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>,
+            AddCandidate: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg>,
             Directory: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>,
             Joiners: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
             Tasks: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>,
@@ -111,21 +110,49 @@
             const [selectedCandidate, setSelectedCandidate] = React.useState(null);
 
             const getTodayString = () => new Date().toISOString().split('T')[0];
+            const getFormattedDDMMYYYY = () => {
+                const d = new Date();
+                const day = String(d.getDate()).padStart(2, '0');
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                return `${day}-${month}-${d.getFullYear()}`;
+            };
+
+            // =========================================================================
+            // ADD CANDIDATE FORM STATE
+            // =========================================================================
+            const initialCandForm = {
+                candidateName: '',
+                source: 'Naukri',
+                role: '',
+                department: '',
+                businessUnit: '',
+                buHead: '',
+                location: '',
+                contactNumber: '',
+                email: '',
+                currentCompany: '',
+                designation: '',
+                totalExp: '',
+                currentCtc: '',
+                expectedCtc: '',
+                noticePeriod: '',
+                screenDate: getFormattedDDMMYYYY(),
+                status: 'Sourced'
+            };
+            const [candForm, setCandForm] = React.useState(initialCandForm);
+            const [isSavingCand, setIsSavingCand] = React.useState(false);
+            const [candSaveBanner, setCandSaveBanner] = React.useState('');
+
+            // Tasks State
             const [newTaskTitle, setNewTaskTitle] = React.useState('');
             const [newTaskHeading, setNewTaskHeading] = React.useState('Interview schedule');
             const [newTaskDate, setNewTaskDate] = React.useState(getTodayString());
             const [isSavingTask, setIsSavingTask] = React.useState(false);
 
-            // =========================================================================
-            // CALCULATOR STATES (AGE & HIKE)
-            // =========================================================================
+            // Calculators State
             const [dobInput, setDobInput] = React.useState('');
-            
-            // Hike Mode 1: Current Salary + Hike % -> New Salary
             const [currentSalInput, setCurrentSalInput] = React.useState('');
             const [hikePercentInput, setHikePercentInput] = React.useState('');
-
-            // Hike Mode 2: Old Salary + New Salary -> Exact Hike % & Amount
             const [oldSalCompare, setOldSalCompare] = React.useState('');
             const [newSalCompare, setNewSalCompare] = React.useState('');
 
@@ -173,23 +200,28 @@
                             docId: doc.id,
                             rowNumber: item.rowNumber || null,
                             candidateName: item['Candidate Name'] || item['candidateName'] || item['NAME'] || 'N/A',
-                            source: item['CV -Source-'] || item['source'] || 'Naukri',
+                            source: item['CV -Source:'] || item['CV -Source-'] || item['source'] || 'Naukri',
                             location: item['Location'] || 'N/A',
                             role: item['Role'] || 'N/A',
                             department: item['Department'] || 'N/A',
-                            businessUnit: item['Business Unit'] || 'N/A',
+                            businessUnit: item['Business Unit'] || item['BU'] || 'N/A',
+                            buHead: item['BU Head'] || 'N/A',
                             contactNumber: item['Contact Number'] || 'N/A',
                             currentCompany: item['Current Company'] || 'N/A',
                             designation: item['Designation'] || 'N/A',
-                            totalExp: item['Overall Experience'] || 'N/A',
+                            totalExp: item['Overall Experience'] || item['Total Experience'] || 'N/A',
                             currentCtc: item['Current CTC'] || 'N/A',
                             expectedCtc: item['Expected CTC'] || 'N/A',
                             noticePeriod: item['Notice Period'] || 'N/A',
                             emailId: item['Email'] || 'N/A',
                             screenDate: item['CV Screen Date'] || 'N/A',
-                            status: item['Status'] || 'Sourced'
+                            status: item['Status'] || 'Sourced',
+                            createdAt: item.createdAt || 0
                         };
                     });
+
+                    // Sort newest added first, then keep original order
+                    allCands.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 
                     setProfiles(allCands.filter(p => p.status !== 'Joined' && p.status !== 'Offer Released' && p.status !== 'Revoked'));
                     setJoiners(allCands.filter(p => p.status === 'Joined' || p.status === 'Offer Released' || p.status === 'Revoked'));
@@ -200,36 +232,97 @@
                 });
 
                 const unsubTasks = db.collection("tasks").orderBy("createdAt", "desc").onSnapshot((snapshot) => {
-                    const loadedTasks = snapshot.docs.map(doc => ({
-                        id: doc.id,
-                        ...doc.data()
-                    }));
+                    const loadedTasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                     setTodos(loadedTasks);
                 });
 
                 const unsubPositions = db.collection("positions").orderBy("createdAt", "desc").onSnapshot((snapshot) => {
-                    const loadedPositions = snapshot.docs.map(doc => ({
-                        id: doc.id,
-                        ...doc.data()
-                    }));
+                    const loadedPositions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                     setPositions(loadedPositions);
                 });
 
-                return () => {
-                    unsubCandidates();
-                    unsubTasks();
-                    unsubPositions();
-                };
+                return () => { unsubCandidates(); unsubTasks(); unsubPositions(); };
             }, []);
 
             // =========================================================================
-            // AGE CALCULATION LOGIC
+            // SAVE NEW CANDIDATE (TO FIRESTORE + GOOGLE SHEET)
+            // =========================================================================
+            const handleAddCandidateSubmit = async (e) => {
+                e.preventDefault();
+                if (!candForm.candidateName.trim() || isSavingCand) return;
+                setIsSavingCand(true);
+
+                try {
+                    const docId = "cand_" + Date.now();
+                    const firestorePayload = {
+                        'Candidate Name': candForm.candidateName.trim(),
+                        'CV -Source:': candForm.source || 'Naukri',
+                        'CV -Source-': candForm.source || 'Naukri',
+                        'Role': candForm.role.trim() || 'N/A',
+                        'Department': candForm.department.trim() || 'N/A',
+                        'Business Unit': candForm.businessUnit.trim() || 'N/A',
+                        'BU Head': candForm.buHead.trim() || 'N/A',
+                        'Location': candForm.location.trim() || 'N/A',
+                        'Contact Number': candForm.contactNumber.trim() || 'N/A',
+                        'Email': candForm.email.trim() || 'N/A',
+                        'Current Company': candForm.currentCompany.trim() || 'N/A',
+                        'Designation': candForm.designation.trim() || 'N/A',
+                        'Overall Experience': candForm.totalExp.trim() || 'N/A',
+                        'Current CTC': candForm.currentCtc.trim() || 'N/A',
+                        'Expected CTC': candForm.expectedCtc.trim() || 'N/A',
+                        'Notice Period': candForm.noticePeriod.trim() || 'N/A',
+                        'CV Screen Date': candForm.screenDate.trim() || getFormattedDDMMYYYY(),
+                        'Status': candForm.status || 'Sourced',
+                        createdAt: Date.now()
+                    };
+
+                    // 1. Write immediately to Firebase so Sourced Page updates instantaneously
+                    await db.collection("candidates").doc(docId).set(firestorePayload);
+
+                    // 2. Mirror row directly into Google Sheet
+                    mirrorToSheet({
+                        type: 'add_candidate',
+                        docId: docId,
+                        candidate: firestorePayload
+                    });
+
+                    setCandForm({ ...initialCandForm, screenDate: getFormattedDDMMYYYY() });
+                    setCandSaveBanner(`✅ ${firestorePayload['Candidate Name']} added to Sourced & synced to Google Sheet!`);
+                    setTimeout(() => setCandSaveBanner(''), 4000);
+                } catch (err) {
+                    console.error("Failed to save candidate:", err);
+                    alert("Error saving candidate. Check console.");
+                } finally {
+                    setIsSavingCand(false);
+                }
+            };
+
+            // =========================================================================
+            // AGE & HIKE CALCULATIONS
             // =========================================================================
             const ageResult = React.useMemo(() => {
-                if (!dobInput) return null;
-                const birthDate = new Date(dobInput + 'T00:00:00');
+                if (!dobInput || dobInput.trim() === '') return null;
+                const cleaned = dobInput.trim().replace(/[\/\.]/g, '-');
+                const parts = cleaned.split('-');
+                if (parts.length !== 3) return { invalid: true };
+
+                let day, month, year;
+                if (parts[0].length === 4) {
+                    year = parseInt(parts[0], 10);
+                    month = parseInt(parts[1], 10) - 1;
+                    day = parseInt(parts[2], 10);
+                } else {
+                    day = parseInt(parts[0], 10);
+                    month = parseInt(parts[1], 10) - 1;
+                    year = parseInt(parts[2], 10);
+                    if (year < 100) year += 2000;
+                }
+
+                const birthDate = new Date(year, month, day);
                 const today = new Date();
-                if (isNaN(birthDate.getTime()) || birthDate > today) return { invalid: true };
+                if (isNaN(birthDate.getTime()) || birthDate > today || month < 0 || month > 11 || day < 1 || day > 31) {
+                    return { invalid: true };
+                }
 
                 let years = today.getFullYear() - birthDate.getFullYear();
                 let months = today.getMonth() - birthDate.getMonth();
@@ -247,18 +340,13 @@
 
                 const totalDays = Math.floor((today - birthDate) / (1000 * 60 * 60 * 24));
                 const totalMonths = years * 12 + months;
-
                 return { invalid: false, years, months, days, totalDays, totalMonths };
             }, [dobInput]);
 
-            // =========================================================================
-            // HIKE CALCULATION LOGIC
-            // =========================================================================
             const hikeByPercentResult = React.useMemo(() => {
                 const curr = parseFloat(currentSalInput);
                 const pct = parseFloat(hikePercentInput);
                 if (isNaN(curr) || isNaN(pct) || curr < 0) return null;
-
                 const hikeAmount = (curr * pct) / 100;
                 const newSalary = curr + hikeAmount;
                 return {
@@ -271,7 +359,6 @@
                 const oldVal = parseFloat(oldSalCompare);
                 const newVal = parseFloat(newSalCompare);
                 if (isNaN(oldVal) || isNaN(newVal) || oldVal <= 0) return null;
-
                 const diffAmount = newVal - oldVal;
                 const percentChange = (diffAmount / oldVal) * 100;
                 return {
@@ -288,9 +375,6 @@
                 return `${trimmed} LPA`;
             };
 
-            // =========================================================================
-            // POSITION ACTIONS
-            // =========================================================================
             const handleSavePosition = async () => {
                 if (!newPosTitle.trim()) return;
                 const formattedSalary = formatSalaryLPA(newPosSalary);
@@ -357,9 +441,6 @@
                 return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
             };
 
-            // =========================================================================
-            // CANDIDATE STATUS ACTIONS
-            // =========================================================================
             const handleStatusChange = async (candidate, newStatus) => {
                 if (window.confirm(`Change status of ${candidate.candidateName} to "${newStatus}"?`)) {
                     await db.collection("candidates").doc(candidate.docId).update({ Status: newStatus });
@@ -374,13 +455,9 @@
                 }
             };
 
-            // =========================================================================
-            // TASK ACTIONS
-            // =========================================================================
             const handleAddTask = async () => {
                 if (!newTaskTitle.trim() || isSavingTask) return;
                 setIsSavingTask(true);
-
                 try {
                     const taskId = "task_" + Date.now();
                     const newTask = {
@@ -391,10 +468,8 @@
                         completed: false,
                         createdAt: Date.now()
                     };
-
                     await db.collection("tasks").doc(taskId).set(newTask);
                     mirrorToSheet({ type: 'task', ...newTask });
-
                     setNewTaskTitle('');
                     setNewTaskDate(getTodayString());
                 } catch (err) {
@@ -421,7 +496,8 @@
                     p.candidateName.toLowerCase().includes(term) ||
                     p.role.toLowerCase().includes(term) ||
                     p.source.toLowerCase().includes(term) ||
-                    p.location.toLowerCase().includes(term)
+                    p.location.toLowerCase().includes(term) ||
+                    p.currentCompany.toLowerCase().includes(term)
                 );
             });
 
@@ -431,8 +507,9 @@
 
             const navItems = [
                 { id: 'dashboard', label: 'Home', icon: Icons.Dashboard },
-                { id: 'positions', label: 'Positions', icon: Icons.Positions, count: positions.filter(p => p.status === 'Open').length },
+                { id: 'add_candidate', label: 'Candidate', icon: Icons.AddCandidate },
                 { id: 'profiles', label: 'Sourced', icon: Icons.Directory, count: profiles.length },
+                { id: 'positions', label: 'Positions', icon: Icons.Positions, count: positions.filter(p => p.status === 'Open').length },
                 { id: 'joiners', label: 'Joiners', icon: Icons.Joiners, count: joiners.length },
                 { id: 'todos', label: 'Tasks', icon: Icons.Tasks, count: todos.length },
                 { id: 'calculators', label: 'Calculators', icon: Icons.Calculator }
@@ -506,6 +583,7 @@
                                     <div>
                                         <h1 className="font-heading font-extrabold text-sm md:text-base leading-tight">
                                             {activeTab === 'dashboard' && 'Personal Overview'}
+                                            {activeTab === 'add_candidate' && 'Add New Candidate'}
                                             {activeTab === 'positions' && 'Open Positions Management'}
                                             {activeTab === 'profiles' && 'Sourced Candidates Directory'}
                                             {activeTab === 'joiners' && 'Joiners & Offers'}
@@ -525,21 +603,26 @@
                                         </button>
                                     )}
                                     <span className="px-2.5 py-1 rounded-lg bg-emerald-50 text-successMint text-[10px] font-bold border border-emerald-200">
-                                        ● Live
+                                        ● {syncStatus}
                                     </span>
                                 </div>
                             </div>
 
                             {activeTab === 'profiles' && (
-                                <div className="w-full md:w-72 relative">
-                                    <span className="absolute left-3 top-2.5 text-navyMuted"><Icons.Search /></span>
-                                    <input
-                                        type="text"
-                                        placeholder="Search candidate..."
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
-                                        className="w-full pl-9 pr-3 py-2 rounded-xl app-input text-xs font-medium"
-                                    />
+                                <div className="flex items-center gap-2 w-full md:w-auto">
+                                    <div className="flex-1 md:w-64 relative">
+                                        <span className="absolute left-3 top-2.5 text-navyMuted"><Icons.Search /></span>
+                                        <input
+                                            type="text"
+                                            placeholder="Search name, role, location..."
+                                            value={searchTerm}
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                            className="w-full pl-9 pr-3 py-2 rounded-xl app-input text-xs font-medium"
+                                        />
+                                    </div>
+                                    <button onClick={() => setActiveTab('add_candidate')} className="px-3 py-2 app-btn-primary text-xs font-bold whitespace-nowrap">
+                                        ➕ Add
+                                    </button>
                                 </div>
                             )}
 
@@ -551,7 +634,7 @@
                         </header>
 
                         {/* Scrollable Workspace Body */}
-                        <div className="flex-1 overflow-y-auto pr-0.5 space-y-4 pb-16 md:pb-6">
+                        <div className="flex-1 overflow-y-auto pr-0.5 space-y-4 pb-20 md:pb-6">
 
                             {/* DASHBOARD PAGE */}
                             {activeTab === 'dashboard' && (
@@ -559,17 +642,17 @@
                                     <div className="p-3.5 rounded-2xl app-card flex items-center justify-between gap-2 bg-gradient-to-r from-orange-50/50 to-white">
                                         <div className="hidden sm:block">
                                             <h4 className="font-heading font-extrabold text-xs text-midnightNavy">Quick Actions</h4>
-                                            <p className="text-[10px] text-navyMuted">Create roles, tasks, or use calculators in 1 click</p>
+                                            <p className="text-[10px] text-navyMuted">Add candidates, roles, or tasks in 1 click</p>
                                         </div>
-                                        <div className="flex items-center gap-2 w-full sm:w-auto">
-                                            <button onClick={() => { resetPosModal(); setIsAddPosOpen(true); }} className="flex-1 sm:flex-initial px-3 py-2 app-btn-primary text-xs font-bold flex items-center justify-center gap-1">
+                                        <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
+                                            <button onClick={() => setActiveTab('add_candidate')} className="flex-1 sm:flex-initial px-3 py-2 app-btn-primary text-xs font-bold flex items-center justify-center gap-1">
+                                                👤 Add Candidate
+                                            </button>
+                                            <button onClick={() => { resetPosModal(); setIsAddPosOpen(true); }} className="flex-1 sm:flex-initial px-3 py-2 app-btn-secondary text-xs font-bold flex items-center justify-center gap-1">
                                                 ➕ New Position
                                             </button>
                                             <button onClick={() => setActiveTab('todos')} className="flex-1 sm:flex-initial px-3 py-2 app-btn-secondary text-xs font-bold flex items-center justify-center gap-1">
                                                 ⚡ Add Task
-                                            </button>
-                                            <button onClick={() => setActiveTab('calculators')} className="flex-1 sm:flex-initial px-3 py-2 app-btn-secondary text-xs font-bold flex items-center justify-center gap-1">
-                                                🧮 Calculators
                                             </button>
                                         </div>
                                     </div>
@@ -660,6 +743,233 @@
                                 </div>
                             )}
 
+                            {/* ADD CANDIDATE PAGE */}
+                            {activeTab === 'add_candidate' && (
+                                <div className="max-w-3xl mx-auto">
+                                    <form onSubmit={handleAddCandidateSubmit} className="p-5 rounded-2xl app-card space-y-4">
+                                        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                                            <div>
+                                                <h2 className="font-heading font-extrabold text-base text-midnightNavy">👤 Candidate Intake Form</h2>
+                                                <p className="text-[11px] text-navyMuted">Saves directly to Google Sheet and appears immediately in the Sourced page</p>
+                                            </div>
+                                            <button type="button" onClick={() => setActiveTab('profiles')} className="px-3 py-1.5 app-btn-secondary text-xs font-bold">
+                                                View Sourced ({profiles.length}) →
+                                            </button>
+                                        </div>
+
+                                        {candSaveBanner && (
+                                            <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-successMint text-xs font-bold flex items-center justify-between">
+                                                <span>{candSaveBanner}</span>
+                                                <button type="button" onClick={() => setActiveTab('profiles')} className="underline ml-2">See in Sourced</button>
+                                            </div>
+                                        )}
+
+                                        {/* Section 1: Basic Info */}
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                                            <div className="sm:col-span-2">
+                                                <label className="block font-bold text-navyMuted mb-1">Candidate Name <span className="text-solarOrange">*</span></label>
+                                                <input
+                                                    type="text"
+                                                    required
+                                                    placeholder="e.g. Karthik Subramanian"
+                                                    value={candForm.candidateName}
+                                                    onChange={e => setCandForm({ ...candForm, candidateName: e.target.value })}
+                                                    className="w-full p-2.5 rounded-xl app-input font-semibold"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block font-bold text-navyMuted mb-1">CV Source</label>
+                                                <select
+                                                    value={candForm.source}
+                                                    onChange={e => setCandForm({ ...candForm, source: e.target.value })}
+                                                    className="w-full p-2.5 rounded-xl app-input font-bold cursor-pointer"
+                                                >
+                                                    <option value="Naukri">Naukri</option>
+                                                    <option value="LinkedIn">LinkedIn</option>
+                                                    <option value="Referral">Referral</option>
+                                                    <option value="Indeed">Indeed</option>
+                                                    <option value="Walk-in">Walk-in</option>
+                                                    <option value="Direct">Direct</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        {/* Section 2: Role & Organization Mapping */}
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                                            <div>
+                                                <label className="block font-bold text-navyMuted mb-1">Role Applied</label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="e.g. Sales Manager"
+                                                    value={candForm.role}
+                                                    onChange={e => setCandForm({ ...candForm, role: e.target.value })}
+                                                    className="w-full p-2.5 rounded-xl app-input font-medium"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block font-bold text-navyMuted mb-1">Department</label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="e.g. Sales"
+                                                    value={candForm.department}
+                                                    onChange={e => setCandForm({ ...candForm, department: e.target.value })}
+                                                    className="w-full p-2.5 rounded-xl app-input font-medium"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block font-bold text-navyMuted mb-1">Business Unit</label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="e.g. Dingli / AWPs"
+                                                    value={candForm.businessUnit}
+                                                    onChange={e => setCandForm({ ...candForm, businessUnit: e.target.value })}
+                                                    className="w-full p-2.5 rounded-xl app-input font-medium"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block font-bold text-navyMuted mb-1">BU Head</label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="e.g. Rohit"
+                                                    value={candForm.buHead}
+                                                    onChange={e => setCandForm({ ...candForm, buHead: e.target.value })}
+                                                    className="w-full p-2.5 rounded-xl app-input font-medium"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Section 3: Contact & Location */}
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                                            <div>
+                                                <label className="block font-bold text-navyMuted mb-1">Contact Number</label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="e.g. 9876543210"
+                                                    value={candForm.contactNumber}
+                                                    onChange={e => setCandForm({ ...candForm, contactNumber: e.target.value })}
+                                                    className="w-full p-2.5 rounded-xl app-input font-medium"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block font-bold text-navyMuted mb-1">Email ID</label>
+                                                <input
+                                                    type="email"
+                                                    placeholder="e.g. candidate@email.com"
+                                                    value={candForm.email}
+                                                    onChange={e => setCandForm({ ...candForm, email: e.target.value })}
+                                                    className="w-full p-2.5 rounded-xl app-input font-medium"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block font-bold text-navyMuted mb-1">Location</label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="e.g. Chennai / Kolkata"
+                                                    value={candForm.location}
+                                                    onChange={e => setCandForm({ ...candForm, location: e.target.value })}
+                                                    className="w-full p-2.5 rounded-xl app-input font-medium"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Section 4: Current Employment */}
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                                            <div>
+                                                <label className="block font-bold text-navyMuted mb-1">Current Company</label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Company name"
+                                                    value={candForm.currentCompany}
+                                                    onChange={e => setCandForm({ ...candForm, currentCompany: e.target.value })}
+                                                    className="w-full p-2.5 rounded-xl app-input font-medium"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block font-bold text-navyMuted mb-1">Designation</label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Current title"
+                                                    value={candForm.designation}
+                                                    onChange={e => setCandForm({ ...candForm, designation: e.target.value })}
+                                                    className="w-full p-2.5 rounded-xl app-input font-medium"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block font-bold text-navyMuted mb-1">Overall Experience</label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="e.g. 4.5 Yrs"
+                                                    value={candForm.totalExp}
+                                                    onChange={e => setCandForm({ ...candForm, totalExp: e.target.value })}
+                                                    className="w-full p-2.5 rounded-xl app-input font-medium"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Section 5: Compensation & Status */}
+                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                                            <div>
+                                                <label className="block font-bold text-navyMuted mb-1">Current CTC</label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="e.g. 6.5 LPA"
+                                                    value={candForm.currentCtc}
+                                                    onChange={e => setCandForm({ ...candForm, currentCtc: e.target.value })}
+                                                    className="w-full p-2.5 rounded-xl app-input font-medium"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block font-bold text-navyMuted mb-1">Expected CTC</label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="e.g. 8.5 LPA"
+                                                    value={candForm.expectedCtc}
+                                                    onChange={e => setCandForm({ ...candForm, expectedCtc: e.target.value })}
+                                                    className="w-full p-2.5 rounded-xl app-input font-medium"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block font-bold text-navyMuted mb-1">Notice Period</label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="e.g. 30 Days"
+                                                    value={candForm.noticePeriod}
+                                                    onChange={e => setCandForm({ ...candForm, noticePeriod: e.target.value })}
+                                                    className="w-full p-2.5 rounded-xl app-input font-medium"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block font-bold text-navyMuted mb-1">CV Screen Date</label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="DD-MM-YYYY"
+                                                    value={candForm.screenDate}
+                                                    onChange={e => setCandForm({ ...candForm, screenDate: e.target.value })}
+                                                    className="w-full p-2.5 rounded-xl app-input font-medium"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                                            <button
+                                                type="button"
+                                                onClick={() => setCandForm({ ...initialCandForm, screenDate: getFormattedDDMMYYYY() })}
+                                                className="px-4 py-2.5 app-btn-secondary text-xs font-bold text-navyMuted"
+                                            >
+                                                Reset Form
+                                            </button>
+                                            <button
+                                                type="submit"
+                                                disabled={isSavingCand}
+                                                className="px-6 py-2.5 app-btn-primary text-xs font-bold shadow-sm"
+                                            >
+                                                {isSavingCand ? 'Saving to Sheet & Firebase...' : '💾 Save Candidate'}
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            )}
+
                             {/* OPEN POSITIONS PAGE */}
                             {activeTab === 'positions' && (
                                 <div className="p-4 rounded-2xl app-card space-y-3">
@@ -712,20 +1022,25 @@
                             {/* SOURCED DIRECTORY PAGE */}
                             {activeTab === 'profiles' && (
                                 <div className="p-4 rounded-2xl app-card space-y-3">
-                                    <h2 className="font-heading font-bold text-sm text-midnightNavy">Sourced Candidates List ({filteredProfiles.length})</h2>
+                                    <div className="flex items-center justify-between">
+                                        <h2 className="font-heading font-bold text-sm text-midnightNavy">Sourced Candidates List ({filteredProfiles.length})</h2>
+                                        <span className="text-[10px] text-navyMuted">Click candidate name for full details</span>
+                                    </div>
                                     <div className="overflow-x-auto">
                                         <table className="w-full text-left border-collapse">
                                             <thead>
                                                 <tr className="border-b border-slate-200 text-[11px] text-navyMuted font-bold uppercase tracking-wider">
                                                     <th className="p-3">Candidate Name</th>
-                                                    <th className="p-3">Role</th>
+                                                    <th className="p-3">Role / BU</th>
+                                                    <th className="p-3">Exp & CTC</th>
                                                     <th className="p-3">Location</th>
+                                                    <th className="p-3">Source</th>
                                                     <th className="p-3 text-center">Action</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="text-xs">
                                                 {filteredProfiles.length === 0 ? (
-                                                    <tr><td colSpan="4" className="text-center p-6 text-navyMuted font-medium">No candidate records match your search.</td></tr>
+                                                    <tr><td colSpan="6" className="text-center p-6 text-navyMuted font-medium">No candidate records match your search.</td></tr>
                                                 ) : (
                                                     filteredProfiles.map((p, idx) => (
                                                         <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50">
@@ -733,11 +1048,22 @@
                                                                 <button onClick={() => setSelectedCandidate(p)} className="font-bold text-solarOrange hover:underline text-left">
                                                                     {p.candidateName}
                                                                 </button>
+                                                                <p className="text-[10px] text-navyMuted">{p.contactNumber}</p>
                                                             </td>
-                                                            <td className="p-3 font-medium text-midnightNavy">{p.role}</td>
+                                                            <td className="p-3">
+                                                                <p className="font-semibold text-midnightNavy">{p.role}</p>
+                                                                <p className="text-[10px] text-navyMuted">{p.businessUnit}</p>
+                                                            </td>
+                                                            <td className="p-3">
+                                                                <p className="font-medium text-midnightNavy">{p.totalExp}</p>
+                                                                <p className="text-[10px] text-navyMuted">C: {p.currentCtc} → E: {p.expectedCtc}</p>
+                                                            </td>
                                                             <td className="p-3 text-navyMuted">{p.location}</td>
+                                                            <td className="p-3">
+                                                                <span className="px-2 py-0.5 rounded-md bg-orange-50 text-solarOrange text-[10px] font-bold">{p.source}</span>
+                                                            </td>
                                                             <td className="p-3 text-center">
-                                                                <button onClick={() => handleMarkJoined(p)} className="px-3 py-1 app-btn-primary text-[11px] font-bold">Mark Joined</button>
+                                                                <button onClick={() => handleMarkJoined(p)} className="px-3 py-1 app-btn-primary text-[11px] font-bold whitespace-nowrap">Mark Joined</button>
                                                             </td>
                                                         </tr>
                                                     ))
@@ -821,7 +1147,7 @@
                                 </div>
                             )}
 
-                            {/* CALCULATORS PAGE (AGE + HIKE CALCULATORS) */}
+                            {/* CALCULATORS PAGE */}
                             {activeTab === 'calculators' && (
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                                     
@@ -830,28 +1156,28 @@
                                         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                                             <div>
                                                 <h2 className="font-heading font-extrabold text-sm text-midnightNavy">🎂 Candidate Age Calculator</h2>
-                                                <p className="text-[11px] text-navyMuted">Select Date of Birth to calculate exact age</p>
+                                                <p className="text-[11px] text-navyMuted">Type Date of Birth (e.g. 09-02-1995)</p>
                                             </div>
                                             {dobInput && (
-                                                <button onClick={() => setDobInput('')} className="text-[11px] font-bold text-solarOrange hover:underline">Reset</button>
+                                                <button onClick={() => setDobInput('')} className="text-[11px] font-bold text-solarOrange hover:underline">Clear</button>
                                             )}
                                         </div>
 
                                         <div className="space-y-1.5 text-xs">
-                                            <label className="block font-bold text-navyMuted">Candidate Date of Birth (DOB)</label>
+                                            <label className="block font-bold text-navyMuted">Enter DOB (DD-MM-YYYY)</label>
                                             <input
-                                                type="date"
+                                                type="text"
+                                                placeholder="e.g. 09-02-1995"
                                                 value={dobInput}
-                                                max={getTodayString()}
                                                 onChange={(e) => setDobInput(e.target.value)}
-                                                className="w-full p-3 rounded-xl app-input font-semibold text-midnightNavy cursor-pointer"
+                                                className="w-full p-3 rounded-xl app-input font-bold text-sm text-midnightNavy tracking-wide"
                                             />
                                         </div>
 
                                         {ageResult ? (
                                             ageResult.invalid ? (
                                                 <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-xs text-red-600 font-semibold">
-                                                    Please select a valid Date of Birth in the past.
+                                                    Invalid date format. Please use DD-MM-YYYY (e.g., 09-02-1995).
                                                 </div>
                                             ) : (
                                                 <div className="space-y-3 pt-1">
@@ -876,12 +1202,12 @@
                                             )
                                         ) : (
                                             <div className="p-6 rounded-xl app-input text-center text-xs text-navyMuted italic">
-                                                Choose a birth date above to see the exact age breakdown.
+                                                Type a date above (e.g. 09-02-1995) to instantly calculate age.
                                             </div>
                                         )}
                                     </div>
 
-                                    {/* CARD 2: SALARY HIKE CALCULATOR (2 MODES) */}
+                                    {/* CARD 2: SALARY HIKE CALCULATOR */}
                                     <div className="p-5 rounded-2xl app-card space-y-5">
                                         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                                             <div>
@@ -898,7 +1224,6 @@
                                             )}
                                         </div>
 
-                                        {/* MODE A: Current Salary + Hike % -> New Salary */}
                                         <div className="space-y-2.5">
                                             <h3 className="font-heading font-bold text-xs text-midnightNavy flex items-center gap-1.5">
                                                 <span className="w-5 h-5 rounded-md bg-orange-100 text-solarOrange flex items-center justify-center text-[10px] font-extrabold">1</span>
@@ -945,7 +1270,6 @@
 
                                         <hr className="border-slate-100" />
 
-                                        {/* MODE B: Old Salary vs New Salary -> Exact Hike % & Amount */}
                                         <div className="space-y-2.5">
                                             <h3 className="font-heading font-bold text-xs text-midnightNavy flex items-center gap-1.5">
                                                 <span className="w-5 h-5 rounded-md bg-orange-100 text-solarOrange flex items-center justify-center text-[10px] font-extrabold">2</span>
@@ -1001,8 +1325,8 @@
                         </div>
                     </main>
 
-                    {/* Modern Floating Mobile Bottom Nav Bar */}
-                    <nav className="fixed bottom-3 left-3 right-3 z-40 bg-midnightNavy/95 backdrop-blur-md rounded-2xl shadow-xl border border-slate-800 flex items-center justify-around py-2 px-1 md:hidden">
+                    {/* Floating Mobile Bottom Nav Bar */}
+                    <nav className="fixed bottom-3 left-2 right-2 z-40 bg-midnightNavy/95 backdrop-blur-md rounded-2xl shadow-xl border border-slate-800 flex items-center justify-around py-2 px-1 md:hidden">
                         {navItems.map(tab => {
                             const IconComp = tab.icon;
                             const isActive = activeTab === tab.id;
@@ -1010,12 +1334,12 @@
                                 <button
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id)}
-                                    className={`relative flex flex-col items-center justify-center py-1.5 px-2 rounded-xl transition-all ${
+                                    className={`relative flex flex-col items-center justify-center py-1 px-1.5 rounded-xl transition-all ${
                                         isActive ? 'text-solarOrange font-bold scale-105' : 'text-slate-400 hover:text-white'
                                     }`}
                                 >
                                     <IconComp />
-                                    <span className="text-[9px] mt-0.5">{tab.label}</span>
+                                    <span className="text-[8px] mt-0.5">{tab.label}</span>
                                     {isActive && <span className="absolute -bottom-1 w-1 h-1 rounded-full bg-solarOrange"></span>}
                                 </button>
                             );
@@ -1084,18 +1408,24 @@
                                 <div className="flex justify-between items-start border-b border-slate-200 pb-3">
                                     <div>
                                         <h3 className="font-heading font-extrabold text-xl text-midnightNavy">{selectedCandidate.candidateName}</h3>
-                                        <p className="text-xs font-bold text-solarOrange">{selectedCandidate.role} • {selectedCandidate.department}</p>
+                                        <p className="text-xs font-bold text-solarOrange">{selectedCandidate.role} • {selectedCandidate.department} ({selectedCandidate.businessUnit})</p>
                                     </div>
                                     <button onClick={() => setSelectedCandidate(null)} className="w-7 h-7 rounded-lg app-btn-secondary flex items-center justify-center font-bold text-xs">✕</button>
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-2 text-xs">
                                     <div className="p-2.5 rounded-xl app-input"><p className="text-[10px] text-navyMuted font-bold uppercase">Source</p><p className="font-bold text-midnightNavy mt-0.5">{selectedCandidate.source}</p></div>
+                                    <div className="p-2.5 rounded-xl app-input"><p className="text-[10px] text-navyMuted font-bold uppercase">Screen Date</p><p className="font-bold text-midnightNavy mt-0.5">{selectedCandidate.screenDate}</p></div>
                                     <div className="p-2.5 rounded-xl app-input"><p className="text-[10px] text-navyMuted font-bold uppercase">Contact</p><p className="font-bold text-midnightNavy mt-0.5">{selectedCandidate.contactNumber}</p></div>
+                                    <div className="p-2.5 rounded-xl app-input"><p className="text-[10px] text-navyMuted font-bold uppercase">Email</p><p className="font-bold text-midnightNavy mt-0.5 truncate">{selectedCandidate.emailId}</p></div>
+                                    <div className="p-2.5 rounded-xl app-input"><p className="text-[10px] text-navyMuted font-bold uppercase">Current Company</p><p className="font-bold text-midnightNavy mt-0.5">{selectedCandidate.currentCompany}</p></div>
+                                    <div className="p-2.5 rounded-xl app-input"><p className="text-[10px] text-navyMuted font-bold uppercase">Designation</p><p className="font-bold text-midnightNavy mt-0.5">{selectedCandidate.designation}</p></div>
                                     <div className="p-2.5 rounded-xl app-input"><p className="text-[10px] text-navyMuted font-bold uppercase">Location</p><p className="font-bold text-midnightNavy mt-0.5">{selectedCandidate.location}</p></div>
                                     <div className="p-2.5 rounded-xl app-input"><p className="text-[10px] text-navyMuted font-bold uppercase">Experience</p><p className="font-bold text-midnightNavy mt-0.5">{selectedCandidate.totalExp}</p></div>
                                     <div className="p-2.5 rounded-xl app-input"><p className="text-[10px] text-navyMuted font-bold uppercase">Current CTC</p><p className="font-bold text-midnightNavy mt-0.5">{selectedCandidate.currentCtc}</p></div>
                                     <div className="p-2.5 rounded-xl app-input"><p className="text-[10px] text-navyMuted font-bold uppercase">Expected CTC</p><p className="font-bold text-midnightNavy mt-0.5">{selectedCandidate.expectedCtc}</p></div>
+                                    <div className="p-2.5 rounded-xl app-input"><p className="text-[10px] text-navyMuted font-bold uppercase">Notice Period</p><p className="font-bold text-midnightNavy mt-0.5">{selectedCandidate.noticePeriod}</p></div>
+                                    <div className="p-2.5 rounded-xl app-input"><p className="text-[10px] text-navyMuted font-bold uppercase">BU Head</p><p className="font-bold text-midnightNavy mt-0.5">{selectedCandidate.buHead}</p></div>
                                 </div>
 
                                 <div className="flex justify-end pt-2 border-t border-slate-200">
