@@ -1,4 +1,11 @@
 self.addEventListener('fetch', (event) => {
-  // Allows app to function smoothly and install natively
-  event.respondWith(fetch(event.request).catch(() => caches.match(event.request)));
+    event.respondWith(
+        fetch(event.request).catch(() => {
+            // Optional: return a fallback offline page or cache response here
+            return new Response("Network error happened", {
+                status: 408,
+                headers: { "Content-Type": "text/plain" }
+            });
+        })
+    );
 });
