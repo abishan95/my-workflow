@@ -1,11 +1,8 @@
 self.addEventListener('fetch', (event) => {
+    if (event.request.method !== 'GET' || !event.request.url.startsWith(self.location.origin)) {
+        return;
+    }
     event.respondWith(
-        fetch(event.request).catch(() => {
-            // Optional: return a fallback offline page or cache response here
-            return new Response("Network error happened", {
-                status: 408,
-                headers: { "Content-Type": "text/plain" }
-            });
-        })
+        fetch(event.request).catch(() => caches.match(event.request))
     );
 });
