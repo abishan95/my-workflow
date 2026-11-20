@@ -211,6 +211,15 @@
 
     <div id="root"></div>
 
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                const loader = document.getElementById('smooth-preloader');
+                if (loader) loader.classList.add('loader-hidden');
+            }, 1200);
+        });
+    </script>
+
     <script type="text/babel">
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
@@ -230,7 +239,7 @@
             appId: "YOUR_APP_ID"
         };
 
-        const SHEET_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbxkDROFiaB61RSqXk4NpklhR5_XRPcQJdQNAwojglUUVvQzaIyT4Rm_HREMhcTjHg55/exec";
+        const SHEET_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbxkDROFiaB61RSqXk4NpklhR5_XRPcQJdQNAwojglUUVvQzaIyT4Rm_HREMhcTjHg55/execL";
 
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
@@ -446,9 +455,7 @@
                 return () => { unsubCandidates(); unsubTasks(); unsubPositions(); };
             }, []);
 
-            // =====================================================================
-            // FEATURE 1: DUPLICATE CANDIDATE FINDER (BY PHONE OR EMAIL)
-            // =====================================================================
+            // DUPLICATE CANDIDATE FINDER (BY PHONE OR EMAIL)
             const duplicateMatches = React.useMemo(() => {
                 const phoneClean = normalizePhone(candForm.contactNumber);
                 const emailClean = normalizeEmail(candForm.email);
@@ -468,9 +475,7 @@
                 });
             }, [candForm.contactNumber, candForm.email, profiles, joiners]);
 
-            // =====================================================================
-            // FEATURE 2 & 3: HISTORY AUTO-SUGGESTIONS + EDITABLE CV SOURCE/VENDORS
-            // =====================================================================
+            // HISTORY AUTO-SUGGESTIONS + EDITABLE CV SOURCE/VENDORS
             const suggestions = React.useMemo(() => {
                 const allRecords = [...profiles, ...joiners];
                 const collectUnique = (getter, defaults = []) => {
@@ -651,4 +656,1126 @@
                     mirrorToSheet({ type: 'position', id: editingPosId, createdDate: existing?.createdDate || getTodayString(), status: existing?.status || 'Open', ...updatedData });
                 } else {
                     const newId = "pos_" + Date.now();
-                    const newPos
+                    const newPos = {
+                        id: newId,
+                        title: newPosTitle.trim(),
+                        exp: newPosExp || '0-2 Yrs',
+                        maxSalary: formattedSalary,
+                        department: newPosDept || 'General',
+                        businessUnit: newPosBU || 'Main Unit',
+                        reportingTo: newPosReporting || 'HOD',
+                        createdDate: getTodayString(),
+                        status: 'Open',
+                        createdAt: Date.now()
+                    };
+                    await db.collection("positions").doc(newId).set(newPos);
+                    mirrorToSheet({ type: 'position', ...newPos });
+                }
+                resetPosModal();
+            };
+
+            const openEditPosition = (pos) => {
+                setEditingPosId(pos.id);
+                setNewPosTitle(pos.title);
+                setNewPosExp(pos.exp);
+                setNewPosSalary(pos.maxSalary);
+                setNewPosDept(pos.department);
+                setNewPosBU(pos.businessUnit);
+                setNewPosReporting(pos.reportingTo);
+                setIsAddPosOpen(true);
+            };
+
+            const resetPosModal = () => {
+                setIsAddPosOpen(false);
+                setEditingPosId(null);
+                setNewPosTitle(''); setNewPosExp(''); setNewPosSalary(''); setNewPosDept(''); setNewPosBU(''); setNewPosReporting('');
+            };
+
+            const handlePositionStatusChange = async (pos, newStatus) => {
+                await db.collection("positions").doc(pos.id).update({ status: newStatus });
+                mirrorToSheet({ type: 'position', ...pos, status: newStatus });
+            };
+
+            const calculateAgeing = (createdDateStr) => {
+                if (!createdDateStr || createdDateStr === 'N/A') return 0;
+                const created = new Date(createdDateStr);
+                const today = new Date();
+                const diffTime = Math.abs(today - created);
+                return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            };
+
+            const handleStatusChange = async (candidate, newStatus) => {
+                if (window.confirm(`Change status of ${candidate.candidateName} to "${newStatus}"?`)) {
+                    await db.collection("candidates").doc(candidate.docId).update({ Status: newStatus });
+                    mirrorToSheet({ type: 'candidate_status', rowNumber: candidate.rowNumber, status: newStatus });
+                }
+            };
+
+            const handleMarkJoined = async (candidate) => {
+                if (window.confirm(`Mark ${candidate.candidateName} as JOINED?`)) {
+                    await db.collection("candidates").doc(candidate.docId).update({ Status: 'Joined' });
+                    mirrorToSheet({ type: 'candidate_status', rowNumber: candidate.rowNumber, status: 'Joined' });
+                }
+            };
+
+            const handleAddTask = async () => {
+                if (!newTaskTitle.trim() || isSavingTask) return;
+                setIsSavingTask(true);
+                try {
+                    const taskId = "task_" + Date.now();
+                    const newTask = {
+                        id: taskId,
+                        title: newTaskTitle.trim(),
+                        heading: newTaskHeading,
+                        date: newTaskDate || getTodayString(),
+                        completed: false,
+                        createdAt: Date.now()
+                    };
+                    await db.collection("tasks").doc(taskId).set(newTask);
+                    mirrorToSheet({ type: 'task', ...newTask });
+                    setNewTaskTitle('');
+                    setNewTaskDate(getTodayString());
+                } catch (err) {
+                    console.error("Error adding task:", err);
+                } finally {
+                    setIsSavingTask(false);
+                }
+            };
+
+            const toggleTaskStatus = async (task) => {
+                const newCompleted = !task.completed;
+                await db.collection("tasks").doc(task.id).update({ completed: newCompleted });
+                mirrorToSheet({ type: 'task', ...task, completed: newCompleted });
+            };
+
+            const deleteTask = async (task) => {
+                await db.collection("tasks").doc(task.id).delete();
+                mirrorToSheet({ type: 'task', action: 'delete_task', id: task.id });
+            };
+
+            const filteredProfiles = profiles.filter(p => {
+                const term = searchTerm.toLowerCase();
+                return (
+                    p.candidateName.toLowerCase().includes(term) ||
+                    p.role.toLowerCase().includes(term) ||
+                    p.source.toLowerCase().includes(term) ||
+                    p.location.toLowerCase().includes(term) ||
+                    p.currentCompany.toLowerCase().includes(term)
+                );
+            });
+
+            const totalPipelineCount = profiles.length + joiners.length;
+            const joinerRate = totalPipelineCount > 0 ? Math.round((joiners.length / totalPipelineCount) * 100) : 0;
+            const activePendingTasks = todos.filter(t => !t.completed);
+
+            const navItems = [
+                { id: 'dashboard', label: 'Home', icon: Icons.Dashboard },
+                { id: 'add_candidate', label: 'Candidate', icon: Icons.AddCandidate },
+                { id: 'profiles', label: 'Sourced', icon: Icons.Directory, count: profiles.length },
+                { id: 'positions', label: 'Positions', icon: Icons.Positions, count: positions.filter(p => p.status === 'Open').length },
+                { id: 'joiners', label: 'Joiners', icon: Icons.Joiners, count: joiners.length },
+                { id: 'todos', label: 'Tasks', icon: Icons.Tasks, count: todos.length },
+                { id: 'calculators', label: 'Calculators', icon: Icons.Calculator }
+            ];
+
+            return (
+                <div className="flex flex-col md:flex-row h-screen overflow-hidden bg-porcelain">
+                    
+                    {/* Desktop Sidebar */}
+                    <MotionCard className="w-64 p-5 flex-col justify-between hidden md:flex z-20 m-4 rounded-2xl">
+                        <div>
+                            <div className="flex items-center space-x-3 mb-8 px-2">
+                                <img src="./logo.jpeg" alt="Logo" className="w-10 h-10 rounded-xl object-cover border border-slate-200 transition-transform duration-300 hover:scale-105" />
+                                <div>
+                                    <h1 className="font-heading font-extrabold text-base leading-tight">My Work Flow</h1>
+                                    <p className="text-[11px] text-navyMuted">Firebase Real-Time</p>
+                                </div>
+                            </div>
+
+                            <nav className="space-y-1.5">
+                                {navItems.map(tab => {
+                                    const IconComp = tab.icon;
+                                    const isActive = activeTab === tab.id;
+                                    return (
+                                        <button
+                                            key={tab.id}
+                                            onClick={() => setActiveTab(tab.id)}
+                                            className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-semibold text-xs transition-all duration-200 active:scale-[0.98] ${
+                                                isActive ? 'bg-orange-50 text-solarOrange border border-orange-200 shadow-xs' : 'text-navyMuted hover:text-midnightNavy hover:bg-slate-50 hover:translate-x-0.5'
+                                            }`}
+                                        >
+                                            <div className="flex items-center space-x-3">
+                                                <IconComp />
+                                                <span className="font-heading">{tab.label}</span>
+                                            </div>
+                                            {tab.count !== undefined && (
+                                                <span className={`px-2 py-0.5 rounded-full text-[10px] transition-transform ${isActive ? 'bg-solarOrange text-white scale-105' : 'bg-slate-100 text-navyMuted'}`}>
+                                                    {tab.count}
+                                                </span>
+                                            )}
+                                        </button>
+                                    );
+                                })}
+                            </nav>
+                        </div>
+
+                        <div className="space-y-2">
+                            {isInstallable && (
+                                <button onClick={handleInstallApp} className="w-full py-2 px-3 app-btn-primary font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm">
+                                    <Icons.Download /> Install App
+                                </button>
+                            )}
+                            <div className="p-3 rounded-xl app-input text-[11px] font-medium text-navyMuted flex items-center justify-between">
+                                <span className="flex items-center gap-1.5 truncate">
+                                    <span className="w-2 h-2 rounded-full bg-successMint animate-pulse"></span>
+                                    <span>{syncStatus}</span>
+                                </span>
+                                <span className="text-[10px] text-successMint font-bold">Auto-Sync</span>
+                            </div>
+                        </div>
+                    </MotionCard>
+
+                    {/* Main Workspace Layout */}
+                    <main className="flex-1 flex flex-col h-screen overflow-hidden p-3 md:p-4 md:pl-0">
+                        
+                        {/* Header */}
+                        <MotionCard className="p-3.5 rounded-2xl mb-3 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                            <div className="flex items-center justify-between w-full md:w-auto">
+                                <div className="flex items-center space-x-2.5">
+                                    <img src="./logo.jpeg" alt="Logo" className="w-8 h-8 rounded-xl object-cover border border-slate-200 md:hidden" />
+                                    <div>
+                                        <h1 className="font-heading font-extrabold text-sm md:text-base leading-tight">
+                                            {activeTab === 'dashboard' && 'Personal Overview'}
+                                            {activeTab === 'add_candidate' && 'Add New Candidate'}
+                                            {activeTab === 'positions' && 'Open Positions Management'}
+                                            {activeTab === 'profiles' && 'Sourced Candidates Directory'}
+                                            {activeTab === 'joiners' && 'Joiners & Offers'}
+                                            {activeTab === 'todos' && 'Task Workflow Console'}
+                                            {activeTab === 'calculators' && 'HR & Recruitment Calculators'}
+                                        </h1>
+                                        <p className="text-[10px] md:text-[11px] text-navyMuted">
+                                            {formattedCurrentDate} • Welcome back, Abishan
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center space-x-2 md:hidden">
+                                    {isInstallable && (
+                                        <button onClick={handleInstallApp} className="p-2 app-btn-primary text-xs font-bold rounded-xl">
+                                            Install
+                                        </button>
+                                    )}
+                                    <span className="px-2.5 py-1 rounded-lg bg-emerald-50 text-successMint text-[10px] font-bold border border-emerald-200">
+                                        ● {syncStatus}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {activeTab === 'profiles' && (
+                                <div className="flex items-center gap-2 w-full md:w-auto">
+                                    <div className="flex-1 md:w-64 relative">
+                                        <span className="absolute left-3 top-2.5 text-navyMuted"><Icons.Search /></span>
+                                        <input
+                                            type="text"
+                                            placeholder="Search name, role, location..."
+                                            value={searchTerm}
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                            className="w-full pl-9 pr-3 py-2 rounded-xl app-input text-xs font-medium"
+                                        />
+                                    </div>
+                                    <button onClick={() => setActiveTab('add_candidate')} className="px-3 py-2 app-btn-primary text-xs font-bold whitespace-nowrap">
+                                        ➕ Add
+                                    </button>
+                                </div>
+                            )}
+
+                            {activeTab === 'positions' && (
+                                <button onClick={() => { resetPosModal(); setIsAddPosOpen(true); }} className="px-3.5 py-2 app-btn-primary text-xs font-bold flex items-center gap-1.5 self-start md:self-auto">
+                                    ➕ Add Position
+                                </button>
+                            )}
+                        </MotionCard>
+
+                        {/* Scrollable Workspace Body */}
+                        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto pr-0.5 space-y-4 pb-20 md:pb-6">
+
+                            {/* DASHBOARD PAGE */}
+                            {activeTab === 'dashboard' && (
+                                <div key="dashboard-view" className="space-y-4 reveal-stagger">
+                                    <div className="parallax-layer">
+                                        <MotionCard className="p-3.5 rounded-2xl flex items-center justify-between gap-2 bg-gradient-to-r from-orange-50/70 to-white">
+                                            <div className="hidden sm:block">
+                                                <h4 className="font-heading font-extrabold text-xs text-midnightNavy">Quick Actions</h4>
+                                                <p className="text-[10px] text-navyMuted">Add candidates, roles, or tasks in 1 click</p>
+                                            </div>
+                                            <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
+                                                <button onClick={() => setActiveTab('add_candidate')} className="flex-1 sm:flex-initial px-3 py-2 app-btn-primary text-xs font-bold flex items-center justify-center gap-1">
+                                                    👤 Add Candidate
+                                                </button>
+                                                <button onClick={() => { resetPosModal(); setIsAddPosOpen(true); }} className="flex-1 sm:flex-initial px-3 py-2 app-btn-secondary text-xs font-bold flex items-center justify-center gap-1">
+                                                    ➕ New Position
+                                                </button>
+                                                <button onClick={() => setActiveTab('todos')} className="flex-1 sm:flex-initial px-3 py-2 app-btn-secondary text-xs font-bold flex items-center justify-center gap-1">
+                                                    ⚡ Add Task
+                                                </button>
+                                            </div>
+                                        </MotionCard>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 md:gap-4">
+                                        <MotionCard className="p-3.5 rounded-2xl bg-gradient-to-br from-orange-50/80 to-white border-orange-100">
+                                            <p className="text-[10px] font-bold text-navyMuted uppercase tracking-wider">Total Pipeline</p>
+                                            <h3 className="font-heading text-xl md:text-3xl font-extrabold text-midnightNavy mt-1">{totalPipelineCount}</h3>
+                                            <p className="text-[9px] text-solarOrange font-medium mt-0.5">Sourced Records</p>
+                                        </MotionCard>
+
+                                        <MotionCard className="p-3.5 rounded-2xl bg-slate-50/50">
+                                            <p className="text-[10px] font-bold text-navyMuted uppercase tracking-wider">Screening</p>
+                                            <h3 className="font-heading text-xl md:text-3xl font-extrabold text-midnightNavy mt-1">{profiles.length}</h3>
+                                            <p className="text-[9px] text-navyMuted font-medium mt-0.5">In evaluation</p>
+                                        </MotionCard>
+
+                                        <MotionCard className="p-3.5 rounded-2xl bg-emerald-50/60 border-emerald-100">
+                                            <p className="text-[10px] font-bold text-navyMuted uppercase tracking-wider">Joiners</p>
+                                            <h3 className="font-heading text-xl md:text-3xl font-extrabold text-successMint mt-1">{joiners.length}</h3>
+                                            <p className="text-[9px] text-successMint font-medium mt-0.5">Onboarded</p>
+                                        </MotionCard>
+
+                                        <MotionCard className="p-3.5 rounded-2xl bg-amber-50/60 border-amber-100">
+                                            <p className="text-[10px] font-bold text-navyMuted uppercase tracking-wider">Pending Tasks</p>
+                                            <h3 className="font-heading text-xl md:text-3xl font-extrabold text-warningAmber mt-1">{activePendingTasks.length}</h3>
+                                            <p className="text-[9px] text-warningAmber font-medium mt-0.5">Requires focus</p>
+                                        </MotionCard>
+                                    </div>
+
+                                    <MotionCard className="p-4 rounded-2xl space-y-2">
+                                        <div className="flex justify-between items-center text-xs font-bold">
+                                            <span className="text-midnightNavy">Candidate Joining Conversion Rate</span>
+                                            <span className="text-solarOrange">{joinerRate}% Conversion</span>
+                                        </div>
+                                        <div className="w-full h-2.5 rounded-full app-input overflow-hidden flex">
+                                            <div className="h-full bg-gradient-to-r from-solarOrange to-emerald-500 transition-all duration-700 ease-out" style={{ width: `${Math.max(joinerRate, 4)}%` }}></div>
+                                        </div>
+                                    </MotionCard>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <MotionCard className="p-4 rounded-2xl space-y-3">
+                                            <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+                                                <h3 className="font-heading font-bold text-xs text-midnightNavy">Recent Candidates Sourced</h3>
+                                                <button onClick={() => setActiveTab('profiles')} className="text-[11px] text-solarOrange font-bold hover:underline">View All</button>
+                                            </div>
+                                            <div className="space-y-2">
+                                                {profiles.length === 0 ? (
+                                                    <p className="text-xs text-navyMuted italic text-center py-4">No recent candidates screened.</p>
+                                                ) : (
+                                                    profiles.slice(0, 4).map((p, i) => (
+                                                        <div key={i} className="p-2.5 rounded-xl app-input flex items-center justify-between text-xs transition-all duration-200 hover:translate-x-0.5">
+                                                            <div>
+                                                                <button onClick={() => setSelectedCandidate(p)} className="font-bold text-midnightNavy hover:text-solarOrange text-left">{p.candidateName}</button>
+                                                                <p className="text-[10px] text-navyMuted">{p.role} • {p.location}</p>
+                                                            </div>
+                                                            <span className="px-2 py-0.5 rounded-md bg-orange-100 text-solarOrange text-[10px] font-bold">{p.source}</span>
+                                                        </div>
+                                                    ))
+                                                )}
+                                            </div>
+                                        </MotionCard>
+
+                                        <MotionCard className="p-4 rounded-2xl space-y-3">
+                                            <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+                                                <h3 className="font-heading font-bold text-xs text-midnightNavy">Today's Focus Tasks</h3>
+                                                <button onClick={() => setActiveTab('todos')} className="text-[11px] text-solarOrange font-bold hover:underline">View Console</button>
+                                            </div>
+                                            <div className="space-y-2">
+                                                {activePendingTasks.length === 0 ? (
+                                                    <p className="text-xs text-navyMuted italic text-center py-4">All pending tasks completed!</p>
+                                                ) : (
+                                                    activePendingTasks.slice(0, 4).map((t) => (
+                                                        <div key={t.id} className="p-2.5 rounded-xl app-input flex items-center justify-between text-xs transition-all duration-200 hover:translate-x-0.5">
+                                                            <div>
+                                                                <span className="block text-[9px] font-bold text-solarOrange uppercase">{t.heading}</span>
+                                                                <p className="font-medium text-midnightNavy">{t.title}</p>
+                                                            </div>
+                                                            <button onClick={() => toggleTaskStatus(t)} className="px-2.5 py-1 rounded-lg bg-emerald-50 text-successMint font-bold text-[10px] border border-emerald-200 active:scale-95 transition">
+                                                                Done
+                                                            </button>
+                                                        </div>
+                                                    ))
+                                                )}
+                                            </div>
+                                        </MotionCard>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* ADD CANDIDATE PAGE */}
+                            {activeTab === 'add_candidate' && (
+                                <div key="add-candidate-view" className="max-w-3xl mx-auto reveal-enter">
+                                    <MotionCard className="p-5 rounded-2xl">
+                                        <form onSubmit={handleAddCandidateSubmit} className="space-y-4">
+                                            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                                                <div>
+                                                    <h2 className="font-heading font-extrabold text-base text-midnightNavy">👤 Candidate Intake Form</h2>
+                                                    <p className="text-[11px] text-navyMuted">Smart history suggestions, duplicate alerts & editable CV sources/vendors</p>
+                                                </div>
+                                                <button type="button" onClick={() => setActiveTab('profiles')} className="px-3 py-1.5 app-btn-secondary text-xs font-bold">
+                                                    View Sourced ({profiles.length}) →
+                                                </button>
+                                            </div>
+
+                                            {candSaveBanner && (
+                                                <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-successMint text-xs font-bold flex items-center justify-between reveal-enter">
+                                                    <span>{candSaveBanner}</span>
+                                                    <button type="button" onClick={() => setActiveTab('profiles')} className="underline ml-2">See in Sourced</button>
+                                                </div>
+                                            )}
+
+                                            {/* DUPLICATE ALERT BANNER */}
+                                            {duplicateMatches.length > 0 && (
+                                                <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-300 text-midnightNavy text-xs space-y-1.5 reveal-enter">
+                                                    <div className="font-extrabold text-amber-800 flex items-center justify-between">
+                                                        <span>⚠️ Duplicate Entry Detected ({duplicateMatches.length})</span>
+                                                        <span className="text-[10px] uppercase tracking-wider bg-amber-200/70 px-2 py-0.5 rounded">Already in Database</span>
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        {duplicateMatches.slice(0, 3).map((dup, i) => (
+                                                            <div key={i} className="flex items-center justify-between bg-white/80 px-2.5 py-1.5 rounded-lg border border-amber-200/70 text-[11px]">
+                                                                <div>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setSelectedCandidate(dup)}
+                                                                        className="font-bold text-solarOrange hover:underline"
+                                                                    >
+                                                                        {dup.candidateName}
+                                                                    </button>
+                                                                    <span className="text-navyMuted"> • {dup.role} • {dup.contactNumber} • {dup.emailId}</span>
+                                                                </div>
+                                                                <span className="font-bold text-[10px] px-2 py-0.5 rounded bg-slate-100 text-midnightNavy">{dup.status}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* SHARED DATALISTS FOR AUTO-FILL / SUGGESTIONS */}
+                                            <datalist id="cv-source-suggestions">
+                                                {suggestions.sources.map((s, idx) => <option key={idx} value={s} />)}
+                                            </datalist>
+                                            <datalist id="role-suggestions">
+                                                {suggestions.roles.map((r, idx) => <option key={idx} value={r} />)}
+                                            </datalist>
+                                            <datalist id="dept-suggestions">
+                                                {suggestions.departments.map((d, idx) => <option key={idx} value={d} />)}
+                                            </datalist>
+                                            <datalist id="bu-suggestions">
+                                                {suggestions.businessUnits.map((b, idx) => <option key={idx} value={b} />)}
+                                            </datalist>
+                                            <datalist id="bu-head-suggestions">
+                                                {suggestions.buHeads.map((h, idx) => <option key={idx} value={h} />)}
+                                            </datalist>
+                                            <datalist id="location-suggestions">
+                                                {suggestions.locations.map((l, idx) => <option key={idx} value={l} />)}
+                                            </datalist>
+                                            <datalist id="company-suggestions">
+                                                {suggestions.companies.map((c, idx) => <option key={idx} value={c} />)}
+                                            </datalist>
+                                            <datalist id="designation-suggestions">
+                                                {suggestions.designations.map((des, idx) => <option key={idx} value={des} />)}
+                                            </datalist>
+                                            <datalist id="exp-suggestions">
+                                                {suggestions.experiences.map((exp, idx) => <option key={idx} value={exp} />)}
+                                            </datalist>
+                                            <datalist id="notice-suggestions">
+                                                {suggestions.noticePeriods.map((np, idx) => <option key={idx} value={np} />)}
+                                            </datalist>
+
+                                            {/* Section 1: Basic Info + Editable CV Source / Vendor */}
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                                                <div className="sm:col-span-2">
+                                                    <label className="block font-bold text-navyMuted mb-1">Candidate Name <span className="text-solarOrange">*</span></label>
+                                                    <input
+                                                        type="text"
+                                                        required
+                                                        placeholder="e.g. Karthik Subramanian"
+                                                        value={candForm.candidateName}
+                                                        onChange={e => setCandForm({ ...candForm, candidateName: e.target.value })}
+                                                        className="w-full p-2.5 rounded-xl app-input font-semibold"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block font-bold text-navyMuted mb-1">CV Source / Vendor <span className="text-[10px] text-solarOrange font-semibold">(Editable)</span></label>
+                                                    <input
+                                                        type="text"
+                                                        list="cv-source-suggestions"
+                                                        placeholder="Naukri, LinkedIn or Vendor name..."
+                                                        value={candForm.source}
+                                                        onChange={e => setCandForm({ ...candForm, source: e.target.value })}
+                                                        className="w-full p-2.5 rounded-xl app-input font-bold"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {/* Section 2: Role & Organization Mapping */}
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                                                <div>
+                                                    <label className="block font-bold text-navyMuted mb-1">Role Applied</label>
+                                                    <input
+                                                        type="text"
+                                                        list="role-suggestions"
+                                                        placeholder="Type or pick role..."
+                                                        value={candForm.role}
+                                                        onChange={e => setCandForm({ ...candForm, role: e.target.value })}
+                                                        className="w-full p-2.5 rounded-xl app-input font-medium"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block font-bold text-navyMuted mb-1">Department</label>
+                                                    <input
+                                                        type="text"
+                                                        list="dept-suggestions"
+                                                        placeholder="Type or pick dept..."
+                                                        value={candForm.department}
+                                                        onChange={e => setCandForm({ ...candForm, department: e.target.value })}
+                                                        className="w-full p-2.5 rounded-xl app-input font-medium"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block font-bold text-navyMuted mb-1">Business Unit</label>
+                                                    <input
+                                                        type="text"
+                                                        list="bu-suggestions"
+                                                        placeholder="Type or pick BU..."
+                                                        value={candForm.businessUnit}
+                                                        onChange={e => setCandForm({ ...candForm, businessUnit: e.target.value })}
+                                                        className="w-full p-2.5 rounded-xl app-input font-medium"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block font-bold text-navyMuted mb-1">BU Head</label>
+                                                    <input
+                                                        type="text"
+                                                        list="bu-head-suggestions"
+                                                        placeholder="Type or pick BU Head..."
+                                                        value={candForm.buHead}
+                                                        onChange={e => setCandForm({ ...candForm, buHead: e.target.value })}
+                                                        className="w-full p-2.5 rounded-xl app-input font-medium"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {/* Section 3: Contact & Location */}
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                                                <div>
+                                                    <label className="block font-bold text-navyMuted mb-1">Contact Number</label>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="e.g. 9876543210"
+                                                        value={candForm.contactNumber}
+                                                        onChange={e => setCandForm({ ...candForm, contactNumber: e.target.value })}
+                                                        className={`w-full p-2.5 rounded-xl app-input font-medium ${duplicateMatches.some(d => normalizePhone(d.contactNumber) && normalizePhone(d.contactNumber) === normalizePhone(candForm.contactNumber)) ? 'border-amber-400 bg-amber-50/40' : ''}`}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block font-bold text-navyMuted mb-1">Email ID</label>
+                                                    <input
+                                                        type="email"
+                                                        placeholder="e.g. candidate@email.com"
+                                                        value={candForm.email}
+                                                        onChange={e => setCandForm({ ...candForm, email: e.target.value })}
+                                                        className={`w-full p-2.5 rounded-xl app-input font-medium ${duplicateMatches.some(d => normalizeEmail(d.emailId) && normalizeEmail(d.emailId) === normalizeEmail(candForm.email)) ? 'border-amber-400 bg-amber-50/40' : ''}`}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block font-bold text-navyMuted mb-1">Location</label>
+                                                    <input
+                                                        type="text"
+                                                        list="location-suggestions"
+                                                        placeholder="Type or pick location..."
+                                                        value={candForm.location}
+                                                        onChange={e => setCandForm({ ...candForm, location: e.target.value })}
+                                                        className="w-full p-2.5 rounded-xl app-input font-medium"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {/* Section 4: Current Employment */}
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                                                <div>
+                                                    <label className="block font-bold text-navyMuted mb-1">Current Company</label>
+                                                    <input
+                                                        type="text"
+                                                        list="company-suggestions"
+                                                        placeholder="Type or pick company..."
+                                                        value={candForm.currentCompany}
+                                                        onChange={e => setCandForm({ ...candForm, currentCompany: e.target.value })}
+                                                        className="w-full p-2.5 rounded-xl app-input font-medium"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block font-bold text-navyMuted mb-1">Designation</label>
+                                                    <input
+                                                        type="text"
+                                                        list="designation-suggestions"
+                                                        placeholder="Type or pick title..."
+                                                        value={candForm.designation}
+                                                        onChange={e => setCandForm({ ...candForm, designation: e.target.value })}
+                                                        className="w-full p-2.5 rounded-xl app-input font-medium"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block font-bold text-navyMuted mb-1">Overall Experience</label>
+                                                    <input
+                                                        type="text"
+                                                        list="exp-suggestions"
+                                                        placeholder="e.g. 4.5 Yrs"
+                                                        value={candForm.totalExp}
+                                                        onChange={e => setCandForm({ ...candForm, totalExp: e.target.value })}
+                                                        className="w-full p-2.5 rounded-xl app-input font-medium"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {/* Section 5: Compensation & Status */}
+                                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                                                <div>
+                                                    <label className="block font-bold text-navyMuted mb-1">Current CTC</label>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="e.g. 6.5 LPA"
+                                                        value={candForm.currentCtc}
+                                                        onChange={e => setCandForm({ ...candForm, currentCtc: e.target.value })}
+                                                        className="w-full p-2.5 rounded-xl app-input font-medium"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block font-bold text-navyMuted mb-1">Expected CTC</label>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="e.g. 8.5 LPA"
+                                                        value={candForm.expectedCtc}
+                                                        onChange={e => setCandForm({ ...candForm, expectedCtc: e.target.value })}
+                                                        className="w-full p-2.5 rounded-xl app-input font-medium"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block font-bold text-navyMuted mb-1">Notice Period</label>
+                                                    <input
+                                                        type="text"
+                                                        list="notice-suggestions"
+                                                        placeholder="e.g. 30 Days"
+                                                        value={candForm.noticePeriod}
+                                                        onChange={e => setCandForm({ ...candForm, noticePeriod: e.target.value })}
+                                                        className="w-full p-2.5 rounded-xl app-input font-medium"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block font-bold text-navyMuted mb-1">CV Screen Date</label>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="DD-MM-YYYY"
+                                                        value={candForm.screenDate}
+                                                        onChange={e => setCandForm({ ...candForm, screenDate: e.target.value })}
+                                                        className="w-full p-2.5 rounded-xl app-input font-medium"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setCandForm({ ...initialCandForm, screenDate: getFormattedDDMMYYYY() })}
+                                                    className="px-4 py-2.5 app-btn-secondary text-xs font-bold text-navyMuted"
+                                                >
+                                                    Reset Form
+                                                </button>
+                                                <button
+                                                    type="submit"
+                                                    disabled={isSavingCand}
+                                                    className="px-6 py-2.5 app-btn-primary text-xs font-bold shadow-sm"
+                                                >
+                                                    {isSavingCand ? 'Saving to Sheet & Firebase...' : '💾 Save Candidate'}
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </MotionCard>
+                                </div>
+                            )}
+
+                            {/* OPEN POSITIONS PAGE */}
+                            {activeTab === 'positions' && (
+                                <div key="positions-view" className="reveal-enter">
+                                    <MotionCard className="p-4 rounded-2xl space-y-3">
+                                        <h2 className="font-heading font-bold text-sm text-midnightNavy">Current Open Positions ({positions.length})</h2>
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-left border-collapse">
+                                                <thead>
+                                                    <tr className="border-b border-slate-200 text-[11px] text-navyMuted font-bold uppercase tracking-wider">
+                                                        <th className="p-3">Position Name</th>
+                                                        <th className="p-3">Dept / BU</th>
+                                                        <th className="p-3">Max Salary (LPA)</th>
+                                                        <th className="p-3 text-center">Ageing</th>
+                                                        <th className="p-3 text-center">Status</th>
+                                                        <th className="p-3 text-center">Action</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="text-xs">
+                                                    {positions.length === 0 ? (
+                                                        <tr><td colSpan="6" className="text-center p-6 text-navyMuted font-medium">No open positions added yet.</td></tr>
+                                                    ) : (
+                                                        positions.map((pos, idx) => (
+                                                            <tr key={idx} className="border-b border-slate-100 hover:bg-orange-50/30 transition-colors">
+                                                                <td className="p-3 font-bold text-midnightNavy">{pos.title}</td>
+                                                                <td className="p-3 text-navyMuted">{pos.department} • <span className="font-semibold text-midnightNavy">{pos.businessUnit}</span></td>
+                                                                <td className="p-3 text-solarOrange font-bold">{pos.maxSalary}</td>
+                                                                <td className="p-3 text-center font-bold text-warningAmber">{calculateAgeing(pos.createdDate)} d</td>
+                                                                <td className="p-3 text-center">
+                                                                    <select
+                                                                        value={pos.status || 'Open'}
+                                                                        onChange={(e) => handlePositionStatusChange(pos, e.target.value)}
+                                                                        className="px-2 py-1 rounded-lg app-input text-[11px] font-bold outline-none cursor-pointer"
+                                                                    >
+                                                                        <option value="Open">🟢 Open</option>
+                                                                        <option value="Closed">🔵 Closed</option>
+                                                                        <option value="Hold">🟡 Hold</option>
+                                                                    </select>
+                                                                </td>
+                                                                <td className="p-3 text-center">
+                                                                    <button onClick={() => openEditPosition(pos)} className="px-2.5 py-1 app-btn-secondary text-[11px] font-bold hover:text-solarOrange">✏️ Edit</button>
+                                                                </td>
+                                                            </tr>
+                                                        ))
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </MotionCard>
+                                </div>
+                            )}
+
+                            {/* SOURCED DIRECTORY PAGE */}
+                            {activeTab === 'profiles' && (
+                                <div key="profiles-view" className="reveal-enter">
+                                    <MotionCard className="p-4 rounded-2xl space-y-3">
+                                        <div className="flex items-center justify-between">
+                                            <h2 className="font-heading font-bold text-sm text-midnightNavy">Sourced Candidates List ({filteredProfiles.length})</h2>
+                                            <span className="text-[10px] text-navyMuted">Click candidate name for full details</span>
+                                        </div>
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-left border-collapse">
+                                                <thead>
+                                                    <tr className="border-b border-slate-200 text-[11px] text-navyMuted font-bold uppercase tracking-wider">
+                                                        <th className="p-3">Candidate Name</th>
+                                                        <th className="p-3">Role / BU</th>
+                                                        <th className="p-3">Exp & CTC</th>
+                                                        <th className="p-3">Location</th>
+                                                        <th className="p-3">Source</th>
+                                                        <th className="p-3 text-center">Action</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="text-xs">
+                                                    {filteredProfiles.length === 0 ? (
+                                                        <tr><td colSpan="6" className="text-center p-6 text-navyMuted font-medium">No candidate records match your search.</td></tr>
+                                                    ) : (
+                                                        filteredProfiles.map((p, idx) => (
+                                                            <tr key={idx} className="border-b border-slate-100 hover:bg-orange-50/30 transition-colors">
+                                                                <td className="p-3">
+                                                                    <button onClick={() => setSelectedCandidate(p)} className="font-bold text-solarOrange hover:underline text-left">
+                                                                        {p.candidateName}
+                                                                    </button>
+                                                                    <p className="text-[10px] text-navyMuted">{p.contactNumber}</p>
+                                                                </td>
+                                                                <td className="p-3">
+                                                                    <p className="font-semibold text-midnightNavy">{p.role}</p>
+                                                                    <p className="text-[10px] text-navyMuted">{p.businessUnit}</p>
+                                                                </td>
+                                                                <td className="p-3">
+                                                                    <p className="font-medium text-midnightNavy">{p.totalExp}</p>
+                                                                    <p className="text-[10px] text-navyMuted">C: {p.currentCtc} → E: {p.expectedCtc}</p>
+                                                                </td>
+                                                                <td className="p-3 text-navyMuted">{p.location}</td>
+                                                                <td className="p-3">
+                                                                    <span className="px-2 py-0.5 rounded-md bg-orange-50 text-solarOrange text-[10px] font-bold">{p.source}</span>
+                                                                </td>
+                                                                <td className="p-3 text-center">
+                                                                    <button onClick={() => handleMarkJoined(p)} className="px-3 py-1 app-btn-primary text-[11px] font-bold whitespace-nowrap">Mark Joined</button>
+                                                                </td>
+                                                            </tr>
+                                                        ))
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </MotionCard>
+                                </div>
+                            )}
+
+                            {/* JOINERS DIRECTORY PAGE */}
+                            {activeTab === 'joiners' && (
+                                <div key="joiners-view" className="reveal-enter">
+                                    <MotionCard className="p-4 rounded-2xl space-y-3">
+                                        <h2 className="font-heading font-bold text-sm text-midnightNavy">Joiners & Offer Directory ({joiners.length})</h2>
+                                        {joiners.length === 0 ? (
+                                            <p className="text-navyMuted text-center py-6 text-xs font-medium">No candidates in offer/joined status yet.</p>
+                                        ) : (
+                                            <div className="space-y-2">
+                                                {joiners.map((j, idx) => (
+                                                    <div key={idx} className="p-3 rounded-xl app-input flex justify-between items-center text-xs transition-all duration-200 hover:translate-x-0.5">
+                                                        <div>
+                                                            <button onClick={() => setSelectedCandidate(j)} className="font-bold text-midnightNavy hover:text-solarOrange text-left">{j.candidateName}</button>
+                                                            <p className="text-[11px] text-navyMuted">{j.role} • {j.location}</p>
+                                                        </div>
+                                                        <select value={j.status || 'Joined'} onChange={(e) => handleStatusChange(j, e.target.value)} className="px-2 py-1 rounded-lg app-input text-[11px] font-bold">
+                                                            <option value="Joined">🟢 Joined</option>
+                                                            <option value="Offer Released">🔵 Offer Released</option>
+                                                            <option value="Revoked">🔴 Revoked</option>
+                                                        </select>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </MotionCard>
+                                </div>
+                            )}
+
+                            {/* TASK MANAGEMENT PAGE */}
+                            {activeTab === 'todos' && (
+                                <div key="todos-view" className="space-y-4 reveal-stagger">
+                                    <MotionCard className="p-4 rounded-2xl space-y-3">
+                                        <h2 className="font-heading font-bold text-sm text-midnightNavy">Task Creation Console</h2>
+                                        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-center text-xs">
+                                            <input type="text" placeholder="Task description..." value={newTaskTitle} onChange={e => setNewTaskTitle(e.target.value)} className="p-2.5 rounded-xl app-input font-medium" />
+                                            <select value={newTaskHeading} onChange={e => setNewTaskHeading(e.target.value)} className="p-2.5 rounded-xl app-input font-bold cursor-pointer">
+                                                <option value="Interview schedule">Interview schedule</option>
+                                                <option value="Welcome Kit">Welcome Kit</option>
+                                                <option value="Reminders">Reminders</option>
+                                                <option value="Custom task">Custom task</option>
+                                            </select>
+                                            <input type="date" value={newTaskDate} onChange={e => setNewTaskDate(e.target.value)} className="p-2.5 rounded-xl app-input font-medium cursor-pointer" />
+                                            <button onClick={handleAddTask} disabled={isSavingTask} className="py-2.5 app-btn-primary font-bold">
+                                                {isSavingTask ? 'Saving...' : '💾 Save Task'}
+                                            </button>
+                                        </div>
+                                    </MotionCard>
+
+                                    <MotionCard className="p-4 rounded-2xl space-y-3">
+                                        <h2 className="font-heading font-bold text-sm text-midnightNavy">All Tasks ({todos.length})</h2>
+                                        <div className="space-y-2">
+                                            {todos.length === 0 ? (
+                                                <p className="text-navyMuted text-xs italic text-center py-6">No tasks added yet.</p>
+                                            ) : (
+                                                todos.map(t => (
+                                                    <div key={t.id} className="p-3 rounded-xl app-input flex items-center justify-between text-xs transition-all duration-200 hover:translate-x-0.5">
+                                                        <div>
+                                                            <span className="px-2 py-0.5 rounded bg-orange-100 text-solarOrange text-[9px] font-bold">{t.heading}</span>
+                                                            <p className={`font-bold mt-1 ${t.completed ? 'line-through text-navyMuted' : 'text-midnightNavy'}`}>{t.title}</p>
+                                                            <span className="text-[10px] text-navyMuted">Date: {t.date}</span>
+                                                        </div>
+                                                        <div className="flex items-center space-x-2">
+                                                            <button onClick={() => toggleTaskStatus(t)} className={`px-3 py-1 rounded-lg text-[11px] font-bold active:scale-95 transition ${t.completed ? 'bg-amber-50 text-warningAmber border border-amber-200' : 'bg-emerald-50 text-successMint border border-emerald-200'}`}>
+                                                                {t.completed ? 'Mark Pending' : 'Mark Done'}
+                                                            </button>
+                                                            <button onClick={() => deleteTask(t)} className="text-solarOrange text-[11px] font-bold hover:underline">Delete</button>
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            )}
+                                        </div>
+                                    </MotionCard>
+                                </div>
+                            )}
+
+                            {/* CALCULATORS PAGE */}
+                            {activeTab === 'calculators' && (
+                                <div key="calculators-view" className="grid grid-cols-1 lg:grid-cols-2 gap-4 reveal-stagger">
+                                    
+                                    {/* CARD 1: CANDIDATE AGE CALCULATOR */}
+                                    <MotionCard className="p-5 rounded-2xl space-y-4">
+                                        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                                            <div>
+                                                <h2 className="font-heading font-extrabold text-sm text-midnightNavy">🎂 Candidate Age Calculator</h2>
+                                                <p className="text-[11px] text-navyMuted">Type Date of Birth (e.g. 09-02-1995)</p>
+                                            </div>
+                                            {dobInput && (
+                                                <button onClick={() => setDobInput('')} className="text-[11px] font-bold text-solarOrange hover:underline">Clear</button>
+                                            )}
+                                        </div>
+
+                                        <div className="space-y-1.5 text-xs">
+                                            <label className="block font-bold text-navyMuted">Enter DOB (DD-MM-YYYY)</label>
+                                            <input
+                                                type="text"
+                                                placeholder="e.g. 09-02-1995"
+                                                value={dobInput}
+                                                onChange={(e) => setDobInput(e.target.value)}
+                                                className="w-full p-3 rounded-xl app-input font-bold text-sm text-midnightNavy tracking-wide"
+                                            />
+                                        </div>
+
+                                        {ageResult ? (
+                                            ageResult.invalid ? (
+                                                <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-xs text-red-600 font-semibold reveal-enter">
+                                                    Invalid date format. Please use DD-MM-YYYY (e.g., 09-02-1995).
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-3 pt-1 reveal-enter">
+                                                    <div className="p-4 rounded-2xl bg-gradient-to-br from-orange-50 to-amber-50/40 border border-orange-100 text-center">
+                                                        <p className="text-[10px] font-bold text-solarOrange uppercase tracking-wider">Exact Candidate Age</p>
+                                                        <h3 className="font-heading text-2xl md:text-3xl font-extrabold text-midnightNavy mt-1">
+                                                            {ageResult.years} <span className="text-sm font-bold text-navyMuted">Yrs</span>, {ageResult.months} <span className="text-sm font-bold text-navyMuted">Mos</span>, {ageResult.days} <span className="text-sm font-bold text-navyMuted">Days</span>
+                                                        </h3>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-2 gap-2.5 text-center text-xs">
+                                                        <div className="p-3 rounded-xl app-input">
+                                                            <p className="text-[10px] text-navyMuted font-bold uppercase">Total Months</p>
+                                                            <p className="font-heading font-extrabold text-base text-midnightNavy mt-0.5">{ageResult.totalMonths.toLocaleString()}</p>
+                                                        </div>
+                                                        <div className="p-3 rounded-xl app-input">
+                                                            <p className="text-[10px] text-navyMuted font-bold uppercase">Total Days</p>
+                                                            <p className="font-heading font-extrabold text-base text-midnightNavy mt-0.5">{ageResult.totalDays.toLocaleString()}</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )
+                                        ) : (
+                                            <div className="p-6 rounded-xl app-input text-center text-xs text-navyMuted italic">
+                                                Type a date above (e.g. 09-02-1995) to instantly calculate age.
+                                            </div>
+                                        )}
+                                    </MotionCard>
+
+                                    {/* CARD 2: SALARY HIKE CALCULATOR */}
+                                    <MotionCard className="p-5 rounded-2xl space-y-5">
+                                        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                                            <div>
+                                                <h2 className="font-heading font-extrabold text-sm text-midnightNavy">💰 Salary Hike Calculator</h2>
+                                                <p className="text-[11px] text-navyMuted">Works for LPA (e.g. 6.5) or exact numbers (e.g. 50000)</p>
+                                            </div>
+                                            {(currentSalInput || hikePercentInput || oldSalCompare || newSalCompare) && (
+                                                <button
+                                                    onClick={() => { setCurrentSalInput(''); setHikePercentInput(''); setOldSalCompare(''); setNewSalCompare(''); }}
+                                                    className="text-[11px] font-bold text-solarOrange hover:underline"
+                                                >
+                                                    Clear All
+                                                </button>
+                                            )}
+                                        </div>
+
+                                        <div className="space-y-2.5">
+                                            <h3 className="font-heading font-bold text-xs text-midnightNavy flex items-center gap-1.5">
+                                                <span className="w-5 h-5 rounded-md bg-orange-100 text-solarOrange flex items-center justify-center text-[10px] font-extrabold">1</span>
+                                                Calculate New Salary by Hike %
+                                            </h3>
+                                            <div className="grid grid-cols-2 gap-2.5 text-xs">
+                                                <div>
+                                                    <label className="block font-bold text-navyMuted mb-1">Current Salary</label>
+                                                    <input
+                                                        type="number"
+                                                        step="any"
+                                                        placeholder="e.g. 6.5"
+                                                        value={currentSalInput}
+                                                        onChange={(e) => setCurrentSalInput(e.target.value)}
+                                                        className="w-full p-2.5 rounded-xl app-input font-semibold"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block font-bold text-navyMuted mb-1">Hike Percentage (%)</label>
+                                                    <input
+                                                        type="number"
+                                                        step="any"
+                                                        placeholder="e.g. 30"
+                                                        value={hikePercentInput}
+                                                        onChange={(e) => setHikePercentInput(e.target.value)}
+                                                        className="w-full p-2.5 rounded-xl app-input font-semibold"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {hikeByPercentResult && (
+                                                <div className="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200 flex items-center justify-between text-xs reveal-enter">
+                                                    <div>
+                                                        <p className="text-[10px] font-bold text-navyMuted uppercase">Hike Value (+{hikePercentInput}%)</p>
+                                                        <p className="font-heading font-extrabold text-sm text-successMint">+{hikeByPercentResult.hikeAmount}</p>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <p className="text-[10px] font-bold text-navyMuted uppercase">New Expected Salary</p>
+                                                        <p className="font-heading font-extrabold text-base text-midnightNavy">{hikeByPercentResult.newSalary}</p>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <hr className="border-slate-100" />
+
+                                        <div className="space-y-2.5">
+                                            <h3 className="font-heading font-bold text-xs text-midnightNavy flex items-center gap-1.5">
+                                                <span className="w-5 h-5 rounded-md bg-orange-100 text-solarOrange flex items-center justify-center text-[10px] font-extrabold">2</span>
+                                                Calculate Exact Hike % (Old vs. New Salary)
+                                            </h3>
+                                            <div className="grid grid-cols-2 gap-2.5 text-xs">
+                                                <div>
+                                                    <label className="block font-bold text-navyMuted mb-1">Old / Current Salary</label>
+                                                    <input
+                                                        type="number"
+                                                        step="any"
+                                                        placeholder="e.g. 5.0"
+                                                        value={oldSalCompare}
+                                                        onChange={(e) => setOldSalCompare(e.target.value)}
+                                                        className="w-full p-2.5 rounded-xl app-input font-semibold"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block font-bold text-navyMuted mb-1">New / Offered Salary</label>
+                                                    <input
+                                                        type="number"
+                                                        step="any"
+                                                        placeholder="e.g. 6.8"
+                                                        value={newSalCompare}
+                                                        onChange={(e) => setNewSalCompare(e.target.value)}
+                                                        className="w-full p-2.5 rounded-xl app-input font-semibold"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {hikeBySalaryResult && (
+                                                <div className={`p-3 rounded-xl border flex items-center justify-between text-xs reveal-enter ${hikeBySalaryResult.isPositive ? 'bg-orange-50/70 border-orange-200' : 'bg-red-50/70 border-red-200'}`}>
+                                                    <div>
+                                                        <p className="text-[10px] font-bold text-navyMuted uppercase">Exact Hike Value</p>
+                                                        <p className={`font-heading font-extrabold text-sm ${hikeBySalaryResult.isPositive ? 'text-midnightNavy' : 'text-red-600'}`}>
+                                                            {hikeBySalaryResult.isPositive ? `+${hikeBySalaryResult.diffAmount}` : hikeBySalaryResult.diffAmount}
+                                                        </p>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <p className="text-[10px] font-bold text-navyMuted uppercase">Exact Hike %</p>
+                                                        <p className={`font-heading font-extrabold text-base ${hikeBySalaryResult.isPositive ? 'text-solarOrange' : 'text-red-600'}`}>
+                                                            {hikeBySalaryResult.isPositive ? `+${hikeBySalaryResult.percentChange}%` : `${hikeBySalaryResult.percentChange}%`}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </MotionCard>
+
+                                </div>
+                            )}
+
+                        </div>
+                    </main>
+
+                    {/* Floating Mobile Bottom Nav Bar */}
+                    <nav className="fixed bottom-3 left-2 right-2 z-40 bg-midnightNavy/95 backdrop-blur-md rounded-2xl shadow-xl border border-slate-800 flex items-center justify-around py-2 px-1 md:hidden">
+                        {navItems.map(tab => {
+                            const IconComp = tab.icon;
+                            const isActive = activeTab === tab.id;
+                            return (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setActiveTab(tab.id)}
+                                    className={`relative flex flex-col items-center justify-center py-1 px-1.5 rounded-xl transition-all duration-200 active:scale-90 ${
+                                        isActive ? 'text-solarOrange font-bold -translate-y-0.5' : 'text-slate-400 hover:text-white'
+                                    }`}
+                                >
+                                    <IconComp />
+                                    <span className="text-[8px] mt-0.5">{tab.label}</span>
+                                    {isActive && <span className="absolute -bottom-1 w-1.5 h-1.5 rounded-full bg-solarOrange"></span>}
+                                </button>
+                            );
+                        })}
+                    </nav>
+
+                    {/* ADD / EDIT POSITION MODAL */}
+                    {isAddPosOpen && (
+                        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 reveal-enter">
+                            <div className="app-card p-5 rounded-2xl max-w-lg w-full space-y-4 bg-white">
+                                <div className="flex justify-between items-center border-b border-slate-200 pb-3">
+                                    <h3 className="font-heading font-extrabold text-base text-midnightNavy">
+                                        {editingPosId ? '✏️ Edit Position' : '➕ Add Open Position'}
+                                    </h3>
+                                    <button onClick={resetPosModal} className="w-7 h-7 rounded-lg app-btn-secondary flex items-center justify-center font-bold text-xs">✕</button>
+                                </div>
+
+                                <div className="space-y-3 text-xs">
+                                    <div>
+                                        <label className="block font-bold text-navyMuted mb-1">Position Name</label>
+                                        <input type="text" placeholder="e.g. Sales Manager" value={newPosTitle} onChange={e => setNewPosTitle(e.target.value)} className="w-full p-2.5 rounded-xl app-input" />
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="block font-bold text-navyMuted mb-1">Exp Required</label>
+                                            <input type="text" placeholder="e.g. 3-5 Years" value={newPosExp} onChange={e => setNewPosExp(e.target.value)} className="w-full p-2.5 rounded-xl app-input" />
+                                        </div>
+                                        <div>
+                                            <label className="block font-bold text-navyMuted mb-1">Max Salary (LPA)</label>
+                                            <input type="text" placeholder="e.g. 12 (or 12 LPA)" value={newPosSalary} onChange={e => setNewPosSalary(e.target.value)} className="w-full p-2.5 rounded-xl app-input" />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="block font-bold text-navyMuted mb-1">Department</label>
+                                            <input type="text" placeholder="e.g. Sales" value={newPosDept} onChange={e => setNewPosDept(e.target.value)} className="w-full p-2.5 rounded-xl app-input" />
+                                        </div>
+                                        <div>
+                                            <label className="block font-bold text-navyMuted mb-1">Business Unit</label>
+                                            <input type="text" placeholder="e.g. AWPs" value={newPosBU} onChange={e => setNewPosBU(e.target.value)} className="w-full p-2.5 rounded-xl app-input" />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block font-bold text-navyMuted mb-1">Reporting To</label>
+                                        <input type="text" placeholder="e.g. VP Sales" value={newPosReporting} onChange={e => setNewPosReporting(e.target.value)} className="w-full p-2.5 rounded-xl app-input" />
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-end space-x-2 pt-3 border-t border-slate-200">
+                                    <button onClick={resetPosModal} className="px-4 py-2 app-btn-secondary text-xs font-bold text-navyMuted">Cancel</button>
+                                    <button onClick={handleSavePosition} className="px-4 py-2 app-btn-primary text-xs font-bold">
+                                        {editingPosId ? 'Update Position' : 'Save Position'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* CANDIDATE DETAIL MODAL */}
+                    {selectedCandidate && (
+                        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 reveal-enter">
+                            <div className="app-card p-5 rounded-2xl max-w-lg w-full max-h-[85vh] overflow-y-auto space-y-4 bg-white">
+                                <div className="flex justify-between items-start border-b border-slate-200 pb-3">
+                                    <div>
+                                        <h3 className="font-heading font-extrabold text-xl text-midnightNavy">{selectedCandidate.candidateName}</h3>
+                                        <p className="text-xs font-bold text-solarOrange">{selectedCandidate.role} • {selectedCandidate.department} ({selectedCandidate.businessUnit})</p>
+                                    </div>
+                                    <button onClick={() => setSelectedCandidate(null)} className="w-7 h-7 rounded-lg app-btn-secondary flex items-center justify-center font-bold text-xs">✕</button>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-2 text-xs">
+                                    <div className="p-2.5 rounded-xl app-input"><p className="text-[10px] text-navyMuted font-bold uppercase">Source</p><p className="font-bold text-midnightNavy mt-0.5">{selectedCandidate.source}</p></div>
+                                    <div className="p-2.5 rounded-xl app-input"><p className="text-[10px] text-navyMuted font-bold uppercase">Screen Date</p><p className="font-bold text-midnightNavy mt-0.5">{selectedCandidate.screenDate}</p></div>
+                                    <div className="p-2.5 rounded-xl app-input"><p className="text-[10px] text-navyMuted font-bold uppercase">Contact</p><p className="font-bold text-midnightNavy mt-0.5">{selectedCandidate.contactNumber}</p></div>
+                                    <div className="p-2.5 rounded-xl app-input"><p className="text-[10px] text-navyMuted font-bold uppercase">Email</p><p className="font-bold text-midnightNavy mt-0.5 truncate">{selectedCandidate.emailId}</p></div>
+                                    <div className="p-2.5 rounded-xl app-input"><p className="text-[10px] text-navyMuted font-bold uppercase">Current Company</p><p className="font-bold text-midnightNavy mt-0.5">{selectedCandidate.currentCompany}</p></div>
+                                    <div className="p-2.5 rounded-xl app-input"><p className="text-[10px] text-navyMuted font-bold uppercase">Designation</p><p className="font-bold text-midnightNavy mt-0.5">{selectedCandidate.designation}</p></div>
+                                    <div className="p-2.5 rounded-xl app-input"><p className="text-[10px] text-navyMuted font-bold uppercase">Location</p><p className="font-bold text-midnightNavy mt-0.5">{selectedCandidate.location}</p></div>
+                                    <div className="p-2.5 rounded-xl app-input"><p className="text-[10px] text-navyMuted font-bold uppercase">Experience</p><p className="font-bold text-midnightNavy mt-0.5">{selectedCandidate.totalExp}</p></div>
+                                    <div className="p-2.5 rounded-xl app-input"><p className="text-[10px] text-navyMuted font-bold uppercase">Current CTC</p><p className="font-bold text-midnightNavy mt-0.5">{selectedCandidate.currentCtc}</p></div>
+                                    <div className="p-2.5 rounded-xl app-input"><p className="text-[10px] text-navyMuted font-bold uppercase">Expected CTC</p><p className="font-bold text-midnightNavy mt-0.5">{selectedCandidate.expectedCtc}</p></div>
+                                    <div className="p-2.5 rounded-xl app-input"><p className="text-[10px] text-navyMuted font-bold uppercase">Notice Period</p><p className="font-bold text-midnightNavy mt-0.5">{selectedCandidate.noticePeriod}</p></div>
+                                    <div className="p-2.5 rounded-xl app-input"><p className="text-[10px] text-navyMuted font-bold uppercase">BU Head</p><p className="font-bold text-midnightNavy mt-0.5">{selectedCandidate.buHead}</p></div>
+                                </div>
+
+                                <div className="flex justify-end pt-2 border-t border-slate-200">
+                                    <button onClick={() => setSelectedCandidate(null)} className="px-4 py-1.5 app-btn-secondary text-xs font-bold text-navyMuted">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
