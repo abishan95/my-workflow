@@ -50,7 +50,7 @@
 
         h1, h2, h3, h4, .font-heading { font-family: 'Manrope', sans-serif; }
 
-        /* 02. SMOOTH LOADER */
+        /* SMOOTH LOADER */
         #smooth-preloader {
             position: fixed;
             inset: 0;
@@ -80,7 +80,7 @@
             to { transform: rotate(360deg); }
         }
 
-        /* 04. ENTRANCE REVEAL */
+        /* ENTRANCE REVEAL */
         @keyframes entranceReveal {
             0% {
                 opacity: 0;
@@ -102,18 +102,16 @@
         .reveal-stagger > *:nth-child(3) { animation-delay: 0.13s; }
         .reveal-stagger > *:nth-child(4) { animation-delay: 0.18s; }
 
-        /* 01. HOVER EFFECTS + 03. 3D MOTION + 05. MICRO INTERACTION */
+        /* HOVER EFFECTS + MICRO INTERACTION (Flat 2D, no 3D tilt) */
         .app-card {
             position: relative;
             background-color: #FFFFFF;
             border-radius: 18px;
             border: 1px solid #E2E8F0;
             box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.04);
-            transform-style: preserve-3d;
-            will-change: transform, box-shadow;
-            transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-                        box-shadow 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-                        border-color 0.25s ease;
+            transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1),
+                        box-shadow 0.24s cubic-bezier(0.22, 1, 0.36, 1),
+                        border-color 0.24s ease;
         }
         .app-card::after {
             content: "";
@@ -126,14 +124,15 @@
             transition: opacity 0.25s ease;
         }
         .app-card:hover {
+            transform: translateY(-2px);
             border-color: rgba(249, 115, 22, 0.35);
-            box-shadow: 0 12px 24px -8px rgba(15, 23, 42, 0.1), 0 4px 10px -4px rgba(249, 115, 22, 0.08);
+            box-shadow: 0 10px 20px -6px rgba(15, 23, 42, 0.08), 0 4px 8px -4px rgba(249, 115, 22, 0.06);
         }
         .app-card:hover::after {
             opacity: 1;
         }
 
-        /* 06. PARALLAX EFFECT */
+        /* PARALLAX EFFECT */
         .parallax-layer {
             transform: translate3d(0, var(--parallax-y, 0px), 0);
             transition: transform 0.12s ease-out;
@@ -204,7 +203,7 @@
     </style>
 </head>
 <body class="bg-porcelain text-midnightNavy min-h-screen pb-24 md:pb-0">
-    <!-- 02. SMOOTH LOADER -->
+    <!-- SMOOTH LOADER -->
     <div id="smooth-preloader" aria-hidden="true">
         <div class="loader-ring"></div>
         <p class="font-heading font-bold text-xs tracking-wide text-midnightNavy">Loading My Work Flow...</p>
@@ -259,39 +258,23 @@
         };
 
         // =========================================================================
-        // 01. HOVER + 03. 3D MOTION + 05. MICRO INTERACTION CARD WRAPPER
+        // HOVER GLOW CARD WRAPPER (2D Hover + Cursor Spotlight, No 3D Tilt)
         // =========================================================================
-        function MotionCard({ children, className = '', tiltStrength = 4.5 }) {
+        function MotionCard({ children, className = '' }) {
             const cardRef = React.useRef(null);
 
             const handleMouseMove = (e) => {
                 const el = cardRef.current;
-                if (!el || window.innerWidth < 768) return;
-                const rect = el.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                const centerX = rect.width / 2;
-                const centerY = rect.height / 2;
-
-                const rotateX = ((centerY - y) / centerY) * tiltStrength;
-                const rotateY = ((x - centerX) / centerX) * tiltStrength;
-
-                el.style.setProperty('--mouse-x', `${x}px`);
-                el.style.setProperty('--mouse-y', `${y}px`);
-                el.style.transform = `perspective(900px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg) translateY(-3px)`;
-            };
-
-            const handleMouseLeave = () => {
-                const el = cardRef.current;
                 if (!el) return;
-                el.style.transform = 'perspective(900px) rotateX(0deg) rotateY(0deg) translateY(0px)';
+                const rect = el.getBoundingClientRect();
+                el.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`);
+                el.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`);
             };
 
             return (
                 <div
                     ref={cardRef}
                     onMouseMove={handleMouseMove}
-                    onMouseLeave={handleMouseLeave}
                     className={`app-card ${className}`}
                 >
                     {children}
@@ -329,7 +312,7 @@
                 return () => clearTimeout(timer);
             }, []);
 
-            // 06. PARALLAX SCROLL LISTENER
+            // PARALLAX SCROLL LISTENER
             React.useEffect(() => {
                 const container = scrollContainerRef.current;
                 if (!container) return;
@@ -734,7 +717,7 @@
                 <div className="flex flex-col md:flex-row h-screen overflow-hidden bg-porcelain">
                     
                     {/* Desktop Sidebar */}
-                    <MotionCard tiltStrength={2} className="w-64 p-5 flex-col justify-between hidden md:flex z-20 m-4 rounded-2xl">
+                    <MotionCard className="w-64 p-5 flex-col justify-between hidden md:flex z-20 m-4 rounded-2xl">
                         <div>
                             <div className="flex items-center space-x-3 mb-8 px-2">
                                 <img src="./logo.jpeg" alt="Logo" className="w-10 h-10 rounded-xl object-cover border border-slate-200 transition-transform duration-300 hover:scale-105" />
@@ -791,7 +774,7 @@
                     <main className="flex-1 flex flex-col h-screen overflow-hidden p-3 md:p-4 md:pl-0">
                         
                         {/* Header */}
-                        <MotionCard tiltStrength={1.5} className="p-3.5 rounded-2xl mb-3 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                        <MotionCard className="p-3.5 rounded-2xl mb-3 flex flex-col md:flex-row md:items-center justify-between gap-3">
                             <div className="flex items-center justify-between w-full md:w-auto">
                                 <div className="flex items-center space-x-2.5">
                                     <img src="./logo.jpeg" alt="Logo" className="w-8 h-8 rounded-xl object-cover border border-slate-200 md:hidden" />
@@ -848,14 +831,14 @@
                             )}
                         </MotionCard>
 
-                        {/* Scrollable Workspace Body with 04. Entrance Reveal & 06. Parallax */}
+                        {/* Scrollable Workspace Body with Entrance Reveal & Parallax */}
                         <div ref={scrollContainerRef} className="flex-1 overflow-y-auto pr-0.5 space-y-4 pb-20 md:pb-6">
 
                             {/* DASHBOARD PAGE */}
                             {activeTab === 'dashboard' && (
                                 <div key="dashboard-view" className="space-y-4 reveal-stagger">
                                     <div className="parallax-layer">
-                                        <MotionCard tiltStrength={3} className="p-3.5 rounded-2xl flex items-center justify-between gap-2 bg-gradient-to-r from-orange-50/70 to-white">
+                                        <MotionCard className="p-3.5 rounded-2xl flex items-center justify-between gap-2 bg-gradient-to-r from-orange-50/70 to-white">
                                             <div className="hidden sm:block">
                                                 <h4 className="font-heading font-extrabold text-xs text-midnightNavy">Quick Actions</h4>
                                                 <p className="text-[10px] text-navyMuted">Add candidates, roles, or tasks in 1 click</p>
@@ -900,7 +883,7 @@
                                         </MotionCard>
                                     </div>
 
-                                    <MotionCard tiltStrength={2} className="p-4 rounded-2xl space-y-2">
+                                    <MotionCard className="p-4 rounded-2xl space-y-2">
                                         <div className="flex justify-between items-center text-xs font-bold">
                                             <span className="text-midnightNavy">Candidate Joining Conversion Rate</span>
                                             <span className="text-solarOrange">{joinerRate}% Conversion</span>
@@ -911,7 +894,7 @@
                                     </MotionCard>
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <MotionCard tiltStrength={2.5} className="p-4 rounded-2xl space-y-3">
+                                        <MotionCard className="p-4 rounded-2xl space-y-3">
                                             <div className="flex justify-between items-center border-b border-slate-100 pb-2">
                                                 <h3 className="font-heading font-bold text-xs text-midnightNavy">Recent Candidates Sourced</h3>
                                                 <button onClick={() => setActiveTab('profiles')} className="text-[11px] text-solarOrange font-bold hover:underline">View All</button>
@@ -933,7 +916,7 @@
                                             </div>
                                         </MotionCard>
 
-                                        <MotionCard tiltStrength={2.5} className="p-4 rounded-2xl space-y-3">
+                                        <MotionCard className="p-4 rounded-2xl space-y-3">
                                             <div className="flex justify-between items-center border-b border-slate-100 pb-2">
                                                 <h3 className="font-heading font-bold text-xs text-midnightNavy">Today's Focus Tasks</h3>
                                                 <button onClick={() => setActiveTab('todos')} className="text-[11px] text-solarOrange font-bold hover:underline">View Console</button>
@@ -963,7 +946,7 @@
                             {/* ADD CANDIDATE PAGE */}
                             {activeTab === 'add_candidate' && (
                                 <div key="add-candidate-view" className="max-w-3xl mx-auto reveal-enter">
-                                    <MotionCard tiltStrength={1.5} className="p-5 rounded-2xl">
+                                    <MotionCard className="p-5 rounded-2xl">
                                         <form onSubmit={handleAddCandidateSubmit} className="space-y-4">
                                             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                                                 <div>
@@ -1187,7 +1170,7 @@
                             {/* OPEN POSITIONS PAGE */}
                             {activeTab === 'positions' && (
                                 <div key="positions-view" className="reveal-enter">
-                                    <MotionCard tiltStrength={1.5} className="p-4 rounded-2xl space-y-3">
+                                    <MotionCard className="p-4 rounded-2xl space-y-3">
                                         <h2 className="font-heading font-bold text-sm text-midnightNavy">Current Open Positions ({positions.length})</h2>
                                         <div className="overflow-x-auto">
                                             <table className="w-full text-left border-collapse">
@@ -1238,7 +1221,7 @@
                             {/* SOURCED DIRECTORY PAGE */}
                             {activeTab === 'profiles' && (
                                 <div key="profiles-view" className="reveal-enter">
-                                    <MotionCard tiltStrength={1.5} className="p-4 rounded-2xl space-y-3">
+                                    <MotionCard className="p-4 rounded-2xl space-y-3">
                                         <div className="flex items-center justify-between">
                                             <h2 className="font-heading font-bold text-sm text-midnightNavy">Sourced Candidates List ({filteredProfiles.length})</h2>
                                             <span className="text-[10px] text-navyMuted">Click candidate name for full details</span>
@@ -1295,7 +1278,7 @@
                             {/* JOINERS DIRECTORY PAGE */}
                             {activeTab === 'joiners' && (
                                 <div key="joiners-view" className="reveal-enter">
-                                    <MotionCard tiltStrength={1.5} className="p-4 rounded-2xl space-y-3">
+                                    <MotionCard className="p-4 rounded-2xl space-y-3">
                                         <h2 className="font-heading font-bold text-sm text-midnightNavy">Joiners & Offer Directory ({joiners.length})</h2>
                                         {joiners.length === 0 ? (
                                             <p className="text-navyMuted text-center py-6 text-xs font-medium">No candidates in offer/joined status yet.</p>
@@ -1323,7 +1306,7 @@
                             {/* TASK MANAGEMENT PAGE */}
                             {activeTab === 'todos' && (
                                 <div key="todos-view" className="space-y-4 reveal-stagger">
-                                    <MotionCard tiltStrength={2} className="p-4 rounded-2xl space-y-3">
+                                    <MotionCard className="p-4 rounded-2xl space-y-3">
                                         <h2 className="font-heading font-bold text-sm text-midnightNavy">Task Creation Console</h2>
                                         <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-center text-xs">
                                             <input type="text" placeholder="Task description..." value={newTaskTitle} onChange={e => setNewTaskTitle(e.target.value)} className="p-2.5 rounded-xl app-input font-medium" />
@@ -1340,7 +1323,7 @@
                                         </div>
                                     </MotionCard>
 
-                                    <MotionCard tiltStrength={2} className="p-4 rounded-2xl space-y-3">
+                                    <MotionCard className="p-4 rounded-2xl space-y-3">
                                         <h2 className="font-heading font-bold text-sm text-midnightNavy">All Tasks ({todos.length})</h2>
                                         <div className="space-y-2">
                                             {todos.length === 0 ? (
