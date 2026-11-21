@@ -132,7 +132,6 @@
             opacity: 1;
         }
 
-        /* PARALLAX EFFECT */
         .parallax-layer {
             transform: translate3d(0, var(--parallax-y, 0px), 0);
             transition: transform 0.12s ease-out;
@@ -231,15 +230,15 @@
         // 1. PASTE YOUR FIREBASE CONFIG & GOOGLE SHEET WEBHOOK URL HERE
         // =========================================================================
         const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
+            apiKey: "AIzaSyD_g9NrQ5_wGfAw_cCEVi9lzE53E69SovY",
             authDomain: "my-work-flow-e5eb1.firebaseapp.com",
             projectId: "my-work-flow-e5eb1",
             storageBucket: "my-work-flow-e5eb1.firebasestorage.app",
             messagingSenderId: "888982928867",
-            appId: "YOUR_APP_ID"
+            appId: "1:888982928867:web:84ca1929558c917c2734d6"
         };
 
-        const SHEET_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbxkDROFiaB61RSqXk4NpklhR5_XRPcQJdQNAwojglUUVvQzaIyT4Rm_HREMhcTjHg55/execL";
+        const SHEET_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbxOzZqIY-sGurbhpuqCwde8SMGqH-wpH6EqQMFQC2_MhIAnAFZHeMWeXj3IEl_BGDcO/exec";
 
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
@@ -290,6 +289,38 @@
 
         const normalizePhone = (val) => (val || '').toString().replace(/\D/g, '').slice(-10);
         const normalizeEmail = (val) => (val || '').toString().trim().toLowerCase();
+        const isEmptyVal = (val) => !val || val.toString().trim() === '' || val.toString().trim().toUpperCase() === 'N/A' || val.toString().trim() === '-';
+
+        const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+        function parseMonthKey(dateStr, fallbackTimestamp) {
+            if (dateStr && !isEmptyVal(dateStr)) {
+                const s = dateStr.toString().trim();
+                let m = s.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+                if (m) {
+                    const yr = parseInt(m[1], 10);
+                    const mo = parseInt(m[2], 10) - 1;
+                    if (mo >= 0 && mo < 12) return { key: `${yr}-${String(mo + 1).padStart(2, '0')}`, label: `${MONTH_NAMES[mo]} ${yr}`, shortMonth: MONTH_NAMES[mo] };
+                }
+                m = s.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{2,4})/);
+                if (m) {
+                    let yr = parseInt(m[3], 10);
+                    if (yr < 100) yr += 2000;
+                    const mo = parseInt(m[2], 10) - 1;
+                    if (mo >= 0 && mo < 12) return { key: `${yr}-${String(mo + 1).padStart(2, '0')}`, label: `${MONTH_NAMES[mo]} ${yr}`, shortMonth: MONTH_NAMES[mo] };
+                }
+                const parsed = new Date(s);
+                if (!isNaN(parsed.getTime())) {
+                    const yr = parsed.getFullYear();
+                    const mo = parsed.getMonth();
+                    return { key: `${yr}-${String(mo + 1).padStart(2, '0')}`, label: `${MONTH_NAMES[mo]} ${yr}`, shortMonth: MONTH_NAMES[mo] };
+                }
+            }
+            const d = new Date(fallbackTimestamp || Date.now());
+            const yr = d.getFullYear();
+            const mo = d.getMonth();
+            return { key: `${yr}-${String(mo + 1).padStart(2, '0')}`, label: `${MONTH_NAMES[mo]} ${yr}`, shortMonth: MONTH_NAMES[mo] };
+        }
 
         function App() {
             const [activeTab, setActiveTab] = React.useState('dashboard');
@@ -302,6 +333,14 @@
             const [searchTerm, setSearchTerm] = React.useState('');
             const [selectedCandidate, setSelectedCandidate] = React.useState(null);
 
+            // JOINERS REPORT & ADD MODAL STATE
+            const [selectedMonthKey, setSelectedMonthKey] = React.useState(null);
+            const [isAddJoinerOpen, setIsAddJoinerOpen] = React.useState(false);
+            const [isSavingJoiner, setIsSavingJoiner] = React.useState(false);
+            const [joinerModalMode, setJoinerModalMode] = React.useState('add');
+            const [sourceCandidateForJoin, setSourceCandidateForJoin] = React.useState(null);
+            const [missingFieldsList, setMissingFieldsList] = React.useState([]);
+
             const scrollContainerRef = React.useRef(null);
 
             const getTodayString = () => new Date().toISOString().split('T')[0];
@@ -311,6 +350,27 @@
                 const month = String(d.getMonth() + 1).padStart(2, '0');
                 return `${day}-${month}-${d.getFullYear()}`;
             };
+
+            const createEmptyJoinerForm = () => ({
+                candidateName: '',
+                designation: '',
+                role: '',
+                department: '',
+                businessUnit: '',
+                buHead: '',
+                location: '',
+                contactNumber: '',
+                email: '',
+                currentCompany: '',
+                totalExp: '',
+                joiningCtc: '',
+                joiningDate: getTodayString(),
+                noticePeriod: '',
+                source: 'Naukri',
+                status: 'Joined'
+            });
+
+            const [joinerForm, setJoinerForm] = React.useState(createEmptyJoinerForm);
 
             React.useEffect(() => {
                 const timer = setTimeout(() => {
@@ -408,22 +468,29 @@
                 const unsubCandidates = db.collection("candidates").onSnapshot((snapshot) => {
                     const allCands = snapshot.docs.map(doc => {
                         const item = doc.data();
+                        const roleVal = item['Role'] || 'N/A';
+                        const desigVal = item['Designation'] || roleVal || 'N/A';
+                        const joinCtcVal = item['Joining CTC'] || item['Expected CTC'] || item['Current CTC'] || 'N/A';
+                        const joinDateVal = item['Joining Date'] || item['CV Screen Date'] || '';
                         return {
                             docId: doc.id,
                             rowNumber: item.rowNumber || null,
+                            joinerRowNumber: item.joinerRowNumber || null,
                             candidateName: item['Candidate Name'] || item['candidateName'] || item['NAME'] || 'N/A',
                             source: item['CV -Source:'] || item['CV -Source-'] || item['source'] || 'Naukri',
                             location: item['Location'] || 'N/A',
-                            role: item['Role'] || 'N/A',
+                            role: roleVal,
+                            designation: desigVal,
                             department: item['Department'] || 'N/A',
                             businessUnit: item['Business Unit'] || item['BU'] || 'N/A',
                             buHead: item['BU Head'] || 'N/A',
                             contactNumber: item['Contact Number'] || 'N/A',
                             currentCompany: item['Current Company'] || 'N/A',
-                            designation: item['Designation'] || 'N/A',
                             totalExp: item['Overall Experience'] || item['Total Experience'] || 'N/A',
                             currentCtc: item['Current CTC'] || 'N/A',
                             expectedCtc: item['Expected CTC'] || 'N/A',
+                            joiningCtc: joinCtcVal,
+                            joiningDate: joinDateVal,
                             noticePeriod: item['Notice Period'] || 'N/A',
                             emailId: item['Email'] || 'N/A',
                             screenDate: item['CV Screen Date'] || 'N/A',
@@ -454,6 +521,47 @@
 
                 return () => { unsubCandidates(); unsubTasks(); unsubPositions(); };
             }, []);
+
+            // MONTH-WISE JOINERS REPORT & CURRENT MONTH HIGHLIGHT
+            const currentMonthInfo = React.useMemo(() => {
+                const now = new Date();
+                const yr = now.getFullYear();
+                const mo = now.getMonth();
+                return {
+                    key: `${yr}-${String(mo + 1).padStart(2, '0')}`,
+                    label: `${MONTH_NAMES[mo]} ${yr}`,
+                    shortMonth: MONTH_NAMES[mo]
+                };
+            }, []);
+
+            const monthlyJoinerGroups = React.useMemo(() => {
+                const map = new Map();
+                joiners.forEach(j => {
+                    const mInfo = parseMonthKey(j.joiningDate || j.screenDate, j.createdAt);
+                    if (!map.has(mInfo.key)) {
+                        map.set(mInfo.key, {
+                            key: mInfo.key,
+                            label: mInfo.label,
+                            shortMonth: mInfo.shortMonth,
+                            items: []
+                        });
+                    }
+                    map.get(mInfo.key).items.push(j);
+                });
+                return Array.from(map.values()).sort((a, b) => b.key.localeCompare(a.key));
+            }, [joiners]);
+
+            const currentMonthJoinerCount = React.useMemo(() => {
+                const found = monthlyJoinerGroups.find(g => g.key === currentMonthInfo.key);
+                return found ? found.items.length : 0;
+            }, [monthlyJoinerGroups, currentMonthInfo]);
+
+            const activeMonthGroup = React.useMemo(() => {
+                if (selectedMonthKey) {
+                    return monthlyJoinerGroups.find(g => g.key === selectedMonthKey) || null;
+                }
+                return monthlyJoinerGroups.find(g => g.key === currentMonthInfo.key) || monthlyJoinerGroups[0] || null;
+            }, [selectedMonthKey, monthlyJoinerGroups, currentMonthInfo]);
 
             // DUPLICATE CANDIDATE FINDER (BY PHONE OR EMAIL)
             const duplicateMatches = React.useMemo(() => {
@@ -503,7 +611,118 @@
                 };
             }, [profiles, joiners]);
 
-            // SAVE NEW CANDIDATE
+            const formatSalaryLPA = (val) => {
+                if (!val) return 'Negotiable';
+                const trimmed = val.toString().trim();
+                if (/lpa|lacs|lakhs|per annum/i.test(trimmed)) return trimmed;
+                return `${trimmed} LPA`;
+            };
+
+            const openAddJoinerModal = () => {
+                setJoinerModalMode('add');
+                setSourceCandidateForJoin(null);
+                setMissingFieldsList([]);
+                setJoinerForm(createEmptyJoinerForm());
+                setIsAddJoinerOpen(true);
+            };
+
+            const handleMarkJoined = (candidate) => {
+                const missing = [];
+                if (isEmptyVal(candidate.designation) && isEmptyVal(candidate.role)) missing.push('Designation / Role');
+                if (isEmptyVal(candidate.department)) missing.push('Department');
+                if (isEmptyVal(candidate.businessUnit)) missing.push('Business Unit');
+                if (isEmptyVal(candidate.buHead)) missing.push('BU Head');
+                if (isEmptyVal(candidate.location)) missing.push('Location');
+                if (isEmptyVal(candidate.contactNumber)) missing.push('Contact Number');
+                if (isEmptyVal(candidate.emailId)) missing.push('Email ID');
+                if (isEmptyVal(candidate.currentCompany)) missing.push('Current Company');
+                if (isEmptyVal(candidate.totalExp)) missing.push('Overall Experience');
+                if (isEmptyVal(candidate.noticePeriod)) missing.push('Notice Period');
+
+                setJoinerModalMode('mark_joined');
+                setSourceCandidateForJoin(candidate);
+                setMissingFieldsList(missing);
+                setJoinerForm({
+                    candidateName: isEmptyVal(candidate.candidateName) ? '' : candidate.candidateName,
+                    designation: isEmptyVal(candidate.designation) ? (isEmptyVal(candidate.role) ? '' : candidate.role) : candidate.designation,
+                    role: isEmptyVal(candidate.role) ? (isEmptyVal(candidate.designation) ? '' : candidate.designation) : candidate.role,
+                    department: isEmptyVal(candidate.department) ? '' : candidate.department,
+                    businessUnit: isEmptyVal(candidate.businessUnit) ? '' : candidate.businessUnit,
+                    buHead: isEmptyVal(candidate.buHead) ? '' : candidate.buHead,
+                    location: isEmptyVal(candidate.location) ? '' : candidate.location,
+                    contactNumber: isEmptyVal(candidate.contactNumber) ? '' : candidate.contactNumber,
+                    email: isEmptyVal(candidate.emailId) ? '' : candidate.emailId,
+                    currentCompany: isEmptyVal(candidate.currentCompany) ? '' : candidate.currentCompany,
+                    totalExp: isEmptyVal(candidate.totalExp) ? '' : candidate.totalExp,
+                    joiningCtc: '',
+                    joiningDate: getTodayString(),
+                    noticePeriod: isEmptyVal(candidate.noticePeriod) ? '' : candidate.noticePeriod,
+                    source: isEmptyVal(candidate.source) ? 'Naukri' : candidate.source,
+                    status: 'Joined'
+                });
+                setIsAddJoinerOpen(true);
+            };
+
+            const handleSaveJoiner = async (e) => {
+                e.preventDefault();
+                if (!joinerForm.candidateName.trim() || !joinerForm.joiningCtc.toString().trim() || isSavingJoiner) return;
+
+                setIsSavingJoiner(true);
+                try {
+                    const docId = joinerModalMode === 'mark_joined' && sourceCandidateForJoin
+                        ? sourceCandidateForJoin.docId
+                        : ("joiner_" + Date.now());
+
+                    const finalDesignation = joinerForm.designation.trim() || joinerForm.role.trim() || 'N/A';
+                    const finalRole = joinerForm.role.trim() || joinerForm.designation.trim() || 'N/A';
+                    const finalSalary = formatSalaryLPA(joinerForm.joiningCtc);
+
+                    const payload = {
+                        id: docId,
+                        'Candidate Name': joinerForm.candidateName.trim(),
+                        'Designation': finalDesignation,
+                        'Role': finalRole,
+                        'Department': joinerForm.department.trim() || 'N/A',
+                        'Business Unit': joinerForm.businessUnit.trim() || 'N/A',
+                        'BU Head': joinerForm.buHead.trim() || 'N/A',
+                        'Location': joinerForm.location.trim() || 'N/A',
+                        'Contact Number': joinerForm.contactNumber.trim() || 'N/A',
+                        'Email': joinerForm.email.trim() || 'N/A',
+                        'Current Company': joinerForm.currentCompany.trim() || 'N/A',
+                        'Overall Experience': joinerForm.totalExp.trim() || 'N/A',
+                        'Joining CTC': finalSalary,
+                        'Expected CTC': finalSalary,
+                        'Joining Date': joinerForm.joiningDate || getTodayString(),
+                        'Notice Period': joinerForm.noticePeriod.trim() || 'N/A',
+                        'CV -Source:': joinerForm.source.trim() || 'Naukri',
+                        'Status': joinerForm.status || 'Joined',
+                        createdAt: joinerModalMode === 'mark_joined' && sourceCandidateForJoin?.createdAt
+                            ? sourceCandidateForJoin.createdAt
+                            : Date.now()
+                    };
+
+                    await db.collection("candidates").doc(docId).set(payload, { merge: true });
+
+                    mirrorToSheet({
+                        type: 'joiner',
+                        docId: docId,
+                        sourceRowNumber: sourceCandidateForJoin?.rowNumber || null,
+                        joiner: payload
+                    });
+
+                    setIsAddJoinerOpen(false);
+                    setSourceCandidateForJoin(null);
+                    setMissingFieldsList([]);
+                    setJoinerForm(createEmptyJoinerForm());
+                    setActiveTab('joiners');
+                } catch (err) {
+                    console.error("Failed to save joiner:", err);
+                    alert("Error saving joiner. Check console.");
+                } finally {
+                    setIsSavingJoiner(false);
+                }
+            };
+
             const handleAddCandidateSubmit = async (e) => {
                 e.preventDefault();
                 if (!candForm.candidateName.trim() || isSavingCand) return;
@@ -562,7 +781,6 @@
                 }
             };
 
-            // AGE & HIKE CALCULATIONS
             const ageResult = React.useMemo(() => {
                 if (!dobInput || dobInput.trim() === '') return null;
                 const cleaned = dobInput.trim().replace(/[\/\.]/g, '-');
@@ -630,13 +848,6 @@
                     isPositive: diffAmount >= 0
                 };
             }, [oldSalCompare, newSalCompare]);
-
-            const formatSalaryLPA = (val) => {
-                if (!val) return 'Negotiable';
-                const trimmed = val.toString().trim();
-                if (/lpa|lacs|lakhs|per annum/i.test(trimmed)) return trimmed;
-                return `${trimmed} LPA`;
-            };
 
             const handleSavePosition = async () => {
                 if (!newPosTitle.trim()) return;
@@ -708,13 +919,6 @@
                 if (window.confirm(`Change status of ${candidate.candidateName} to "${newStatus}"?`)) {
                     await db.collection("candidates").doc(candidate.docId).update({ Status: newStatus });
                     mirrorToSheet({ type: 'candidate_status', rowNumber: candidate.rowNumber, status: newStatus });
-                }
-            };
-
-            const handleMarkJoined = async (candidate) => {
-                if (window.confirm(`Mark ${candidate.candidateName} as JOINED?`)) {
-                    await db.collection("candidates").doc(candidate.docId).update({ Status: 'Joined' });
-                    mirrorToSheet({ type: 'candidate_status', rowNumber: candidate.rowNumber, status: 'Joined' });
                 }
             };
 
@@ -889,6 +1093,12 @@
                                 </div>
                             )}
 
+                            {activeTab === 'joiners' && (
+                                <button onClick={openAddJoinerModal} className="px-3.5 py-2 app-btn-primary text-xs font-bold flex items-center gap-1.5 self-start md:self-auto">
+                                    ➕ Add Joiner
+                                </button>
+                            )}
+
                             {activeTab === 'positions' && (
                                 <button onClick={() => { resetPosModal(); setIsAddPosOpen(true); }} className="px-3.5 py-2 app-btn-primary text-xs font-bold flex items-center gap-1.5 self-start md:self-auto">
                                     ➕ Add Position
@@ -1030,7 +1240,6 @@
                                                 </div>
                                             )}
 
-                                            {/* DUPLICATE ALERT BANNER */}
                                             {duplicateMatches.length > 0 && (
                                                 <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-300 text-midnightNavy text-xs space-y-1.5 reveal-enter">
                                                     <div className="font-extrabold text-amber-800 flex items-center justify-between">
@@ -1057,7 +1266,6 @@
                                                 </div>
                                             )}
 
-                                            {/* SHARED DATALISTS FOR AUTO-FILL / SUGGESTIONS */}
                                             <datalist id="cv-source-suggestions">
                                                 {suggestions.sources.map((s, idx) => <option key={idx} value={s} />)}
                                             </datalist>
@@ -1089,7 +1297,6 @@
                                                 {suggestions.noticePeriods.map((np, idx) => <option key={idx} value={np} />)}
                                             </datalist>
 
-                                            {/* Section 1: Basic Info + Editable CV Source / Vendor */}
                                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                                                 <div className="sm:col-span-2">
                                                     <label className="block font-bold text-navyMuted mb-1">Candidate Name <span className="text-solarOrange">*</span></label>
@@ -1115,7 +1322,6 @@
                                                 </div>
                                             </div>
 
-                                            {/* Section 2: Role & Organization Mapping */}
                                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                                                 <div>
                                                     <label className="block font-bold text-navyMuted mb-1">Role Applied</label>
@@ -1163,7 +1369,6 @@
                                                 </div>
                                             </div>
 
-                                            {/* Section 3: Contact & Location */}
                                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                                                 <div>
                                                     <label className="block font-bold text-navyMuted mb-1">Contact Number</label>
@@ -1198,7 +1403,6 @@
                                                 </div>
                                             </div>
 
-                                            {/* Section 4: Current Employment */}
                                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                                                 <div>
                                                     <label className="block font-bold text-navyMuted mb-1">Current Company</label>
@@ -1235,7 +1439,6 @@
                                                 </div>
                                             </div>
 
-                                            {/* Section 5: Compensation & Status */}
                                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
                                                 <div>
                                                     <label className="block font-bold text-navyMuted mb-1">Current CTC</label>
@@ -1411,24 +1614,131 @@
 
                             {/* JOINERS DIRECTORY PAGE */}
                             {activeTab === 'joiners' && (
-                                <div key="joiners-view" className="reveal-enter">
+                                <div key="joiners-view" className="space-y-4 reveal-stagger">
+                                    <MotionCard className="p-4 rounded-2xl bg-gradient-to-r from-orange-50 via-amber-50/50 to-emerald-50/40 border-orange-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                        <div className="flex items-center gap-3">
+                                            <span className="px-3 py-1.5 rounded-xl bg-solarOrange text-white font-heading font-extrabold text-xs shadow-xs">
+                                                🔥 {currentMonthInfo.shortMonth} Spotlight
+                                            </span>
+                                            <div>
+                                                <h3 className="font-heading font-extrabold text-sm text-midnightNavy">
+                                                    {currentMonthInfo.shortMonth}: {currentMonthJoinerCount} {currentMonthJoinerCount === 1 ? 'joiner' : 'joiners'} so far, Way to go!
+                                                </h3>
+                                                <p className="text-[11px] text-navyMuted">Synced live with your Joiners sheet tab • Click any month below for Name & Designation</p>
+                                            </div>
+                                        </div>
+                                        <button onClick={openAddJoinerModal} className="px-3.5 py-2 app-btn-primary text-xs font-bold whitespace-nowrap">
+                                            ➕ Add Joiner
+                                        </button>
+                                    </MotionCard>
+
                                     <MotionCard className="p-4 rounded-2xl space-y-3">
-                                        <h2 className="font-heading font-bold text-sm text-midnightNavy">Joiners & Offer Directory ({joiners.length})</h2>
-                                        {joiners.length === 0 ? (
-                                            <p className="text-navyMuted text-center py-6 text-xs font-medium">No candidates in offer/joined status yet.</p>
+                                        <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                                            <h2 className="font-heading font-bold text-sm text-midnightNavy">📊 Month-Wise Joiners Report</h2>
+                                            <span className="text-[11px] text-navyMuted">Click a month to view Name & Designation</span>
+                                        </div>
+
+                                        {monthlyJoinerGroups.length === 0 ? (
+                                            <p className="text-xs text-navyMuted italic py-3">No monthly joiner records available yet.</p>
                                         ) : (
-                                            <div className="space-y-2">
-                                                {joiners.map((j, idx) => (
-                                                    <div key={idx} className="p-3 rounded-xl app-input flex justify-between items-center text-xs transition-all duration-200 hover:translate-x-0.5">
-                                                        <div>
-                                                            <button onClick={() => setSelectedCandidate(j)} className="font-bold text-midnightNavy hover:text-solarOrange text-left">{j.candidateName}</button>
-                                                            <p className="text-[11px] text-navyMuted">{j.role} • {j.location}</p>
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
+                                                {monthlyJoinerGroups.map(grp => {
+                                                    const isCurrent = grp.key === currentMonthInfo.key;
+                                                    const isSelected = activeMonthGroup && activeMonthGroup.key === grp.key;
+                                                    return (
+                                                        <button
+                                                            key={grp.key}
+                                                            type="button"
+                                                            onClick={() => setSelectedMonthKey(grp.key)}
+                                                            className={`p-3 rounded-xl text-left border transition-all ${
+                                                                isSelected
+                                                                    ? 'bg-orange-50 border-solarOrange shadow-xs'
+                                                                    : isCurrent
+                                                                        ? 'bg-amber-50/70 border-amber-300 hover:border-solarOrange'
+                                                                        : 'bg-slate-50/70 border-slate-200 hover:border-slate-300'
+                                                            }`}
+                                                        >
+                                                            <div className="flex items-center justify-between gap-1">
+                                                                <span className="font-heading font-extrabold text-xs text-midnightNavy">{grp.label}</span>
+                                                                {isCurrent && (
+                                                                    <span className="px-1.5 py-0.5 rounded bg-solarOrange text-white text-[9px] font-bold">Current</span>
+                                                                )}
+                                                            </div>
+                                                            <p className="text-xs font-bold text-solarOrange mt-1">
+                                                                {grp.items.length} {grp.items.length === 1 ? 'Joiner' : 'Joiners'}
+                                                            </p>
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+
+                                        {activeMonthGroup && (
+                                            <div className="p-3.5 rounded-xl bg-porcelain border border-slate-200 space-y-2 reveal-enter">
+                                                <div className="flex items-center justify-between">
+                                                    <h4 className="font-heading font-extrabold text-xs text-midnightNavy">
+                                                        {activeMonthGroup.label} Joiners ({activeMonthGroup.items.length})
+                                                    </h4>
+                                                    <span className="text-[10px] font-bold text-solarOrange uppercase">Name & Designation</span>
+                                                </div>
+                                                <div className="divide-y divide-slate-200/70">
+                                                    {activeMonthGroup.items.map((item, i) => (
+                                                        <div key={item.docId || i} className="py-2 flex items-center justify-between text-xs">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setSelectedCandidate(item)}
+                                                                className="font-bold text-midnightNavy hover:text-solarOrange text-left"
+                                                            >
+                                                                {item.candidateName}
+                                                            </button>
+                                                            <span className="px-2.5 py-0.5 rounded-lg bg-white border border-slate-200 font-semibold text-navyMuted text-[11px]">
+                                                                {item.designation || item.role}
+                                                            </span>
                                                         </div>
-                                                        <select value={j.status || 'Joined'} onChange={(e) => handleStatusChange(j, e.target.value)} className="px-2 py-1 rounded-lg app-input text-[11px] font-bold">
-                                                            <option value="Joined">🟢 Joined</option>
-                                                            <option value="Offer Released">🔵 Offer Released</option>
-                                                            <option value="Revoked">🔴 Revoked</option>
-                                                        </select>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </MotionCard>
+
+                                    <MotionCard className="p-4 rounded-2xl space-y-3">
+                                        <h2 className="font-heading font-bold text-sm text-midnightNavy">Full Joiners Directory ({joiners.length})</h2>
+                                        {joiners.length === 0 ? (
+                                            <p className="text-navyMuted text-center py-6 text-xs font-medium">No candidates in offer/joined status yet. Click "+ Add Joiner" or "Mark Joined" from Sourced.</p>
+                                        ) : (
+                                            <div className="space-y-3">
+                                                {joiners.map((j, idx) => (
+                                                    <div key={j.docId || idx} className="p-3.5 rounded-2xl app-input space-y-2.5 text-xs transition-all duration-200 hover:bg-white">
+                                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/70 pb-2">
+                                                            <div>
+                                                                <button onClick={() => setSelectedCandidate(j)} className="font-heading font-extrabold text-sm text-midnightNavy hover:text-solarOrange text-left">
+                                                                    {j.candidateName}
+                                                                </button>
+                                                                <p className="text-[11px] font-semibold text-solarOrange">
+                                                                    {j.designation || j.role} • <span className="text-navyMuted">{j.department} ({j.businessUnit})</span>
+                                                                </p>
+                                                            </div>
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="px-2.5 py-1 rounded-lg bg-emerald-50 text-successMint font-extrabold text-[11px] border border-emerald-200">
+                                                                    💰 {j.joiningCtc}
+                                                                </span>
+                                                                <select value={j.status || 'Joined'} onChange={(e) => handleStatusChange(j, e.target.value)} className="px-2 py-1 rounded-lg app-input text-[11px] font-bold">
+                                                                    <option value="Joined">🟢 Joined</option>
+                                                                    <option value="Offer Released">🔵 Offer Released</option>
+                                                                    <option value="Revoked">🔴 Revoked</option>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
+                                                            <div><span className="text-navyMuted">Location:</span> <span className="font-semibold text-midnightNavy">{j.location}</span></div>
+                                                            <div><span className="text-navyMuted">Joining Date:</span> <span className="font-semibold text-midnightNavy">{j.joiningDate || j.screenDate || 'N/A'}</span></div>
+                                                            <div><span className="text-navyMuted">BU Head:</span> <span className="font-semibold text-midnightNavy">{j.buHead}</span></div>
+                                                            <div><span className="text-navyMuted">Source:</span> <span className="font-semibold text-midnightNavy">{j.source}</span></div>
+                                                            <div><span className="text-navyMuted">Phone:</span> <span className="font-semibold text-midnightNavy">{j.contactNumber}</span></div>
+                                                            <div><span className="text-navyMuted">Email:</span> <span className="font-semibold text-midnightNavy truncate">{j.emailId}</span></div>
+                                                            <div><span className="text-navyMuted">Exp:</span> <span className="font-semibold text-midnightNavy">{j.totalExp}</span></div>
+                                                            <div><span className="text-navyMuted">Prev Co:</span> <span className="font-semibold text-midnightNavy">{j.currentCompany}</span></div>
+                                                        </div>
                                                     </div>
                                                 ))}
                                             </div>
@@ -1487,8 +1797,6 @@
                             {/* CALCULATORS PAGE */}
                             {activeTab === 'calculators' && (
                                 <div key="calculators-view" className="grid grid-cols-1 lg:grid-cols-2 gap-4 reveal-stagger">
-                                    
-                                    {/* CARD 1: CANDIDATE AGE CALCULATOR */}
                                     <MotionCard className="p-5 rounded-2xl space-y-4">
                                         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                                             <div>
@@ -1544,7 +1852,6 @@
                                         )}
                                     </MotionCard>
 
-                                    {/* CARD 2: SALARY HIKE CALCULATOR */}
                                     <MotionCard className="p-5 rounded-2xl space-y-5">
                                         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                                             <div>
@@ -1569,28 +1876,13 @@
                                             <div className="grid grid-cols-2 gap-2.5 text-xs">
                                                 <div>
                                                     <label className="block font-bold text-navyMuted mb-1">Current Salary</label>
-                                                    <input
-                                                        type="number"
-                                                        step="any"
-                                                        placeholder="e.g. 6.5"
-                                                        value={currentSalInput}
-                                                        onChange={(e) => setCurrentSalInput(e.target.value)}
-                                                        className="w-full p-2.5 rounded-xl app-input font-semibold"
-                                                    />
+                                                    <input type="number" step="any" placeholder="e.g. 6.5" value={currentSalInput} onChange={(e) => setCurrentSalInput(e.target.value)} className="w-full p-2.5 rounded-xl app-input font-semibold" />
                                                 </div>
                                                 <div>
                                                     <label className="block font-bold text-navyMuted mb-1">Hike Percentage (%)</label>
-                                                    <input
-                                                        type="number"
-                                                        step="any"
-                                                        placeholder="e.g. 30"
-                                                        value={hikePercentInput}
-                                                        onChange={(e) => setHikePercentInput(e.target.value)}
-                                                        className="w-full p-2.5 rounded-xl app-input font-semibold"
-                                                    />
+                                                    <input type="number" step="any" placeholder="e.g. 30" value={hikePercentInput} onChange={(e) => setHikePercentInput(e.target.value)} className="w-full p-2.5 rounded-xl app-input font-semibold" />
                                                 </div>
                                             </div>
-
                                             {hikeByPercentResult && (
                                                 <div className="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200 flex items-center justify-between text-xs reveal-enter">
                                                     <div>
@@ -1615,28 +1907,13 @@
                                             <div className="grid grid-cols-2 gap-2.5 text-xs">
                                                 <div>
                                                     <label className="block font-bold text-navyMuted mb-1">Old / Current Salary</label>
-                                                    <input
-                                                        type="number"
-                                                        step="any"
-                                                        placeholder="e.g. 5.0"
-                                                        value={oldSalCompare}
-                                                        onChange={(e) => setOldSalCompare(e.target.value)}
-                                                        className="w-full p-2.5 rounded-xl app-input font-semibold"
-                                                    />
+                                                    <input type="number" step="any" placeholder="e.g. 5.0" value={oldSalCompare} onChange={(e) => setOldSalCompare(e.target.value)} className="w-full p-2.5 rounded-xl app-input font-semibold" />
                                                 </div>
                                                 <div>
                                                     <label className="block font-bold text-navyMuted mb-1">New / Offered Salary</label>
-                                                    <input
-                                                        type="number"
-                                                        step="any"
-                                                        placeholder="e.g. 6.8"
-                                                        value={newSalCompare}
-                                                        onChange={(e) => setNewSalCompare(e.target.value)}
-                                                        className="w-full p-2.5 rounded-xl app-input font-semibold"
-                                                    />
+                                                    <input type="number" step="any" placeholder="e.g. 6.8" value={newSalCompare} onChange={(e) => setNewSalCompare(e.target.value)} className="w-full p-2.5 rounded-xl app-input font-semibold" />
                                                 </div>
                                             </div>
-
                                             {hikeBySalaryResult && (
                                                 <div className={`p-3 rounded-xl border flex items-center justify-between text-xs reveal-enter ${hikeBySalaryResult.isPositive ? 'bg-orange-50/70 border-orange-200' : 'bg-red-50/70 border-red-200'}`}>
                                                     <div>
@@ -1655,7 +1932,6 @@
                                             )}
                                         </div>
                                     </MotionCard>
-
                                 </div>
                             )}
 
@@ -1682,6 +1958,110 @@
                             );
                         })}
                     </nav>
+
+                    {/* ADD / MARK JOINED MODAL */}
+                    {isAddJoinerOpen && (
+                        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 reveal-enter">
+                            <form onSubmit={handleSaveJoiner} className="app-card p-5 rounded-2xl max-w-xl w-full max-h-[90vh] overflow-y-auto space-y-4 bg-white">
+                                <div className="flex justify-between items-start border-b border-slate-200 pb-3">
+                                    <div>
+                                        <h3 className="font-heading font-extrabold text-base text-midnightNavy">
+                                            {joinerModalMode === 'mark_joined' ? '🎉 Confirm Joining & Final Salary' : '➕ Add Joiner Record'}
+                                        </h3>
+                                        <p className="text-[11px] text-navyMuted">
+                                            {joinerModalMode === 'mark_joined'
+                                                ? 'Enter final joining salary (required) and complete any missing details before moving to Joiners.'
+                                                : 'Saves directly to Joiners list and syncs to the Joiners tab in Google Sheet.'}
+                                        </p>
+                                    </div>
+                                    <button type="button" onClick={() => setIsAddJoinerOpen(false)} className="w-7 h-7 rounded-lg app-btn-secondary flex items-center justify-center font-bold text-xs">✕</button>
+                                </div>
+
+                                {missingFieldsList.length > 0 && (
+                                    <div className="p-3 rounded-xl bg-amber-50 border border-amber-300 text-xs space-y-1">
+                                        <p className="font-extrabold text-amber-800">⚠️ Missing details found from sourced record:</p>
+                                        <p className="text-[11px] text-midnightNavy">{missingFieldsList.join(' • ')}</p>
+                                    </div>
+                                )}
+
+                                <div className="space-y-3 text-xs">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="block font-bold text-navyMuted mb-1">Candidate Name <span className="text-solarOrange">*</span></label>
+                                            <input type="text" required value={joinerForm.candidateName} onChange={e => setJoinerForm({ ...joinerForm, candidateName: e.target.value })} className="w-full p-2.5 rounded-xl app-input font-semibold" />
+                                        </div>
+                                        <div>
+                                            <label className="block font-bold text-solarOrange mb-1">Final Joining Salary (LPA) <span className="text-solarOrange">*</span></label>
+                                            <input type="text" required placeholder="e.g. 9.5 or 9.5 LPA" value={joinerForm.joiningCtc} onChange={e => setJoinerForm({ ...joinerForm, joiningCtc: e.target.value })} className="w-full p-2.5 rounded-xl app-input font-bold border-orange-300 bg-orange-50/30" />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="block font-bold text-navyMuted mb-1">Designation <span className="text-solarOrange">*</span></label>
+                                            <input type="text" required list="designation-suggestions" placeholder="e.g. Senior Sales Manager" value={joinerForm.designation} onChange={e => setJoinerForm({ ...joinerForm, designation: e.target.value })} className="w-full p-2.5 rounded-xl app-input font-medium" />
+                                        </div>
+                                        <div>
+                                            <label className="block font-bold text-navyMuted mb-1">Joining Date <span className="text-solarOrange">*</span></label>
+                                            <input type="date" required value={joinerForm.joiningDate} onChange={e => setJoinerForm({ ...joinerForm, joiningDate: e.target.value })} className="w-full p-2.5 rounded-xl app-input font-medium" />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                        <div>
+                                            <label className="block font-bold text-navyMuted mb-1">Department</label>
+                                            <input type="text" list="dept-suggestions" value={joinerForm.department} onChange={e => setJoinerForm({ ...joinerForm, department: e.target.value })} className="w-full p-2.5 rounded-xl app-input font-medium" />
+                                        </div>
+                                        <div>
+                                            <label className="block font-bold text-navyMuted mb-1">Business Unit</label>
+                                            <input type="text" list="bu-suggestions" value={joinerForm.businessUnit} onChange={e => setJoinerForm({ ...joinerForm, businessUnit: e.target.value })} className="w-full p-2.5 rounded-xl app-input font-medium" />
+                                        </div>
+                                        <div>
+                                            <label className="block font-bold text-navyMuted mb-1">BU Head</label>
+                                            <input type="text" list="bu-head-suggestions" value={joinerForm.buHead} onChange={e => setJoinerForm({ ...joinerForm, buHead: e.target.value })} className="w-full p-2.5 rounded-xl app-input font-medium" />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                        <div>
+                                            <label className="block font-bold text-navyMuted mb-1">Location</label>
+                                            <input type="text" list="location-suggestions" value={joinerForm.location} onChange={e => setJoinerForm({ ...joinerForm, location: e.target.value })} className="w-full p-2.5 rounded-xl app-input font-medium" />
+                                        </div>
+                                        <div>
+                                            <label className="block font-bold text-navyMuted mb-1">Contact Number</label>
+                                            <input type="text" value={joinerForm.contactNumber} onChange={e => setJoinerForm({ ...joinerForm, contactNumber: e.target.value })} className="w-full p-2.5 rounded-xl app-input font-medium" />
+                                        </div>
+                                        <div>
+                                            <label className="block font-bold text-navyMuted mb-1">Email ID</label>
+                                            <input type="email" value={joinerForm.email} onChange={e => setJoinerForm({ ...joinerForm, email: e.target.value })} className="w-full p-2.5 rounded-xl app-input font-medium" />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                        <div>
+                                            <label className="block font-bold text-navyMuted mb-1">Current Company</label>
+                                            <input type="text" list="company-suggestions" value={joinerForm.currentCompany} onChange={e => setJoinerForm({ ...joinerForm, currentCompany: e.target.value })} className="w-full p-2.5 rounded-xl app-input font-medium" />
+                                        </div>
+                                        <div>
+                                            <label className="block font-bold text-navyMuted mb-1">Overall Experience</label>
+                                            <input type="text" list="exp-suggestions" value={joinerForm.totalExp} onChange={e => setJoinerForm({ ...joinerForm, totalExp: e.target.value })} className="w-full p-2.5 rounded-xl app-input font-medium" />
+                                        </div>
+                                        <div>
+                                            <label className="block font-bold text-navyMuted mb-1">Source / Vendor</label>
+                                            <input type="text" list="cv-source-suggestions" value={joinerForm.source} onChange={e => setJoinerForm({ ...joinerForm, source: e.target.value })} className="w-full p-2.5 rounded-xl app-input font-medium" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-end space-x-2 pt-3 border-t border-slate-200">
+                                    <button type="button" onClick={() => setIsAddJoinerOpen(false)} className="px-4 py-2 app-btn-secondary text-xs font-bold text-navyMuted">Cancel</button>
+                                    <button type="submit" disabled={isSavingJoiner} className="px-5 py-2 app-btn-primary text-xs font-bold">
+                                        {isSavingJoiner ? 'Saving Joiner...' : '✅ Confirm & Save Joiner'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    )}
 
                     {/* ADD / EDIT POSITION MODAL */}
                     {isAddPosOpen && (
@@ -1738,21 +2118,21 @@
                         </div>
                     )}
 
-                    {/* CANDIDATE DETAIL MODAL */}
+                    {/* CANDIDATE / JOINER DETAIL MODAL */}
                     {selectedCandidate && (
                         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 reveal-enter">
                             <div className="app-card p-5 rounded-2xl max-w-lg w-full max-h-[85vh] overflow-y-auto space-y-4 bg-white">
                                 <div className="flex justify-between items-start border-b border-slate-200 pb-3">
                                     <div>
                                         <h3 className="font-heading font-extrabold text-xl text-midnightNavy">{selectedCandidate.candidateName}</h3>
-                                        <p className="text-xs font-bold text-solarOrange">{selectedCandidate.role} • {selectedCandidate.department} ({selectedCandidate.businessUnit})</p>
+                                        <p className="text-xs font-bold text-solarOrange">{selectedCandidate.designation || selectedCandidate.role} • {selectedCandidate.department} ({selectedCandidate.businessUnit})</p>
                                     </div>
                                     <button onClick={() => setSelectedCandidate(null)} className="w-7 h-7 rounded-lg app-btn-secondary flex items-center justify-center font-bold text-xs">✕</button>
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-2 text-xs">
                                     <div className="p-2.5 rounded-xl app-input"><p className="text-[10px] text-navyMuted font-bold uppercase">Source</p><p className="font-bold text-midnightNavy mt-0.5">{selectedCandidate.source}</p></div>
-                                    <div className="p-2.5 rounded-xl app-input"><p className="text-[10px] text-navyMuted font-bold uppercase">Screen Date</p><p className="font-bold text-midnightNavy mt-0.5">{selectedCandidate.screenDate}</p></div>
+                                    <div className="p-2.5 rounded-xl app-input"><p className="text-[10px] text-navyMuted font-bold uppercase">Joining / Screen Date</p><p className="font-bold text-midnightNavy mt-0.5">{selectedCandidate.joiningDate || selectedCandidate.screenDate}</p></div>
                                     <div className="p-2.5 rounded-xl app-input"><p className="text-[10px] text-navyMuted font-bold uppercase">Contact</p><p className="font-bold text-midnightNavy mt-0.5">{selectedCandidate.contactNumber}</p></div>
                                     <div className="p-2.5 rounded-xl app-input"><p className="text-[10px] text-navyMuted font-bold uppercase">Email</p><p className="font-bold text-midnightNavy mt-0.5 truncate">{selectedCandidate.emailId}</p></div>
                                     <div className="p-2.5 rounded-xl app-input"><p className="text-[10px] text-navyMuted font-bold uppercase">Current Company</p><p className="font-bold text-midnightNavy mt-0.5">{selectedCandidate.currentCompany}</p></div>
@@ -1760,7 +2140,7 @@
                                     <div className="p-2.5 rounded-xl app-input"><p className="text-[10px] text-navyMuted font-bold uppercase">Location</p><p className="font-bold text-midnightNavy mt-0.5">{selectedCandidate.location}</p></div>
                                     <div className="p-2.5 rounded-xl app-input"><p className="text-[10px] text-navyMuted font-bold uppercase">Experience</p><p className="font-bold text-midnightNavy mt-0.5">{selectedCandidate.totalExp}</p></div>
                                     <div className="p-2.5 rounded-xl app-input"><p className="text-[10px] text-navyMuted font-bold uppercase">Current CTC</p><p className="font-bold text-midnightNavy mt-0.5">{selectedCandidate.currentCtc}</p></div>
-                                    <div className="p-2.5 rounded-xl app-input"><p className="text-[10px] text-navyMuted font-bold uppercase">Expected CTC</p><p className="font-bold text-midnightNavy mt-0.5">{selectedCandidate.expectedCtc}</p></div>
+                                    <div className="p-2.5 rounded-xl app-input"><p className="text-[10px] text-navyMuted font-bold uppercase">Joining / Expected CTC</p><p className="font-bold text-solarOrange mt-0.5">{selectedCandidate.joiningCtc || selectedCandidate.expectedCtc}</p></div>
                                     <div className="p-2.5 rounded-xl app-input"><p className="text-[10px] text-navyMuted font-bold uppercase">Notice Period</p><p className="font-bold text-midnightNavy mt-0.5">{selectedCandidate.noticePeriod}</p></div>
                                     <div className="p-2.5 rounded-xl app-input"><p className="text-[10px] text-navyMuted font-bold uppercase">BU Head</p><p className="font-bold text-midnightNavy mt-0.5">{selectedCandidate.buHead}</p></div>
                                 </div>
