@@ -1,907 +1,2172 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#0F172A" />
-  <title>HR &amp; Talent Acquisition Console — Joiners &amp; Sourced</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <!-- Firebase Compat SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            porcelain: '#FAF8F5',
-            navy: '#0F172A',
-            solar: '#F97316'
-          }
-        }
-      }
-    };
-  </script>
-  <style>
-    body {
-      background-color: #FAF8F5;
-      color: #0F172A;
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    }
-  </style>
-</head>
-<body>
-  <div id="root"></div>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>My Work Flow - Real-Time Firebase Workspace</title>
+    <link rel="manifest" href="./manifest.json">
+    <link rel="icon" type="image/jpeg" href="./logo.jpeg">
+    <link rel="apple-touch-icon" href="./logo.jpeg">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#F8FAFC">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Firebase Compat SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
-  <script type="text/babel">
-    const { useState, useEffect, useMemo } = React;
-
-    // =====================================================================
-    // 1. CONFIGURATION (Update Web App URL + Firebase Web Keys)
-    // =====================================================================
-    const APPS_SCRIPT_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzp7fyDgAduK1Ddpvg0lgrmdXb7D4eUTYZ4TXlpY5d5hOqRONBhKeW6zDgqWDMATXeH/exec";
-
-    const FIREBASE_CONFIG = {
-      apiKey: "AIzaSyD_g9NrQ5_wGfAw_cCEVi9lzE53E69SovY",
-      authDomain: "my-work-flow-e5eb1.firebaseapp.com",
-      projectId: "my-work-flow-e5eb1",
-      storageBucket: "my-work-flow-e5eb1.firebasestorage.app",
-      messagingSenderId: "111611610896",
-      appId: "1:888982928867:web:84ca1929558c917c2734d6"
-    };
-
-    const JOINER_STATUSES = ["Joined", "OYTJ", "STYO", "Offer Released", "Revoked"];
-    const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-    let db = null;
-    try {
-      if (!firebase.apps.length) {
-        firebase.initializeApp(FIREBASE_CONFIG);
-      }
-      db = firebase.firestore();
-    } catch (err) {
-      console.warn("Firebase init notice:", err);
-    }
-
-    // =====================================================================
-    // 2. DATE PARSING & WEBHOOK HELPERS
-    // =====================================================================
-    function getTodayISO() {
-      const d = new Date();
-      const yyyy = d.getFullYear();
-      const mm = String(d.getMonth() + 1).padStart(2, "0");
-      const dd = String(d.getDate()).padStart(2, "0");
-      return `${yyyy}-${mm}-${dd}`;
-    }
-
-    function parseMonthKey(rawDate) {
-      if (!rawDate) return null;
-      const s = String(rawDate).trim();
-      if (!s) return null;
-
-      // Match YYYY-MM-DD or YYYY/MM/DD
-      let iso = s.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
-      if (iso) {
-        const yr = parseInt(iso[1], 10);
-        const mo = parseInt(iso[2], 10) - 1;
-        if (mo >= 0 && mo < 12) {
-          return {
-            key: `${yr}-${String(mo + 1).padStart(2, "0")}`,
-            label: `${MONTH_NAMES[mo]} ${yr}`,
-            shortMonth: MONTH_NAMES[mo]
-          };
-        }
-      }
-
-      // Match MM-DD-YYYY or DD-MM-YYYY safely
-      const dmy = s.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{2,4})/);
-      if (dmy) {
-        let yr = parseInt(dmy[3], 10);
-        if (yr < 100) yr += 2000;
-        const p1 = parseInt(dmy[1], 10);
-        const p2 = parseInt(dmy[2], 10);
-        // If p1 > 12, it's DD-MM-YYYY; otherwise treat as MM-DD-YYYY
-        const mo = (p1 > 12 ? p2 : p1) - 1;
-        if (mo >= 0 && mo < 12) {
-          return {
-            key: `${yr}-${String(mo + 1).padStart(2, "0")}`,
-            label: `${MONTH_NAMES[mo]} ${yr}`,
-            shortMonth: MONTH_NAMES[mo]
-          };
-        }
-      }
-
-      const parsed = new Date(s);
-      if (!Number.isNaN(parsed.getTime())) {
-        const yr = parsed.getFullYear();
-        const mo = parsed.getMonth();
-        return {
-          key: `${yr}-${String(mo + 1).padStart(2, "0")}`,
-          label: `${MONTH_NAMES[mo]} ${yr}`,
-          shortMonth: MONTH_NAMES[mo]
-        };
-      }
-      return null;
-    }
-
-    async function postToSheetsWebhook(payload) {
-      if (!APPS_SCRIPT_WEB_APP_URL || APPS_SCRIPT_WEB_APP_URL.includes("YOUR_DEPLOYMENT_ID")) {
-        console.warn("Set APPS_SCRIPT_WEB_APP_URL to push changes to Google Sheets:", payload);
-        return;
-      }
-      await fetch(APPS_SCRIPT_WEB_APP_URL, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-    }
-
-    function normalizeCandidateDoc(docId, data) {
-      const name = (data["Candidate Name"] || data["NAME"] || data.name || "").trim();
-      const doj = (data["Date of Joining"] || data["Joining Date"] || "").trim();
-      const role = (data["Role"] || data["Designation"] || "").trim();
-      const reporting = (data["Reporting"] || data["BU Head"] || "").trim();
-      const ctc = (data["Salary / CTC"] || data["Joining CTC"] || data["Expected CTC"] || "").trim();
-      const status = (data["Status"] || "Sourced").trim();
-
-      return {
-        id: docId,
-        raw: data,
-        rowNumber: data.rowNumber || null,
-        joinerRowNumber: data.joinerRowNumber || null,
-        name,
-        doj,
-        businessUnit: (data["Business Unit"] || "").trim(),
-        reporting,
-        role,
-        ctc,
-        phone: (data["Contact Number"] || "").trim(),
-        location: (data["Location"] || "").trim(),
-        currentCompany: (data["Current Company"] || "").trim(),
-        experience: (data["Overall Experience"] || "").trim(),
-        noticePeriod: (data["Notice Period"] || "").trim(),
-        email: (data["Email"] || "").trim(),
-        status,
-        createdAt: data.createdAt || 0
-      };
-    }
-
-    // =====================================================================
-    // 3. MAIN APPLICATION
-    // =====================================================================
-    function App() {
-      const [activeTab, setActiveTab] = useState("joiners"); // "joiners" | "sourced" | "positions" | "tasks"
-      const [allDocs, setAllDocs] = useState([]);
-      const [positions, setPositions] = useState([]);
-      const [tasks, setTasks] = useState([]);
-      const [loading, setLoading] = useState(true);
-      const [toast, setToast] = useState("");
-
-      // Joiners filters & modal
-      const [searchQuery, setSearchQuery] = useState("");
-      const [statusFilter, setStatusFilter] = useState("ALL");
-      const [monthFilter, setMonthFilter] = useState("ALL");
-      const [showJoinerModal, setShowJoinerModal] = useState(false);
-      const [convertingCandidate, setConvertingCandidate] = useState(null);
-
-      const [joinerForm, setJoinerForm] = useState({
-        candidateName: "",
-        joiningDate: getTodayISO(),
-        businessUnit: "",
-        reporting: "",
-        role: "",
-        salaryCtc: "",
-        contactNumber: "",
-        location: "",
-        status: "Joined"
-      });
-
-      // Position & Task quick forms
-      const [posForm, setPosForm] = useState({
-        title: "",
-        exp: "1-3 Yrs",
-        maxSalary: "",
-        department: "",
-        businessUnit: "",
-        reportingTo: "",
-        status: "Open"
-      });
-      const [taskTitle, setTaskTitle] = useState("");
-      const [taskCategory, setTaskCategory] = useState("Reminders");
-      const [taskDate, setTaskDate] = useState(getTodayISO());
-
-      const notify = (msg) => {
-        setToast(msg);
-        setTimeout(() => setToast(""), 3500);
-      };
-
-      // Subscribe to Firestore collections
-      useEffect(() => {
-        if (!db) {
-          setLoading(false);
-          return;
-        }
-
-        const unsubCands = db.collection("candidates").onSnapshot(
-          (snap) => {
-            const rows = [];
-            snap.forEach((doc) => {
-              const item = normalizeCandidateDoc(doc.id, doc.data() || {});
-              if (item.name) rows.push(item);
-            });
-            rows.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-            setAllDocs(rows);
-            setLoading(false);
-          },
-          (err) => {
-            console.error("Candidates snapshot error:", err);
-            setLoading(false);
-          }
-        );
-
-        const unsubPos = db.collection("positions").onSnapshot((snap) => {
-          const list = [];
-          snap.forEach((doc) => list.push({ id: doc.id, ...doc.data() }));
-          setPositions(list);
-        });
-
-        const unsubTasks = db.collection("tasks").onSnapshot((snap) => {
-          const list = [];
-          snap.forEach((doc) => list.push({ id: doc.id, ...doc.data() }));
-          setTasks(list);
-        });
-
-        return () => {
-          unsubCands();
-          unsubPos();
-          unsubTasks();
-        };
-      }, []);
-
-      // Split Sourced vs Joiners (including Joined, OYTJ, STYO, Offer Released, Revoked)
-      const joiners = useMemo(
-        () => allDocs.filter((d) => JOINER_STATUSES.includes(d.status)),
-        [allDocs]
-      );
-
-      const sourcedProfiles = useMemo(
-        () => allDocs.filter((d) => !JOINER_STATUSES.includes(d.status)),
-        [allDocs]
-      );
-
-      const monthOptions = useMemo(() => {
-        const map = new Map();
-        joiners.forEach((j) => {
-          const info = parseMonthKey(j.doj);
-          if (info && !map.has(info.key)) {
-            map.set(info.key, info.label);
-          }
-        });
-        return Array.from(map.entries()).sort((a, b) => b[0].localeCompare(a[0]));
-      }, [joiners]);
-
-      const filteredJoiners = useMemo(() => {
-        return joiners.filter((j) => {
-          if (statusFilter !== "ALL" && j.status !== statusFilter) return false;
-          if (monthFilter !== "ALL") {
-            const m = parseMonthKey(j.doj);
-            if (!m || m.key !== monthFilter) return false;
-          }
-          if (searchQuery.trim()) {
-            const q = searchQuery.toLowerCase();
-            const hay = `${j.name} ${j.role} ${j.businessUnit} ${j.reporting} ${j.location} ${j.phone}`.toLowerCase();
-            if (!hay.includes(q)) return false;
-          }
-          return true;
-        });
-      }, [joiners, statusFilter, monthFilter, searchQuery]);
-
-      const filteredSourced = useMemo(() => {
-        if (!searchQuery.trim()) return sourcedProfiles;
-        const q = searchQuery.toLowerCase();
-        return sourcedProfiles.filter((p) => {
-          const hay = `${p.name} ${p.role} ${p.currentCompany} ${p.location} ${p.phone} ${p.status}`.toLowerCase();
-          return hay.includes(q);
-        });
-      }, [sourcedProfiles, searchQuery]);
-
-      // Open modal for + Add Joiner or Mark Joined from Sourced
-      const openAddJoinerModal = (candidate = null) => {
-        setConvertingCandidate(candidate);
-        setJoinerForm({
-          candidateName: candidate ? candidate.name : "",
-          joiningDate: getTodayISO(),
-          businessUnit: candidate ? candidate.businessUnit : "",
-          reporting: candidate ? (candidate.reporting || candidate.raw["BU Head"] || "") : "",
-          role: candidate ? candidate.role : "",
-          salaryCtc: candidate ? (candidate.ctc || candidate.raw["Expected CTC"] || "") : "",
-          contactNumber: candidate ? candidate.phone : "",
-          location: candidate ? candidate.location : "",
-          status: "Joined"
-        });
-        setShowJoinerModal(true);
-      };
-
-      const handleSaveJoiner = async (e) => {
-        e.preventDefault();
-        const name = joinerForm.candidateName.trim();
-        if (!name) return;
-
-        const docPayload = {
-          "Candidate Name": name,
-          "Date of Joining": joinerForm.joiningDate,
-          "Joining Date": joinerForm.joiningDate,
-          "Business Unit": joinerForm.businessUnit.trim(),
-          "Reporting": joinerForm.reporting.trim(),
-          "BU Head": joinerForm.reporting.trim(),
-          "Role": joinerForm.role.trim(),
-          "Designation": joinerForm.role.trim(),
-          "Salary / CTC": joinerForm.salaryCtc.trim(),
-          "Joining CTC": joinerForm.salaryCtc.trim(),
-          "Contact Number": joinerForm.contactNumber.trim(),
-          "Location": joinerForm.location.trim(),
-          "Status": joinerForm.status || "Joined",
-          createdAt: Date.now()
-        };
-
-        try {
-          if (db) {
-            if (convertingCandidate && convertingCandidate.id) {
-              await db.collection("candidates").doc(convertingCandidate.id).set(docPayload, { merge: true });
-            } else {
-              await db.collection("candidates").add(docPayload);
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'], heading: ['Manrope', 'sans-serif'] },
+                    colors: {
+                        porcelain: '#F8FAFC', midnightNavy: '#0F172A', navyMuted: '#64748B',
+                        solarOrange: '#F97316', solarHover: '#EA580C', successMint: '#10B981', warningAmber: '#F59E0B',
+                    }
+                }
             }
-          }
-
-          await postToSheetsWebhook({
-            type: "joiner",
-            sourceRowNumber: convertingCandidate ? convertingCandidate.rowNumber : null,
-            joiner: docPayload
-          });
-
-          setShowJoinerModal(false);
-          setConvertingCandidate(null);
-          notify(`Saved ${name} to Joiners data`);
-        } catch (err) {
-          console.error("Save joiner error:", err);
-          notify("Error saving joiner");
         }
-      };
-
-      const handleInlineJoinerStatusChange = async (joiner, newStatus) => {
-        try {
-          if (db && joiner.id) {
-            await db.collection("candidates").doc(joiner.id).set({ Status: newStatus }, { merge: true });
-          }
-          await postToSheetsWebhook({
-            type: "candidate_status",
-            rowNumber: joiner.rowNumber || null,
-            joinerRowNumber: joiner.joinerRowNumber || null,
-            status: newStatus
-          });
-          notify(`${joiner.name} → ${newStatus}`);
-        } catch (err) {
-          console.error(err);
+    </script>
+    <style>
+        :root {
+            --parallax-y: 0px;
         }
-      };
 
-      const handleAddPosition = async (e) => {
-        e.preventDefault();
-        if (!posForm.title.trim()) return;
-        const id = "pos_" + Date.now();
-        const item = {
-          id,
-          title: posForm.title.trim(),
-          exp: posForm.exp.trim(),
-          maxSalary: posForm.maxSalary.trim(),
-          department: posForm.department.trim(),
-          businessUnit: posForm.businessUnit.trim(),
-          reportingTo: posForm.reportingTo.trim(),
-          createdDate: getTodayISO(),
-          status: posForm.status,
-          createdAt: Date.now()
-        };
-        if (db) await db.collection("positions").doc(id).set(item, { merge: true });
-        await postToSheetsWebhook({ type: "position", ...item });
-        setPosForm({ title: "", exp: "1-3 Yrs", maxSalary: "", department: "", businessUnit: "", reportingTo: "", status: "Open" });
-        notify("Position added");
-      };
+        body {
+            background-color: #F8FAFC;
+            color: #0F172A;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
 
-      const handleAddTask = async (e) => {
-        e.preventDefault();
-        if (!taskTitle.trim()) return;
-        const id = "task_" + Date.now();
-        const item = {
-          id,
-          title: taskTitle.trim(),
-          heading: taskCategory,
-          date: taskDate,
-          completed: false,
-          createdAt: Date.now()
-        };
-        if (db) await db.collection("tasks").doc(id).set(item, { merge: true });
-        await postToSheetsWebhook({ type: "task", ...item });
-        setTaskTitle("");
-        notify("Task added");
-      };
+        h1, h2, h3, h4, .font-heading { font-family: 'Manrope', sans-serif; }
 
-      const handleToggleTask = async (task) => {
-        const nextCompleted = !task.completed;
-        if (db) await db.collection("tasks").doc(task.id).set({ completed: nextCompleted }, { merge: true });
-        await postToSheetsWebhook({ type: "task", ...task, completed: nextCompleted });
-      };
+        /* SMOOTH LOADER */
+        #smooth-preloader {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: linear-gradient(145deg, #F8FAFC 0%, #FFF7ED 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            transition: opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1), visibility 0.45s ease;
+        }
+        #smooth-preloader.loader-hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+        .loader-ring {
+            width: 44px;
+            height: 44px;
+            border-radius: 9999px;
+            border: 3px solid rgba(249, 115, 22, 0.18);
+            border-top-color: #F97316;
+            animation: spinSmooth 0.85s cubic-bezier(0.4, 0.15, 0.3, 0.85) infinite;
+        }
+        @keyframes spinSmooth {
+            to { transform: rotate(360deg); }
+        }
 
-      const statusCounts = useMemo(() => {
-        const counts = { Joined: 0, OYTJ: 0, STYO: 0 };
-        joiners.forEach((j) => {
-          if (counts[j.status] !== undefined) counts[j.status] += 1;
+        /* ENTRANCE REVEAL */
+        @keyframes entranceReveal {
+            0% {
+                opacity: 0;
+                transform: translateY(14px) scale(0.985);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        .reveal-enter {
+            animation: entranceReveal 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+        .reveal-stagger > * {
+            animation: entranceReveal 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+        .reveal-stagger > *:nth-child(1) { animation-delay: 0.03s; }
+        .reveal-stagger > *:nth-child(2) { animation-delay: 0.08s; }
+        .reveal-stagger > *:nth-child(3) { animation-delay: 0.13s; }
+        .reveal-stagger > *:nth-child(4) { animation-delay: 0.18s; }
+
+        /* HOVER EFFECTS + MICRO INTERACTION (Flat 2D, no 3D tilt) */
+        .app-card {
+            position: relative;
+            background-color: #FFFFFF;
+            border-radius: 18px;
+            border: 1px solid #E2E8F0;
+            box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.04);
+            transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1),
+                        box-shadow 0.24s cubic-bezier(0.22, 1, 0.36, 1),
+                        border-color 0.24s ease;
+        }
+        .app-card::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: 18px;
+            pointer-events: none;
+            opacity: 0;
+            background: radial-gradient(420px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(249, 115, 22, 0.08), transparent 65%);
+            transition: opacity 0.25s ease;
+        }
+        .app-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(249, 115, 22, 0.35);
+            box-shadow: 0 10px 20px -6px rgba(15, 23, 42, 0.08), 0 4px 8px -4px rgba(249, 115, 22, 0.06);
+        }
+        .app-card:hover::after {
+            opacity: 1;
+        }
+
+        .parallax-layer {
+            transform: translate3d(0, var(--parallax-y, 0px), 0);
+            transition: transform 0.12s ease-out;
+            will-change: transform;
+        }
+
+        .app-input {
+            background-color: #F8FAFC;
+            color: #0F172A;
+            border-radius: 12px;
+            border: 1px solid #E2E8F0;
+            transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .app-input:hover {
+            border-color: #CBD5E1;
+        }
+        .app-input:focus {
+            outline: none;
+            background-color: #FFFFFF;
+            border-color: #F97316;
+            box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
+            transform: translateY(-1px);
+        }
+
+        .app-btn-primary {
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, #F97316 0%, #EA580C 100%);
+            color: #FFFFFF;
+            border-radius: 12px;
+            transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.2s ease, filter 0.2s ease;
+        }
+        .app-btn-primary:hover {
+            transform: translateY(-1.5px);
+            box-shadow: 0 8px 16px -4px rgba(249, 115, 22, 0.38);
+            filter: brightness(1.03);
+        }
+        .app-btn-primary:active {
+            transform: scale(0.96) translateY(0);
+        }
+
+        .app-btn-secondary {
+            background-color: #FFFFFF;
+            color: #0F172A;
+            border-radius: 12px;
+            border: 1px solid #E2E8F0;
+            transition: all 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .app-btn-secondary:hover {
+            color: #F97316;
+            border-color: rgba(249, 115, 22, 0.4);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px -2px rgba(15, 23, 42, 0.06);
+        }
+        .app-btn-secondary:active {
+            transform: scale(0.96);
+        }
+
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 10px; }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-porcelain text-midnightNavy min-h-screen pb-24 md:pb-0">
+    <!-- SMOOTH LOADER -->
+    <div id="smooth-preloader" aria-hidden="true">
+        <div class="loader-ring"></div>
+        <p class="font-heading font-bold text-xs tracking-wide text-midnightNavy">Loading My Work Flow...</p>
+    </div>
+
+    <div id="root"></div>
+
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                const loader = document.getElementById('smooth-preloader');
+                if (loader) loader.classList.add('loader-hidden');
+            }, 1200);
         });
-        return counts;
-      }, [joiners]);
+    </script>
 
-      return (
-        <div className="min-h-screen flex flex-col">
-          {/* Top Header */}
-          <header className="bg-navy text-white border-b border-slate-800 sticky top-0 z-20">
-            <div className="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-solar flex items-center justify-center font-bold text-navy">
-                  TA
-                </div>
-                <div>
-                  <h1 className="text-base sm:text-lg font-semibold tracking-tight">Workflow Console</h1>
-                  <p className="text-xs text-slate-300">Synced with Joiners data &amp; Candidate data</p>
-                </div>
-              </div>
+    <script type="text/babel">
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW registration failed: ', err));
+            });
+        }
 
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => openAddJoinerModal(null)}
-                  className="bg-solar hover:bg-orange-600 text-white text-sm font-medium px-3.5 py-2 rounded-lg transition cursor-pointer"
+        // =========================================================================
+        // 1. PASTE YOUR FIREBASE CONFIG & GOOGLE SHEET WEBHOOK URL HERE
+        // =========================================================================
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "my-work-flow-e5eb1.firebaseapp.com",
+            projectId: "my-work-flow-e5eb1",
+            storageBucket: "my-work-flow-e5eb1.firebasestorage.app",
+            messagingSenderId: "888982928867",
+            appId: "YOUR_APP_ID"
+        };
+
+        const SHEET_WEBHOOK_URL = "YOUR_NEW_APPS_SCRIPT_WEB_APP_URL";
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        const mirrorToSheet = (payload) => {
+            if (!SHEET_WEBHOOK_URL || SHEET_WEBHOOK_URL.includes("YOUR_NEW")) return;
+            fetch(SHEET_WEBHOOK_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(payload)
+            }).catch(err => console.error("Sheet mirror warning:", err));
+        };
+
+        const Icons = {
+            Dashboard: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>,
+            AddCandidate: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg>,
+            Directory: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>,
+            Joiners: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+            Tasks: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>,
+            Positions: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>,
+            Calculator: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>,
+            Search: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>,
+            Download: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+        };
+
+        function MotionCard({ children, className = '' }) {
+            const cardRef = React.useRef(null);
+
+            const handleMouseMove = (e) => {
+                const el = cardRef.current;
+                if (!el) return;
+                const rect = el.getBoundingClientRect();
+                el.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`);
+                el.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`);
+            };
+
+            return (
+                <div
+                    ref={cardRef}
+                    onMouseMove={handleMouseMove}
+                    className={`app-card ${className}`}
                 >
-                  + Add Joiner
-                </button>
-              </div>
-            </div>
-
-            {/* Navigation Tabs */}
-            <div className="max-w-7xl mx-auto px-4 flex gap-2 overflow-x-auto pb-2">
-              {[
-                { id: "joiners", label: `Joiners (${joiners.length})` },
-                { id: "sourced", label: `Sourced (${sourcedProfiles.length})` },
-                { id: "positions", label: `Positions (${positions.length})` },
-                { id: "tasks", label: `Tasks (${tasks.length})` }
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`px-3.5 py-1.5 rounded-md text-sm font-medium whitespace-nowrap transition cursor-pointer ${
-                    activeTab === tab.id
-                      ? "bg-white text-navy"
-                      : "text-slate-300 hover:bg-slate-800 hover:text-white"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-          </header>
-
-          {/* Toast Notification */}
-          {toast && (
-            <div className="fixed bottom-5 right-5 z-50 bg-navy text-white px-4 py-2.5 rounded-lg shadow-lg text-sm border border-solar">
-              {toast}
-            </div>
-          )}
-
-          {/* Main Content */}
-          <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-6 space-y-6">
-            {/* Search & Filter Bar */}
-            {(activeTab === "joiners" || activeTab === "sourced") && (
-              <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex flex-wrap items-center gap-3">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search by name, role, BU, reporting, location, phone..."
-                  className="flex-1 min-w-[220px] px-3.5 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:border-navy"
-                />
-
-                {activeTab === "joiners" && (
-                  <>
-                    <select
-                      value={statusFilter}
-                      onChange={(e) => setStatusFilter(e.target.value)}
-                      className="px-3 py-2 rounded-lg border border-slate-300 text-sm bg-white"
-                    >
-                      <option value="ALL">All Statuses</option>
-                      {JOINER_STATUSES.map((st) => (
-                        <option key={st} value={st}>{st}</option>
-                      ))}
-                    </select>
-
-                    <select
-                      value={monthFilter}
-                      onChange={(e) => setMonthFilter(e.target.value)}
-                      className="px-3 py-2 rounded-lg border border-slate-300 text-sm bg-white"
-                    >
-                      <option value="ALL">All Joining Months</option>
-                      {monthOptions.map(([key, label]) => (
-                        <option key={key} value={key}>{label}</option>
-                      ))}
-                    </select>
-                  </>
-                )}
-              </div>
-            )}
-
-            {/* JOINERS TAB */}
-            {activeTab === "joiners" && (
-              <>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  <div className="bg-white rounded-xl p-4 border border-slate-200">
-                    <p className="text-xs text-slate-500 uppercase font-medium">Total Joiners</p>
-                    <p className="text-2xl font-bold text-navy mt-1">{joiners.length}</p>
-                  </div>
-                  <div className="bg-white rounded-xl p-4 border border-slate-200">
-                    <p className="text-xs text-slate-500 uppercase font-medium">Joined</p>
-                    <p className="text-2xl font-bold text-emerald-700 mt-1">{statusCounts.Joined}</p>
-                  </div>
-                  <div className="bg-white rounded-xl p-4 border border-slate-200">
-                    <p className="text-xs text-slate-500 uppercase font-medium">OYTJ</p>
-                    <p className="text-2xl font-bold text-solar mt-1">{statusCounts.OYTJ}</p>
-                  </div>
-                  <div className="bg-white rounded-xl p-4 border border-slate-200">
-                    <p className="text-xs text-slate-500 uppercase font-medium">STYO</p>
-                    <p className="text-2xl font-bold text-indigo-700 mt-1">{statusCounts.STYO}</p>
-                  </div>
+                    {children}
                 </div>
+            );
+        }
 
-                {loading ? (
-                  <div className="bg-white rounded-xl p-8 text-center text-slate-500 border border-slate-200">
-                    Loading Joiners data from Firestore...
-                  </div>
-                ) : filteredJoiners.length === 0 ? (
-                  <div className="bg-white rounded-xl p-8 text-center text-slate-500 border border-slate-200">
-                    No joiner records match the current filter. Run <code>syncAllSheetsToFirebase</code> in Apps Script or click <strong>+ Add Joiner</strong>.
-                  </div>
-                ) : (
-                  <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-x-auto">
-                    <table className="w-full text-left border-collapse text-sm">
-                      <thead className="bg-slate-50 border-b border-slate-200 text-slate-600">
-                        <tr>
-                          <th className="py-3 px-4 font-semibold">Candidate Name</th>
-                          <th className="py-3 px-4 font-semibold">Date of Joining</th>
-                          <th className="py-3 px-4 font-semibold">BU</th>
-                          <th className="py-3 px-4 font-semibold">Reporting</th>
-                          <th className="py-3 px-4 font-semibold">Role</th>
-                          <th className="py-3 px-4 font-semibold">Salary / CTC</th>
-                          <th className="py-3 px-4 font-semibold">Contact</th>
-                          <th className="py-3 px-4 font-semibold">Location</th>
-                          <th className="py-3 px-4 font-semibold">Status</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {filteredJoiners.map((j) => (
-                          <tr key={j.id} className="hover:bg-slate-50/80">
-                            <td className="py-3 px-4 font-medium text-navy">{j.name}</td>
-                            <td className="py-3 px-4 whitespace-nowrap">{j.doj || "—"}</td>
-                            <td className="py-3 px-4">{j.businessUnit || "—"}</td>
-                            <td className="py-3 px-4">{j.reporting || "—"}</td>
-                            <td className="py-3 px-4">{j.role || "—"}</td>
-                            <td className="py-3 px-4 whitespace-nowrap">{j.ctc || "—"}</td>
-                            <td className="py-3 px-4 whitespace-nowrap">{j.phone || "—"}</td>
-                            <td className="py-3 px-4">{j.location || "—"}</td>
-                            <td className="py-3 px-4">
-                              <select
-                                value={j.status}
-                                onChange={(e) => handleInlineJoinerStatusChange(j, e.target.value)}
-                                className="px-2.5 py-1 rounded-md border border-slate-300 text-xs font-medium bg-white"
-                              >
-                                {JOINER_STATUSES.map((st) => (
-                                  <option key={st} value={st}>{st}</option>
-                                ))}
-                              </select>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </>
-            )}
+        const normalizePhone = (val) => (val || '').toString().replace(/\D/g, '').slice(-10);
+        const normalizeEmail = (val) => (val || '').toString().trim().toLowerCase();
+        const isEmptyVal = (val) => !val || val.toString().trim() === '' || val.toString().trim().toUpperCase() === 'N/A' || val.toString().trim() === '-';
 
-            {/* SOURCED TAB */}
-            {activeTab === "sourced" && (
-              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-x-auto">
-                <table className="w-full text-left border-collapse text-sm">
-                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-600">
-                    <tr>
-                      <th className="py-3 px-4 font-semibold">Candidate Name</th>
-                      <th className="py-3 px-4 font-semibold">Role</th>
-                      <th className="py-3 px-4 font-semibold">Current Company</th>
-                      <th className="py-3 px-4 font-semibold">Location</th>
-                      <th className="py-3 px-4 font-semibold">Contact</th>
-                      <th className="py-3 px-4 font-semibold">Status</th>
-                      <th className="py-3 px-4 font-semibold">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {filteredSourced.slice(0, 150).map((p) => (
-                      <tr key={p.id} className="hover:bg-slate-50/80">
-                        <td className="py-3 px-4 font-medium text-navy">{p.name}</td>
-                        <td className="py-3 px-4">{p.role || "—"}</td>
-                        <td className="py-3 px-4">{p.currentCompany || "—"}</td>
-                        <td className="py-3 px-4">{p.location || "—"}</td>
-                        <td className="py-3 px-4 whitespace-nowrap">{p.phone || "—"}</td>
-                        <td className="py-3 px-4">
-                          <span className="px-2 py-0.5 rounded-full text-xs bg-slate-100 text-slate-700 font-medium">
-                            {p.status}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <button
-                            onClick={() => openAddJoinerModal(p)}
-                            className="px-3 py-1 rounded-md bg-navy hover:bg-slate-800 text-white text-xs font-medium cursor-pointer"
-                          >
-                            Mark Joined
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+        const JOINER_STATUS_LIST = ['Joined', 'OYTJ', 'STYO', 'Offer Released', 'Revoked'];
+        const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-            {/* POSITIONS TAB */}
-            {activeTab === "positions" && (
-              <div className="space-y-4">
-                <form onSubmit={handleAddPosition} className="bg-white rounded-xl p-4 border border-slate-200 grid grid-cols-1 sm:grid-cols-4 gap-3">
-                  <input
-                    type="text"
-                    required
-                    placeholder="Position Title"
-                    value={posForm.title}
-                    onChange={(e) => setPosForm({ ...posForm, title: e.target.value })}
-                    className="px-3 py-2 rounded-lg border border-slate-300 text-sm"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Business Unit (e.g., MRL)"
-                    value={posForm.businessUnit}
-                    onChange={(e) => setPosForm({ ...posForm, businessUnit: e.target.value })}
-                    className="px-3 py-2 rounded-lg border border-slate-300 text-sm"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Reporting To"
-                    value={posForm.reportingTo}
-                    onChange={(e) => setPosForm({ ...posForm, reportingTo: e.target.value })}
-                    className="px-3 py-2 rounded-lg border border-slate-300 text-sm"
-                  />
-                  <button
-                    type="submit"
-                    className="bg-solar hover:bg-orange-600 text-white rounded-lg text-sm font-medium px-4 py-2 cursor-pointer"
-                  >
-                    + Add Position
-                  </button>
-                </form>
+        function parseMonthKey(dateStr, fallbackTimestamp) {
+            if (dateStr && !isEmptyVal(dateStr)) {
+                const s = dateStr.toString().trim();
+                let m = s.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+                if (m) {
+                    const yr = parseInt(m[1], 10);
+                    const mo = parseInt(m[2], 10) - 1;
+                    if (mo >= 0 && mo < 12) return { key: `${yr}-${String(mo + 1).padStart(2, '0')}`, label: `${MONTH_NAMES[mo]} ${yr}`, shortMonth: MONTH_NAMES[mo] };
+                }
+                m = s.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{2,4})/);
+                if (m) {
+                    let yr = parseInt(m[3], 10);
+                    if (yr < 100) yr += 2000;
+                    const p1 = parseInt(m[1], 10);
+                    const p2 = parseInt(m[2], 10);
+                    const mo = (p1 > 12 ? p2 : p1) - 1;
+                    if (mo >= 0 && mo < 12) return { key: `${yr}-${String(mo + 1).padStart(2, '0')}`, label: `${MONTH_NAMES[mo]} ${yr}`, shortMonth: MONTH_NAMES[mo] };
+                }
+                const parsed = new Date(s);
+                if (!isNaN(parsed.getTime())) {
+                    const yr = parsed.getFullYear();
+                    const mo = parsed.getMonth();
+                    return { key: `${yr}-${String(mo + 1).padStart(2, '0')}`, label: `${MONTH_NAMES[mo]} ${yr}`, shortMonth: MONTH_NAMES[mo] };
+                }
+            }
+            const d = new Date(fallbackTimestamp || Date.now());
+            const yr = d.getFullYear();
+            const mo = d.getMonth();
+            return { key: `${yr}-${String(mo + 1).padStart(2, '0')}`, label: `${MONTH_NAMES[mo]} ${yr}`, shortMonth: MONTH_NAMES[mo] };
+        }
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {positions.map((pos) => (
-                    <div key={pos.id} className="bg-white rounded-xl p-4 border border-slate-200">
-                      <div className="flex items-center justify-between">
-                        <h3 className="font-semibold text-navy">{pos.title}</h3>
-                        <span className="text-xs px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-medium">
-                          {pos.status || "Open"}
-                        </span>
-                      </div>
-                      <p className="text-xs text-slate-500 mt-1">
-                        BU: {pos.businessUnit || "—"} • Reporting: {pos.reportingTo || "—"}
-                      </p>
-                    </div>
-                  ))}
+        function App() {
+            const [activeTab, setActiveTab] = React.useState('dashboard');
+            const [syncStatus, setSyncStatus] = React.useState('Connecting...');
+            const [profiles, setProfiles] = React.useState([]);
+            const [joiners, setJoiners] = React.useState([]);
+            const [positions, setPositions] = React.useState([]);
+            const [todos, setTodos] = React.useState([]);
+
+            const [searchTerm, setSearchTerm] = React.useState('');
+            const [selectedCandidate, setSelectedCandidate] = React.useState(null);
+
+            // JOINERS REPORT & ADD MODAL STATE
+            const [selectedMonthKey, setSelectedMonthKey] = React.useState(null);
+            const [isAddJoinerOpen, setIsAddJoinerOpen] = React.useState(false);
+            const [isSavingJoiner, setIsSavingJoiner] = React.useState(false);
+            const [joinerModalMode, setJoinerModalMode] = React.useState('add');
+            const [sourceCandidateForJoin, setSourceCandidateForJoin] = React.useState(null);
+            const [missingFieldsList, setMissingFieldsList] = React.useState([]);
+
+            const scrollContainerRef = React.useRef(null);
+
+            const getTodayString = () => new Date().toISOString().split('T')[0];
+            const getFormattedDDMMYYYY = () => {
+                const d = new Date();
+                const day = String(d.getDate()).padStart(2, '0');
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                return `${day}-${month}-${d.getFullYear()}`;
+            };
+
+            const createEmptyJoinerForm = () => ({
+                candidateName: '',
+                designation: '',
+                role: '',
+                department: '',
+                businessUnit: '',
+                buHead: '',
+                location: '',
+                contactNumber: '',
+                email: '',
+                currentCompany: '',
+                totalExp: '',
+                joiningCtc: '',
+                joiningDate: getTodayString(),
+                noticePeriod: '',
+                source: 'Naukri',
+                status: 'Joined'
+            });
+
+            const [joinerForm, setJoinerForm] = React.useState(createEmptyJoinerForm);
+
+            React.useEffect(() => {
+                const timer = setTimeout(() => {
+                    const loader = document.getElementById('smooth-preloader');
+                    if (loader) loader.classList.add('loader-hidden');
+                }, 320);
+                return () => clearTimeout(timer);
+            }, []);
+
+            React.useEffect(() => {
+                const container = scrollContainerRef.current;
+                if (!container) return;
+
+                const onScroll = () => {
+                    const offset = Math.min(container.scrollTop * 0.14, 18);
+                    document.documentElement.style.setProperty('--parallax-y', `${-offset.toFixed(1)}px`);
+                };
+
+                container.addEventListener('scroll', onScroll, { passive: true });
+                return () => container.removeEventListener('scroll', onScroll);
+            }, []);
+
+            // ADD CANDIDATE FORM STATE
+            const initialCandForm = {
+                candidateName: '',
+                source: 'Naukri',
+                role: '',
+                department: '',
+                businessUnit: '',
+                buHead: '',
+                location: '',
+                contactNumber: '',
+                email: '',
+                currentCompany: '',
+                designation: '',
+                totalExp: '',
+                currentCtc: '',
+                expectedCtc: '',
+                noticePeriod: '',
+                screenDate: getFormattedDDMMYYYY(),
+                status: 'Sourced'
+            };
+            const [candForm, setCandForm] = React.useState(initialCandForm);
+            const [isSavingCand, setIsSavingCand] = React.useState(false);
+            const [candSaveBanner, setCandSaveBanner] = React.useState('');
+
+            // Tasks State
+            const [newTaskTitle, setNewTaskTitle] = React.useState('');
+            const [newTaskHeading, setNewTaskHeading] = React.useState('Interview schedule');
+            const [newTaskDate, setNewTaskDate] = React.useState(getTodayString());
+            const [isSavingTask, setIsSavingTask] = React.useState(false);
+
+            // Calculators State
+            const [dobInput, setDobInput] = React.useState('');
+            const [currentSalInput, setCurrentSalInput] = React.useState('');
+            const [hikePercentInput, setHikePercentInput] = React.useState('');
+            const [oldSalCompare, setOldSalCompare] = React.useState('');
+            const [newSalCompare, setNewSalCompare] = React.useState('');
+
+            const [deferredPrompt, setDeferredPrompt] = React.useState(null);
+            const [isInstallable, setIsInstallable] = React.useState(false);
+
+            React.useEffect(() => {
+                window.addEventListener('beforeinstallprompt', (e) => {
+                    e.preventDefault();
+                    setDeferredPrompt(e);
+                    setIsInstallable(true);
+                });
+            }, []);
+
+            const handleInstallApp = async () => {
+                if (!deferredPrompt) return;
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') setIsInstallable(false);
+                setDeferredPrompt(null);
+            };
+
+            const formattedCurrentDate = React.useMemo(() => {
+                const options = { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' };
+                return new Date().toLocaleDateString('en-US', options);
+            }, []);
+
+            const [isAddPosOpen, setIsAddPosOpen] = React.useState(false);
+            const [editingPosId, setEditingPosId] = React.useState(null);
+            const [newPosTitle, setNewPosTitle] = React.useState('');
+            const [newPosExp, setNewPosExp] = React.useState('');
+            const [newPosSalary, setNewPosSalary] = React.useState('');
+            const [newPosDept, setNewPosDept] = React.useState('');
+            const [newPosBU, setNewPosBU] = React.useState('');
+            const [newPosReporting, setNewPosReporting] = React.useState('');
+
+            // REAL-TIME FIRESTORE LISTENERS
+            React.useEffect(() => {
+                const unsubCandidates = db.collection("candidates").onSnapshot((snapshot) => {
+                    const allCands = snapshot.docs.map(doc => {
+                        const item = doc.data();
+                        const roleVal = item['Role'] || 'N/A';
+                        const desigVal = item['Designation'] || roleVal || 'N/A';
+                        const reportingVal = item['Reporting'] || item['BU Head'] || 'N/A';
+                        const joinCtcVal = item['Salary / CTC'] || item['Joining CTC'] || item['Expected CTC'] || item['Current CTC'] || 'N/A';
+                        const joinDateVal = item['Date of Joining'] || item['Joining Date'] || item['CV Screen Date'] || '';
+                        return {
+                            docId: doc.id,
+                            rowNumber: item.rowNumber || null,
+                            joinerRowNumber: item.joinerRowNumber || null,
+                            candidateName: item['Candidate Name'] || item['candidateName'] || item['NAME'] || 'N/A',
+                            source: item['CV -Source:'] || item['CV -Source-'] || item['source'] || 'Naukri',
+                            location: item['Location'] || 'N/A',
+                            role: roleVal,
+                            designation: desigVal,
+                            department: item['Department'] || 'N/A',
+                            businessUnit: item['Business Unit'] || item['BU'] || 'N/A',
+                            buHead: reportingVal,
+                            contactNumber: item['Contact Number'] || 'N/A',
+                            currentCompany: item['Current Company'] || 'N/A',
+                            totalExp: item['Overall Experience'] || item['Total Experience'] || 'N/A',
+                            currentCtc: item['Current CTC'] || 'N/A',
+                            expectedCtc: item['Expected CTC'] || 'N/A',
+                            joiningCtc: joinCtcVal,
+                            joiningDate: joinDateVal,
+                            noticePeriod: item['Notice Period'] || 'N/A',
+                            emailId: item['Email'] || 'N/A',
+                            screenDate: item['CV Screen Date'] || 'N/A',
+                            status: item['Status'] || 'Sourced',
+                            createdAt: item.createdAt || 0
+                        };
+                    });
+
+                    allCands.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+                    setProfiles(allCands.filter(p => !JOINER_STATUS_LIST.includes(p.status)));
+                    setJoiners(allCands.filter(p => JOINER_STATUS_LIST.includes(p.status)));
+                    setSyncStatus(`Live (${allCands.length})`);
+                }, (error) => {
+                    console.error("Firestore candidates error:", error);
+                    setSyncStatus("DB Error");
+                });
+
+                const unsubTasks = db.collection("tasks").orderBy("createdAt", "desc").onSnapshot((snapshot) => {
+                    const loadedTasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    setTodos(loadedTasks);
+                });
+
+                const unsubPositions = db.collection("positions").orderBy("createdAt", "desc").onSnapshot((snapshot) => {
+                    const loadedPositions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    setPositions(loadedPositions);
+                });
+
+                return () => { unsubCandidates(); unsubTasks(); unsubPositions(); };
+            }, []);
+
+            // MONTH-WISE JOINERS REPORT & CURRENT MONTH HIGHLIGHT
+            const currentMonthInfo = React.useMemo(() => {
+                const now = new Date();
+                const yr = now.getFullYear();
+                const mo = now.getMonth();
+                return {
+                    key: `${yr}-${String(mo + 1).padStart(2, '0')}`,
+                    label: `${MONTH_NAMES[mo]} ${yr}`,
+                    shortMonth: MONTH_NAMES[mo]
+                };
+            }, []);
+
+            const monthlyJoinerGroups = React.useMemo(() => {
+                const map = new Map();
+                joiners.forEach(j => {
+                    const mInfo = parseMonthKey(j.joiningDate || j.screenDate, j.createdAt);
+                    if (!map.has(mInfo.key)) {
+                        map.set(mInfo.key, {
+                            key: mInfo.key,
+                            label: mInfo.label,
+                            shortMonth: mInfo.shortMonth,
+                            items: []
+                        });
+                    }
+                    map.get(mInfo.key).items.push(j);
+                });
+                return Array.from(map.values()).sort((a, b) => b.key.localeCompare(a.key));
+            }, [joiners]);
+
+            const currentMonthJoinerCount = React.useMemo(() => {
+                const found = monthlyJoinerGroups.find(g => g.key === currentMonthInfo.key);
+                return found ? found.items.length : 0;
+            }, [monthlyJoinerGroups, currentMonthInfo]);
+
+            const activeMonthGroup = React.useMemo(() => {
+                if (selectedMonthKey) {
+                    return monthlyJoinerGroups.find(g => g.key === selectedMonthKey) || null;
+                }
+                return monthlyJoinerGroups.find(g => g.key === currentMonthInfo.key) || monthlyJoinerGroups[0] || null;
+            }, [selectedMonthKey, monthlyJoinerGroups, currentMonthInfo]);
+
+            // DUPLICATE CANDIDATE FINDER (BY PHONE OR EMAIL)
+            const duplicateMatches = React.useMemo(() => {
+                const phoneClean = normalizePhone(candForm.contactNumber);
+                const emailClean = normalizeEmail(candForm.email);
+
+                const hasPhone = phoneClean.length >= 7;
+                const hasEmail = emailClean.length >= 4 && emailClean.includes('@');
+
+                if (!hasPhone && !hasEmail) return [];
+
+                const allRecords = [...profiles, ...joiners];
+                return allRecords.filter(rec => {
+                    const recPhone = normalizePhone(rec.contactNumber);
+                    const recEmail = normalizeEmail(rec.emailId);
+                    const phoneMatch = hasPhone && recPhone && recPhone === phoneClean;
+                    const emailMatch = hasEmail && recEmail && recEmail !== 'n/a' && recEmail === emailClean;
+                    return phoneMatch || emailMatch;
+                });
+            }, [candForm.contactNumber, candForm.email, profiles, joiners]);
+
+            // HISTORY AUTO-SUGGESTIONS + EDITABLE CV SOURCE/VENDORS
+            const suggestions = React.useMemo(() => {
+                const allRecords = [...profiles, ...joiners];
+                const collectUnique = (getter, defaults = []) => {
+                    const set = new Set(defaults);
+                    allRecords.forEach(rec => {
+                        const val = (getter(rec) || '').toString().trim();
+                        if (val && val.toUpperCase() !== 'N/A' && val !== '-') {
+                            set.add(val);
+                        }
+                    });
+                    return Array.from(set).sort((a, b) => a.localeCompare(b));
+                };
+
+                return {
+                    sources: collectUnique(r => r.source, ['Naukri', 'LinkedIn', 'Referral', 'Indeed', 'Walk-in', 'Direct']),
+                    roles: collectUnique(r => r.role),
+                    departments: collectUnique(r => r.department),
+                    businessUnits: collectUnique(r => r.businessUnit),
+                    buHeads: collectUnique(r => r.buHead),
+                    locations: collectUnique(r => r.location),
+                    companies: collectUnique(r => r.currentCompany),
+                    designations: collectUnique(r => r.designation),
+                    experiences: collectUnique(r => r.totalExp),
+                    noticePeriods: collectUnique(r => r.noticePeriod, ['Immediate', '15 Days', '30 Days', '60 Days', '90 Days'])
+                };
+            }, [profiles, joiners]);
+
+            const formatSalaryLPA = (val) => {
+                if (!val) return 'Negotiable';
+                const trimmed = val.toString().trim();
+                if (/lpa|lacs|lakhs|per annum/i.test(trimmed)) return trimmed;
+                return `${trimmed} LPA`;
+            };
+
+            const openAddJoinerModal = () => {
+                setJoinerModalMode('add');
+                setSourceCandidateForJoin(null);
+                setMissingFieldsList([]);
+                setJoinerForm(createEmptyJoinerForm());
+                setIsAddJoinerOpen(true);
+            };
+
+            const handleMarkJoined = (candidate) => {
+                const missing = [];
+                if (isEmptyVal(candidate.designation) && isEmptyVal(candidate.role)) missing.push('Designation / Role');
+                if (isEmptyVal(candidate.department)) missing.push('Department');
+                if (isEmptyVal(candidate.businessUnit)) missing.push('Business Unit');
+                if (isEmptyVal(candidate.buHead)) missing.push('BU Head');
+                if (isEmptyVal(candidate.location)) missing.push('Location');
+                if (isEmptyVal(candidate.contactNumber)) missing.push('Contact Number');
+                if (isEmptyVal(candidate.emailId)) missing.push('Email ID');
+                if (isEmptyVal(candidate.currentCompany)) missing.push('Current Company');
+                if (isEmptyVal(candidate.totalExp)) missing.push('Overall Experience');
+                if (isEmptyVal(candidate.noticePeriod)) missing.push('Notice Period');
+
+                setJoinerModalMode('mark_joined');
+                setSourceCandidateForJoin(candidate);
+                setMissingFieldsList(missing);
+                setJoinerForm({
+                    candidateName: isEmptyVal(candidate.candidateName) ? '' : candidate.candidateName,
+                    designation: isEmptyVal(candidate.designation) ? (isEmptyVal(candidate.role) ? '' : candidate.role) : candidate.designation,
+                    role: isEmptyVal(candidate.role) ? (isEmptyVal(candidate.designation) ? '' : candidate.designation) : candidate.role,
+                    department: isEmptyVal(candidate.department) ? '' : candidate.department,
+                    businessUnit: isEmptyVal(candidate.businessUnit) ? '' : candidate.businessUnit,
+                    buHead: isEmptyVal(candidate.buHead) ? '' : candidate.buHead,
+                    location: isEmptyVal(candidate.location) ? '' : candidate.location,
+                    contactNumber: isEmptyVal(candidate.contactNumber) ? '' : candidate.contactNumber,
+                    email: isEmptyVal(candidate.emailId) ? '' : candidate.emailId,
+                    currentCompany: isEmptyVal(candidate.currentCompany) ? '' : candidate.currentCompany,
+                    totalExp: isEmptyVal(candidate.totalExp) ? '' : candidate.totalExp,
+                    joiningCtc: '',
+                    joiningDate: getTodayString(),
+                    noticePeriod: isEmptyVal(candidate.noticePeriod) ? '' : candidate.noticePeriod,
+                    source: isEmptyVal(candidate.source) ? 'Naukri' : candidate.source,
+                    status: 'Joined'
+                });
+                setIsAddJoinerOpen(true);
+            };
+
+            const handleSaveJoiner = async (e) => {
+                e.preventDefault();
+                if (!joinerForm.candidateName.trim() || !joinerForm.joiningCtc.toString().trim() || isSavingJoiner) return;
+
+                setIsSavingJoiner(true);
+                try {
+                    const docId = joinerModalMode === 'mark_joined' && sourceCandidateForJoin
+                        ? sourceCandidateForJoin.docId
+                        : ("joiner_" + Date.now());
+
+                    const finalDesignation = joinerForm.designation.trim() || joinerForm.role.trim() || 'N/A';
+                    const finalRole = joinerForm.role.trim() || joinerForm.designation.trim() || 'N/A';
+                    const finalSalary = formatSalaryLPA(joinerForm.joiningCtc);
+                    const finalReporting = joinerForm.buHead.trim() || 'N/A';
+                    const finalDoj = joinerForm.joiningDate || getTodayString();
+
+                    const payload = {
+                        id: docId,
+                        'Candidate Name': joinerForm.candidateName.trim(),
+                        'Designation': finalDesignation,
+                        'Role': finalRole,
+                        'Department': joinerForm.department.trim() || 'N/A',
+                        'Business Unit': joinerForm.businessUnit.trim() || 'N/A',
+                        'Reporting': finalReporting,
+                        'BU Head': finalReporting,
+                        'Location': joinerForm.location.trim() || 'N/A',
+                        'Contact Number': joinerForm.contactNumber.trim() || 'N/A',
+                        'Email': joinerForm.email.trim() || 'N/A',
+                        'Current Company': joinerForm.currentCompany.trim() || 'N/A',
+                        'Overall Experience': joinerForm.totalExp.trim() || 'N/A',
+                        'Salary / CTC': finalSalary,
+                        'Joining CTC': finalSalary,
+                        'Expected CTC': finalSalary,
+                        'Date of Joining': finalDoj,
+                        'Joining Date': finalDoj,
+                        'Notice Period': joinerForm.noticePeriod.trim() || 'N/A',
+                        'CV -Source:': joinerForm.source.trim() || 'Naukri',
+                        'Status': joinerForm.status || 'Joined',
+                        createdAt: joinerModalMode === 'mark_joined' && sourceCandidateForJoin?.createdAt
+                            ? sourceCandidateForJoin.createdAt
+                            : Date.now()
+                    };
+
+                    await db.collection("candidates").doc(docId).set(payload, { merge: true });
+
+                    mirrorToSheet({
+                        type: 'joiner',
+                        docId: docId,
+                        sourceRowNumber: sourceCandidateForJoin?.rowNumber || null,
+                        joiner: payload
+                    });
+
+                    setIsAddJoinerOpen(false);
+                    setSourceCandidateForJoin(null);
+                    setMissingFieldsList([]);
+                    setJoinerForm(createEmptyJoinerForm());
+                    setActiveTab('joiners');
+                } catch (err) {
+                    console.error("Failed to save joiner:", err);
+                    alert("Error saving joiner. Check console.");
+                } finally {
+                    setIsSavingJoiner(false);
+                }
+            };
+
+            const handleAddCandidateSubmit = async (e) => {
+                e.preventDefault();
+                if (!candForm.candidateName.trim() || isSavingCand) return;
+
+                if (duplicateMatches.length > 0) {
+                    const firstDup = duplicateMatches[0];
+                    const proceed = window.confirm(
+                        `Duplicate alert: A record already exists for "${firstDup.candidateName}" (${firstDup.role} • Status: ${firstDup.status}).\n\nDo you still want to add this candidate?`
+                    );
+                    if (!proceed) return;
+                }
+
+                setIsSavingCand(true);
+
+                try {
+                    const docId = "cand_" + Date.now();
+                    const cleanSource = (candForm.source || '').trim() || 'Naukri';
+                    const firestorePayload = {
+                        'Candidate Name': candForm.candidateName.trim(),
+                        'CV -Source:': cleanSource,
+                        'CV -Source-': cleanSource,
+                        'Role': candForm.role.trim() || 'N/A',
+                        'Department': candForm.department.trim() || 'N/A',
+                        'Business Unit': candForm.businessUnit.trim() || 'N/A',
+                        'BU Head': candForm.buHead.trim() || 'N/A',
+                        'Location': candForm.location.trim() || 'N/A',
+                        'Contact Number': candForm.contactNumber.trim() || 'N/A',
+                        'Email': candForm.email.trim() || 'N/A',
+                        'Current Company': candForm.currentCompany.trim() || 'N/A',
+                        'Designation': candForm.designation.trim() || 'N/A',
+                        'Overall Experience': candForm.totalExp.trim() || 'N/A',
+                        'Current CTC': candForm.currentCtc.trim() || 'N/A',
+                        'Expected CTC': candForm.expectedCtc.trim() || 'N/A',
+                        'Notice Period': candForm.noticePeriod.trim() || 'N/A',
+                        'CV Screen Date': candForm.screenDate.trim() || getFormattedDDMMYYYY(),
+                        'Status': candForm.status || 'Sourced',
+                        createdAt: Date.now()
+                    };
+
+                    await db.collection("candidates").doc(docId).set(firestorePayload);
+
+                    mirrorToSheet({
+                        type: 'add_candidate',
+                        docId: docId,
+                        candidate: firestorePayload
+                    });
+
+                    setCandForm({ ...initialCandForm, screenDate: getFormattedDDMMYYYY() });
+                    setCandSaveBanner(`✅ ${firestorePayload['Candidate Name']} added to Sourced & synced to Google Sheet!`);
+                    setTimeout(() => setCandSaveBanner(''), 4000);
+                } catch (err) {
+                    console.error("Failed to save candidate:", err);
+                    alert("Error saving candidate. Check console.");
+                } finally {
+                    setIsSavingCand(false);
+                }
+            };
+
+            const ageResult = React.useMemo(() => {
+                if (!dobInput || dobInput.trim() === '') return null;
+                const cleaned = dobInput.trim().replace(/[\/\.]/g, '-');
+                const parts = cleaned.split('-');
+                if (parts.length !== 3) return { invalid: true };
+
+                let day, month, year;
+                if (parts[0].length === 4) {
+                    year = parseInt(parts[0], 10);
+                    month = parseInt(parts[1], 10) - 1;
+                    day = parseInt(parts[2], 10);
+                } else {
+                    day = parseInt(parts[0], 10);
+                    month = parseInt(parts[1], 10) - 1;
+                    year = parseInt(parts[2], 10);
+                    if (year < 100) year += 2000;
+                }
+
+                const birthDate = new Date(year, month, day);
+                const today = new Date();
+                if (isNaN(birthDate.getTime()) || birthDate > today || month < 0 || month > 11 || day < 1 || day > 31) {
+                    return { invalid: true };
+                }
+
+                let years = today.getFullYear() - birthDate.getFullYear();
+                let months = today.getMonth() - birthDate.getMonth();
+                let days = today.getDate() - birthDate.getDate();
+
+                if (days < 0) {
+                    months--;
+                    const prevMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+                    days += prevMonth.getDate();
+                }
+                if (months < 0) {
+                    years--;
+                    months += 12;
+                }
+
+                const totalDays = Math.floor((today - birthDate) / (1000 * 60 * 60 * 24));
+                const totalMonths = years * 12 + months;
+                return { invalid: false, years, months, days, totalDays, totalMonths };
+            }, [dobInput]);
+
+            const hikeByPercentResult = React.useMemo(() => {
+                const curr = parseFloat(currentSalInput);
+                const pct = parseFloat(hikePercentInput);
+                if (isNaN(curr) || isNaN(pct) || curr < 0) return null;
+                const hikeAmount = (curr * pct) / 100;
+                const newSalary = curr + hikeAmount;
+                return {
+                    hikeAmount: hikeAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 }),
+                    newSalary: newSalary.toLocaleString('en-IN', { maximumFractionDigits: 2 })
+                };
+            }, [currentSalInput, hikePercentInput]);
+
+            const hikeBySalaryResult = React.useMemo(() => {
+                const oldVal = parseFloat(oldSalCompare);
+                const newVal = parseFloat(newSalCompare);
+                if (isNaN(oldVal) || isNaN(newVal) || oldVal <= 0) return null;
+                const diffAmount = newVal - oldVal;
+                const percentChange = (diffAmount / oldVal) * 100;
+                return {
+                    diffAmount: diffAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 }),
+                    percentChange: percentChange.toFixed(2),
+                    isPositive: diffAmount >= 0
+                };
+            }, [oldSalCompare, newSalCompare]);
+
+            const handleSavePosition = async () => {
+                if (!newPosTitle.trim()) return;
+                const formattedSalary = formatSalaryLPA(newPosSalary);
+
+                if (editingPosId) {
+                    const existing = positions.find(p => p.id === editingPosId);
+                    const updatedData = {
+                        title: newPosTitle.trim(),
+                        exp: newPosExp || '0-2 Yrs',
+                        maxSalary: formattedSalary,
+                        department: newPosDept || 'General',
+                        businessUnit: newPosBU || 'Main Unit',
+                        reportingTo: newPosReporting || 'HOD'
+                    };
+                    await db.collection("positions").doc(editingPosId).update(updatedData);
+                    mirrorToSheet({ type: 'position', id: editingPosId, createdDate: existing?.createdDate || getTodayString(), status: existing?.status || 'Open', ...updatedData });
+                } else {
+                    const newId = "pos_" + Date.now();
+                    const newPos = {
+                        id: newId,
+                        title: newPosTitle.trim(),
+                        exp: newPosExp || '0-2 Yrs',
+                        maxSalary: formattedSalary,
+                        department: newPosDept || 'General',
+                        businessUnit: newPosBU || 'Main Unit',
+                        reportingTo: newPosReporting || 'HOD',
+                        createdDate: getTodayString(),
+                        status: 'Open',
+                        createdAt: Date.now()
+                    };
+                    await db.collection("positions").doc(newId).set(newPos);
+                    mirrorToSheet({ type: 'position', ...newPos });
+                }
+                resetPosModal();
+            };
+
+            const openEditPosition = (pos) => {
+                setEditingPosId(pos.id);
+                setNewPosTitle(pos.title);
+                setNewPosExp(pos.exp);
+                setNewPosSalary(pos.maxSalary);
+                setNewPosDept(pos.department);
+                setNewPosBU(pos.businessUnit);
+                setNewPosReporting(pos.reportingTo);
+                setIsAddPosOpen(true);
+            };
+
+            const resetPosModal = () => {
+                setIsAddPosOpen(false);
+                setEditingPosId(null);
+                setNewPosTitle(''); setNewPosExp(''); setNewPosSalary(''); setNewPosDept(''); setNewPosBU(''); setNewPosReporting('');
+            };
+
+            const handlePositionStatusChange = async (pos, newStatus) => {
+                await db.collection("positions").doc(pos.id).update({ status: newStatus });
+                mirrorToSheet({ type: 'position', ...pos, status: newStatus });
+            };
+
+            const calculateAgeing = (createdDateStr) => {
+                if (!createdDateStr || createdDateStr === 'N/A') return 0;
+                const created = new Date(createdDateStr);
+                const today = new Date();
+                const diffTime = Math.abs(today - created);
+                return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            };
+
+            const handleStatusChange = async (candidate, newStatus) => {
+                if (window.confirm(`Change status of ${candidate.candidateName} to "${newStatus}"?`)) {
+                    await db.collection("candidates").doc(candidate.docId).update({ Status: newStatus });
+                    mirrorToSheet({ type: 'candidate_status', rowNumber: candidate.rowNumber, joinerRowNumber: candidate.joinerRowNumber, status: newStatus });
+                }
+            };
+
+            const handleAddTask = async () => {
+                if (!newTaskTitle.trim() || isSavingTask) return;
+                setIsSavingTask(true);
+                try {
+                    const taskId = "task_" + Date.now();
+                    const newTask = {
+                        id: taskId,
+                        title: newTaskTitle.trim(),
+                        heading: newTaskHeading,
+                        date: newTaskDate || getTodayString(),
+                        completed: false,
+                        createdAt: Date.now()
+                    };
+                    await db.collection("tasks").doc(taskId).set(newTask);
+                    mirrorToSheet({ type: 'task', ...newTask });
+                    setNewTaskTitle('');
+                    setNewTaskDate(getTodayString());
+                } catch (err) {
+                    console.error("Error adding task:", err);
+                } finally {
+                    setIsSavingTask(false);
+                }
+            };
+
+            const toggleTaskStatus = async (task) => {
+                const newCompleted = !task.completed;
+                await db.collection("tasks").doc(task.id).update({ completed: newCompleted });
+                mirrorToSheet({ type: 'task', ...task, completed: newCompleted });
+            };
+
+            const deleteTask = async (task) => {
+                await db.collection("tasks").doc(task.id).delete();
+                mirrorToSheet({ type: 'task', action: 'delete_task', id: task.id });
+            };
+
+            const filteredProfiles = profiles.filter(p => {
+                const term = searchTerm.toLowerCase();
+                return (
+                    p.candidateName.toLowerCase().includes(term) ||
+                    p.role.toLowerCase().includes(term) ||
+                    p.source.toLowerCase().includes(term) ||
+                    p.location.toLowerCase().includes(term) ||
+                    p.currentCompany.toLowerCase().includes(term)
+                );
+            });
+
+            const totalPipelineCount = profiles.length + joiners.length;
+            const joinerRate = totalPipelineCount > 0 ? Math.round((joiners.length / totalPipelineCount) * 100) : 0;
+            const activePendingTasks = todos.filter(t => !t.completed);
+
+            const navItems = [
+                { id: 'dashboard', label: 'Home', icon: Icons.Dashboard },
+                { id: 'add_candidate', label: 'Candidate', icon: Icons.AddCandidate },
+                { id: 'profiles', label: 'Sourced', icon: Icons.Directory, count: profiles.length },
+                { id: 'positions', label: 'Positions', icon: Icons.Positions, count: positions.filter(p => p.status === 'Open').length },
+                { id: 'joiners', label: 'Joiners', icon: Icons.Joiners, count: joiners.length },
+                { id: 'todos', label: 'Tasks', icon: Icons.Tasks, count: todos.length },
+                { id: 'calculators', label: 'Calculators', icon: Icons.Calculator }
+            ];
+
+            return (
+                <div className="flex flex-col md:flex-row h-screen overflow-hidden bg-porcelain">
+                    
+                    {/* Desktop Sidebar */}
+                    <MotionCard className="w-64 p-5 flex-col justify-between hidden md:flex z-20 m-4 rounded-2xl">
+                        <div>
+                            <div className="flex items-center space-x-3 mb-8 px-2">
+                                <img src="./logo.jpeg" alt="Logo" className="w-10 h-10 rounded-xl object-cover border border-slate-200 transition-transform duration-300 hover:scale-105" />
+                                <div>
+                                    <h1 className="font-heading font-extrabold text-base leading-tight">My Work Flow</h1>
+                                    <p className="text-[11px] text-navyMuted">Firebase Real-Time</p>
+                                </div>
+                            </div>
+
+                            <nav className="space-y-1.5">
+                                {navItems.map(tab => {
+                                    const IconComp = tab.icon;
+                                    const isActive = activeTab === tab.id;
+                                    return (
+                                        <button
+                                            key={tab.id}
+                                            onClick={() => setActiveTab(tab.id)}
+                                            className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-semibold text-xs transition-all duration-200 active:scale-[0.98] ${
+                                                isActive ? 'bg-orange-50 text-solarOrange border border-orange-200 shadow-xs' : 'text-navyMuted hover:text-midnightNavy hover:bg-slate-50 hover:translate-x-0.5'
+                                            }`}
+                                        >
+                                            <div className="flex items-center space-x-3">
+                                                <IconComp />
+                                                <span className="font-heading">{tab.label}</span>
+                                            </div>
+                                            {tab.count !== undefined && (
+                                                <span className={`px-2 py-0.5 rounded-full text-[10px] transition-transform ${isActive ? 'bg-solarOrange text-white scale-105' : 'bg-slate-100 text-navyMuted'}`}>
+                                                    {tab.count}
+                                                </span>
+                                            )}
+                                        </button>
+                                    );
+                                })}
+                            </nav>
+                        </div>
+
+                        <div className="space-y-2">
+                            {isInstallable && (
+                                <button onClick={handleInstallApp} className="w-full py-2 px-3 app-btn-primary font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm">
+                                    <Icons.Download /> Install App
+                                </button>
+                            )}
+                            <div className="p-3 rounded-xl app-input text-[11px] font-medium text-navyMuted flex items-center justify-between">
+                                <span className="flex items-center gap-1.5 truncate">
+                                    <span className="w-2 h-2 rounded-full bg-successMint animate-pulse"></span>
+                                    <span>{syncStatus}</span>
+                                </span>
+                                <span className="text-[10px] text-successMint font-bold">Auto-Sync</span>
+                            </div>
+                        </div>
+                    </MotionCard>
+
+                    {/* Main Workspace Layout */}
+                    <main className="flex-1 flex flex-col h-screen overflow-hidden p-3 md:p-4 md:pl-0">
+                        
+                        {/* Header */}
+                        <MotionCard className="p-3.5 rounded-2xl mb-3 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                            <div className="flex items-center justify-between w-full md:w-auto">
+                                <div className="flex items-center space-x-2.5">
+                                    <img src="./logo.jpeg" alt="Logo" className="w-8 h-8 rounded-xl object-cover border border-slate-200 md:hidden" />
+                                    <div>
+                                        <h1 className="font-heading font-extrabold text-sm md:text-base leading-tight">
+                                            {activeTab === 'dashboard' && 'Personal Overview'}
+                                            {activeTab === 'add_candidate' && 'Add New Candidate'}
+                                            {activeTab === 'positions' && 'Open Positions Management'}
+                                            {activeTab === 'profiles' && 'Sourced Candidates Directory'}
+                                            {activeTab === 'joiners' && 'Joiners & Offers'}
+                                            {activeTab === 'todos' && 'Task Workflow Console'}
+                                            {activeTab === 'calculators' && 'HR & Recruitment Calculators'}
+                                        </h1>
+                                        <p className="text-[10px] md:text-[11px] text-navyMuted">
+                                            {formattedCurrentDate} • Welcome back, Abishan
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center space-x-2 md:hidden">
+                                    {isInstallable && (
+                                        <button onClick={handleInstallApp} className="p-2 app-btn-primary text-xs font-bold rounded-xl">
+                                            Install
+                                        </button>
+                                    )}
+                                    <span className="px-2.5 py-1 rounded-lg bg-emerald-50 text-successMint text-[10px] font-bold border border-emerald-200">
+                                        ● {syncStatus}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {activeTab === 'profiles' && (
+                                <div className="flex items-center gap-2 w-full md:w-auto">
+                                    <div className="flex-1 md:w-64 relative">
+                                        <span className="absolute left-3 top-2.5 text-navyMuted"><Icons.Search /></span>
+                                        <input
+                                            type="text"
+                                            placeholder="Search name, role, location..."
+                                            value={searchTerm}
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                            className="w-full pl-9 pr-3 py-2 rounded-xl app-input text-xs font-medium"
+                                        />
+                                    </div>
+                                    <button onClick={() => setActiveTab('add_candidate')} className="px-3 py-2 app-btn-primary text-xs font-bold whitespace-nowrap">
+                                        ➕ Add
+                                    </button>
+                                </div>
+                            )}
+
+                            {activeTab === 'joiners' && (
+                                <button onClick={openAddJoinerModal} className="px-3.5 py-2 app-btn-primary text-xs font-bold flex items-center gap-1.5 self-start md:self-auto">
+                                    ➕ Add Joiner
+                                </button>
+                            )}
+
+                            {activeTab === 'positions' && (
+                                <button onClick={() => { resetPosModal(); setIsAddPosOpen(true); }} className="px-3.5 py-2 app-btn-primary text-xs font-bold flex items-center gap-1.5 self-start md:self-auto">
+                                    ➕ Add Position
+                                </button>
+                            )}
+                        </MotionCard>
+
+                        {/* Scrollable Workspace Body */}
+                        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto pr-0.5 space-y-4 pb-20 md:pb-6">
+
+                            {/* DASHBOARD PAGE */}
+                            {activeTab === 'dashboard' && (
+                                <div key="dashboard-view" className="space-y-4 reveal-stagger">
+                                    <div className="parallax-layer">
+                                        <MotionCard className="p-3.5 rounded-2xl flex items-center justify-between gap-2 bg-gradient-to-r from-orange-50/70 to-white">
+                                            <div className="hidden sm:block">
+                                                <h4 className="font-heading font-extrabold text-xs text-midnightNavy">Quick Actions</h4>
+                                                <p className="text-[10px] text-navyMuted">Add candidates, roles, or tasks in 1 click</p>
+                                            </div>
+                                            <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
+                                                <button onClick={() => setActiveTab('add_candidate')} className="flex-1 sm:flex-initial px-3 py-2 app-btn-primary text-xs font-bold flex items-center justify-center gap-1">
+                                                    👤 Add Candidate
+                                                </button>
+                                                <button onClick={() => { resetPosModal(); setIsAddPosOpen(true); }} className="flex-1 sm:flex-initial px-3 py-2 app-btn-secondary text-xs font-bold flex items-center justify-center gap-1">
+                                                    ➕ New Position
+                                                </button>
+                                                <button onClick={() => setActiveTab('todos')} className="flex-1 sm:flex-initial px-3 py-2 app-btn-secondary text-xs font-bold flex items-center justify-center gap-1">
+                                                    ⚡ Add Task
+                                                </button>
+                                            </div>
+                                        </MotionCard>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 md:gap-4">
+                                        <MotionCard className="p-3.5 rounded-2xl bg-gradient-to-br from-orange-50/80 to-white border-orange-100">
+                                            <p className="text-[10px] font-bold text-navyMuted uppercase tracking-wider">Total Pipeline</p>
+                                            <h3 className="font-heading text-xl md:text-3xl font-extrabold text-midnightNavy mt-1">{totalPipelineCount}</h3>
+                                            <p className="text-[9px] text-solarOrange font-medium mt-0.5">Sourced Records</p>
+                                        </MotionCard>
+
+                                        <MotionCard className="p-3.5 rounded-2xl bg-slate-50/50">
+                                            <p className="text-[10px] font-bold text-navyMuted uppercase tracking-wider">Screening</p>
+                                            <h3 className="font-heading text-xl md:text-3xl font-extrabold text-midnightNavy mt-1">{profiles.length}</h3>
+                                            <p className="text-[9px] text-navyMuted font-medium mt-0.5">In evaluation</p>
+                                        </MotionCard>
+
+                                        <MotionCard className="p-3.5 rounded-2xl bg-emerald-50/60 border-emerald-100">
+                                            <p className="text-[10px] font-bold text-navyMuted uppercase tracking-wider">Joiners</p>
+                                            <h3 className="font-heading text-xl md:text-3xl font-extrabold text-successMint mt-1">{joiners.length}</h3>
+                                            <p className="text-[9px] text-successMint font-medium mt-0.5">Onboarded</p>
+                                        </MotionCard>
+
+                                        <MotionCard className="p-3.5 rounded-2xl bg-amber-50/60 border-amber-100">
+                                            <p className="text-[10px] font-bold text-navyMuted uppercase tracking-wider">Pending Tasks</p>
+                                            <h3 className="font-heading text-xl md:text-3xl font-extrabold text-warningAmber mt-1">{activePendingTasks.length}</h3>
+                                            <p className="text-[9px] text-warningAmber font-medium mt-0.5">Requires focus</p>
+                                        </MotionCard>
+                                    </div>
+
+                                    <MotionCard className="p-4 rounded-2xl space-y-2">
+                                        <div className="flex justify-between items-center text-xs font-bold">
+                                            <span className="text-midnightNavy">Candidate Joining Conversion Rate</span>
+                                            <span className="text-solarOrange">{joinerRate}% Conversion</span>
+                                        </div>
+                                        <div className="w-full h-2.5 rounded-full app-input overflow-hidden flex">
+                                            <div className="h-full bg-gradient-to-r from-solarOrange to-emerald-500 transition-all duration-700 ease-out" style={{ width: `${Math.max(joinerRate, 4)}%` }}></div>
+                                        </div>
+                                    </MotionCard>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <MotionCard className="p-4 rounded-2xl space-y-3">
+                                            <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+                                                <h3 className="font-heading font-bold text-xs text-midnightNavy">Recent Candidates Sourced</h3>
+                                                <button onClick={() => setActiveTab('profiles')} className="text-[11px] text-solarOrange font-bold hover:underline">View All</button>
+                                            </div>
+                                            <div className="space-y-2">
+                                                {profiles.length === 0 ? (
+                                                    <p className="text-xs text-navyMuted italic text-center py-4">No recent candidates screened.</p>
+                                                ) : (
+                                                    profiles.slice(0, 4).map((p, i) => (
+                                                        <div key={i} className="p-2.5 rounded-xl app-input flex items-center justify-between text-xs transition-all duration-200 hover:translate-x-0.5">
+                                                            <div>
+                                                                <button onClick={() => setSelectedCandidate(p)} className="font-bold text-midnightNavy hover:text-solarOrange text-left">{p.candidateName}</button>
+                                                                <p className="text-[10px] text-navyMuted">{p.role} • {p.location}</p>
+                                                            </div>
+                                                            <span className="px-2 py-0.5 rounded-md bg-orange-100 text-solarOrange text-[10px] font-bold">{p.source}</span>
+                                                        </div>
+                                                    ))
+                                                )}
+                                            </div>
+                                        </MotionCard>
+
+                                        <MotionCard className="p-4 rounded-2xl space-y-3">
+                                            <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+                                                <h3 className="font-heading font-bold text-xs text-midnightNavy">Today's Focus Tasks</h3>
+                                                <button onClick={() => setActiveTab('todos')} className="text-[11px] text-solarOrange font-bold hover:underline">View Console</button>
+                                            </div>
+                                            <div className="space-y-2">
+                                                {activePendingTasks.length === 0 ? (
+                                                    <p className="text-xs text-navyMuted italic text-center py-4">All pending tasks completed!</p>
+                                                ) : (
+                                                    activePendingTasks.slice(0, 4).map((t) => (
+                                                        <div key={t.id} className="p-2.5 rounded-xl app-input flex items-center justify-between text-xs transition-all duration-200 hover:translate-x-0.5">
+                                                            <div>
+                                                                <span className="block text-[9px] font-bold text-solarOrange uppercase">{t.heading}</span>
+                                                                <p className="font-medium text-midnightNavy">{t.title}</p>
+                                                            </div>
+                                                            <button onClick={() => toggleTaskStatus(t)} className="px-2.5 py-1 rounded-lg bg-emerald-50 text-successMint font-bold text-[10px] border border-emerald-200 active:scale-95 transition">
+                                                                Done
+                                                            </button>
+                                                        </div>
+                                                    ))
+                                                )}
+                                            </div>
+                                        </MotionCard>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* ADD CANDIDATE PAGE */}
+                            {activeTab === 'add_candidate' && (
+                                <div key="add-candidate-view" className="max-w-3xl mx-auto reveal-enter">
+                                    <MotionCard className="p-5 rounded-2xl">
+                                        <form onSubmit={handleAddCandidateSubmit} className="space-y-4">
+                                            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                                                <div>
+                                                    <h2 className="font-heading font-extrabold text-base text-midnightNavy">👤 Candidate Intake Form</h2>
+                                                    <p className="text-[11px] text-navyMuted">Smart history suggestions, duplicate alerts & editable CV sources/vendors</p>
+                                                </div>
+                                                <button type="button" onClick={() => setActiveTab('profiles')} className="px-3 py-1.5 app-btn-secondary text-xs font-bold">
+                                                    View Sourced ({profiles.length}) →
+                                                </button>
+                                            </div>
+
+                                            {candSaveBanner && (
+                                                <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-successMint text-xs font-bold flex items-center justify-between reveal-enter">
+                                                    <span>{candSaveBanner}</span>
+                                                    <button type="button" onClick={() => setActiveTab('profiles')} className="underline ml-2">See in Sourced</button>
+                                                </div>
+                                            )}
+
+                                            {duplicateMatches.length > 0 && (
+                                                <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-300 text-midnightNavy text-xs space-y-1.5 reveal-enter">
+                                                    <div className="font-extrabold text-amber-800 flex items-center justify-between">
+                                                        <span>⚠️ Duplicate Entry Detected ({duplicateMatches.length})</span>
+                                                        <span className="text-[10px] uppercase tracking-wider bg-amber-200/70 px-2 py-0.5 rounded">Already in Database</span>
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        {duplicateMatches.slice(0, 3).map((dup, i) => (
+                                                            <div key={i} className="flex items-center justify-between bg-white/80 px-2.5 py-1.5 rounded-lg border border-amber-200/70 text-[11px]">
+                                                                <div>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setSelectedCandidate(dup)}
+                                                                        className="font-bold text-solarOrange hover:underline"
+                                                                    >
+                                                                        {dup.candidateName}
+                                                                    </button>
+                                                                    <span className="text-navyMuted"> • {dup.role} • {dup.contactNumber} • {dup.emailId}</span>
+                                                                </div>
+                                                                <span className="font-bold text-[10px] px-2 py-0.5 rounded bg-slate-100 text-midnightNavy">{dup.status}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            <datalist id="cv-source-suggestions">
+                                                {suggestions.sources.map((s, idx) => <option key={idx} value={s} />)}
+                                            </datalist>
+                                            <datalist id="role-suggestions">
+                                                {suggestions.roles.map((r, idx) => <option key={idx} value={r} />)}
+                                            </datalist>
+                                            <datalist id="dept-suggestions">
+                                                {suggestions.departments.map((d, idx) => <option key={idx} value={d} />)}
+                                            </datalist>
+                                            <datalist id="bu-suggestions">
+                                                {suggestions.businessUnits.map((b, idx) => <option key={idx} value={b} />)}
+                                            </datalist>
+                                            <datalist id="bu-head-suggestions">
+                                                {suggestions.buHeads.map((h, idx) => <option key={idx} value={h} />)}
+                                            </datalist>
+                                            <datalist id="location-suggestions">
+                                                {suggestions.locations.map((l, idx) => <option key={idx} value={l} />)}
+                                            </datalist>
+                                            <datalist id="company-suggestions">
+                                                {suggestions.companies.map((c, idx) => <option key={idx} value={c} />)}
+                                            </datalist>
+                                            <datalist id="designation-suggestions">
+                                                {suggestions.designations.map((des, idx) => <option key={idx} value={des} />)}
+                                            </datalist>
+                                            <datalist id="exp-suggestions">
+                                                {suggestions.experiences.map((exp, idx) => <option key={idx} value={exp} />)}
+                                            </datalist>
+                                            <datalist id="notice-suggestions">
+                                                {suggestions.noticePeriods.map((np, idx) => <option key={idx} value={np} />)}
+                                            </datalist>
+
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                                                <div className="sm:col-span-2">
+                                                    <label className="block font-bold text-navyMuted mb-1">Candidate Name <span className="text-solarOrange">*</span></label>
+                                                    <input
+                                                        type="text"
+                                                        required
+                                                        placeholder="e.g. Karthik Subramanian"
+                                                        value={candForm.candidateName}
+                                                        onChange={e => setCandForm({ ...candForm, candidateName: e.target.value })}
+                                                        className="w-full p-2.5 rounded-xl app-input font-semibold"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block font-bold text-navyMuted mb-1">CV Source / Vendor <span className="text-[10px] text-solarOrange font-semibold">(Editable)</span></label>
+                                                    <input
+                                                        type="text"
+                                                        list="cv-source-suggestions"
+                                                        placeholder="Naukri, LinkedIn or Vendor name..."
+                                                        value={candForm.source}
+                                                        onChange={e => setCandForm({ ...candForm, source: e.target.value })}
+                                                        className="w-full p-2.5 rounded-xl app-input font-bold"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                                                <div>
+                                                    <label className="block font-bold text-navyMuted mb-1">Role Applied</label>
+                                                    <input
+                                                        type="text"
+                                                        list="role-suggestions"
+                                                        placeholder="Type or pick role..."
+                                                        value={candForm.role}
+                                                        onChange={e => setCandForm({ ...candForm, role: e.target.value })}
+                                                        className="w-full p-2.5 rounded-xl app-input font-medium"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block font-bold text-navyMuted mb-1">Department</label>
+                                                    <input
+                                                        type="text"
+                                                        list="dept-suggestions"
+                                                        placeholder="Type or pick dept..."
+                                                        value={candForm.department}
+                                                        onChange={e => setCandForm({ ...candForm, department: e.target.value })}
+                                                        className="w-full p-2.5 rounded-xl app-input font-medium"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block font-bold text-navyMuted mb-1">Business Unit</label>
+                                                    <input
+                                                        type="text"
+                                                        list="bu-suggestions"
+                                                        placeholder="Type or pick BU..."
+                                                        value={candForm.businessUnit}
+                                                        onChange={e => setCandForm({ ...candForm, businessUnit: e.target.value })}
+                                                        className="w-full p-2.5 rounded-xl app-input font-medium"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block font-bold text-navyMuted mb-1">BU Head</label>
+                                                    <input
+                                                        type="text"
+                                                        list="bu-head-suggestions"
+                                                        placeholder="Type or pick BU Head..."
+                                                        value={candForm.buHead}
+                                                        onChange={e => setCandForm({ ...candForm, buHead: e.target.value })}
+                                                        className="w-full p-2.5 rounded-xl app-input font-medium"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                                                <div>
+                                                    <label className="block font-bold text-navyMuted mb-1">Contact Number</label>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="e.g. 9876543210"
+                                                        value={candForm.contactNumber}
+                                                        onChange={e => setCandForm({ ...candForm, contactNumber: e.target.value })}
+                                                        className={`w-full p-2.5 rounded-xl app-input font-medium ${duplicateMatches.some(d => normalizePhone(d.contactNumber) && normalizePhone(d.contactNumber) === normalizePhone(candForm.contactNumber)) ? 'border-amber-400 bg-amber-50/40' : ''}`}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block font-bold text-navyMuted mb-1">Email ID</label>
+                                                    <input
+                                                        type="email"
+                                                        placeholder="e.g. candidate@email.com"
+                                                        value={candForm.email}
+                                                        onChange={e => setCandForm({ ...candForm, email: e.target.value })}
+                                                        className={`w-full p-2.5 rounded-xl app-input font-medium ${duplicateMatches.some(d => normalizeEmail(d.emailId) && normalizeEmail(d.emailId) === normalizeEmail(candForm.email)) ? 'border-amber-400 bg-amber-50/40' : ''}`}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block font-bold text-navyMuted mb-1">Location</label>
+                                                    <input
+                                                        type="text"
+                                                        list="location-suggestions"
+                                                        placeholder="Type or pick location..."
+                                                        value={candForm.location}
+                                                        onChange={e => setCandForm({ ...candForm, location: e.target.value })}
+                                                        className="w-full p-2.5 rounded-xl app-input font-medium"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                                                <div>
+                                                    <label className="block font-bold text-navyMuted mb-1">Current Company</label>
+                                                    <input
+                                                        type="text"
+                                                        list="company-suggestions"
+                                                        placeholder="Type or pick company..."
+                                                        value={candForm.currentCompany}
+                                                        onChange={e => setCandForm({ ...candForm, currentCompany: e.target.value })}
+                                                        className="w-full p-2.5 rounded-xl app-input font-medium"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block font-bold text-navyMuted mb-1">Designation</label>
+                                                    <input
+                                                        type="text"
+                                                        list="designation-suggestions"
+                                                        placeholder="Type or pick title..."
+                                                        value={candForm.designation}
+                                                        onChange={e => setCandForm({ ...candForm, designation: e.target.value })}
+                                                        className="w-full p-2.5 rounded-xl app-input font-medium"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block font-bold text-navyMuted mb-1">Overall Experience</label>
+                                                    <input
+                                                        type="text"
+                                                        list="exp-suggestions"
+                                                        placeholder="e.g. 4.5 Yrs"
+                                                        value={candForm.totalExp}
+                                                        onChange={e => setCandForm({ ...candForm, totalExp: e.target.value })}
+                                                        className="w-full p-2.5 rounded-xl app-input font-medium"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                                                <div>
+                                                    <label className="block font-bold text-navyMuted mb-1">Current CTC</label>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="e.g. 6.5 LPA"
+                                                        value={candForm.currentCtc}
+                                                        onChange={e => setCandForm({ ...candForm, currentCtc: e.target.value })}
+                                                        className="w-full p-2.5 rounded-xl app-input font-medium"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block font-bold text-navyMuted mb-1">Expected CTC</label>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="e.g. 8.5 LPA"
+                                                        value={candForm.expectedCtc}
+                                                        onChange={e => setCandForm({ ...candForm, expectedCtc: e.target.value })}
+                                                        className="w-full p-2.5 rounded-xl app-input font-medium"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block font-bold text-navyMuted mb-1">Notice Period</label>
+                                                    <input
+                                                        type="text"
+                                                        list="notice-suggestions"
+                                                        placeholder="e.g. 30 Days"
+                                                        value={candForm.noticePeriod}
+                                                        onChange={e => setCandForm({ ...candForm, noticePeriod: e.target.value })}
+                                                        className="w-full p-2.5 rounded-xl app-input font-medium"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block font-bold text-navyMuted mb-1">CV Screen Date</label>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="DD-MM-YYYY"
+                                                        value={candForm.screenDate}
+                                                        onChange={e => setCandForm({ ...candForm, screenDate: e.target.value })}
+                                                        className="w-full p-2.5 rounded-xl app-input font-medium"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setCandForm({ ...initialCandForm, screenDate: getFormattedDDMMYYYY() })}
+                                                    className="px-4 py-2.5 app-btn-secondary text-xs font-bold text-navyMuted"
+                                                >
+                                                    Reset Form
+                                                </button>
+                                                <button
+                                                    type="submit"
+                                                    disabled={isSavingCand}
+                                                    className="px-6 py-2.5 app-btn-primary text-xs font-bold shadow-sm"
+                                                >
+                                                    {isSavingCand ? 'Saving to Sheet & Firebase...' : '💾 Save Candidate'}
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </MotionCard>
+                                </div>
+                            )}
+
+                            {/* OPEN POSITIONS PAGE */}
+                            {activeTab === 'positions' && (
+                                <div key="positions-view" className="reveal-enter">
+                                    <MotionCard className="p-4 rounded-2xl space-y-3">
+                                        <h2 className="font-heading font-bold text-sm text-midnightNavy">Current Open Positions ({positions.length})</h2>
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-left border-collapse">
+                                                <thead>
+                                                    <tr className="border-b border-slate-200 text-[11px] text-navyMuted font-bold uppercase tracking-wider">
+                                                        <th className="p-3">Position Name</th>
+                                                        <th className="p-3">Dept / BU</th>
+                                                        <th className="p-3">Max Salary (LPA)</th>
+                                                        <th className="p-3 text-center">Ageing</th>
+                                                        <th className="p-3 text-center">Status</th>
+                                                        <th className="p-3 text-center">Action</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="text-xs">
+                                                    {positions.length === 0 ? (
+                                                        <tr><td colSpan="6" className="text-center p-6 text-navyMuted font-medium">No open positions added yet.</td></tr>
+                                                    ) : (
+                                                        positions.map((pos, idx) => (
+                                                            <tr key={idx} className="border-b border-slate-100 hover:bg-orange-50/30 transition-colors">
+                                                                <td className="p-3 font-bold text-midnightNavy">{pos.title}</td>
+                                                                <td className="p-3 text-navyMuted">{pos.department} • <span className="font-semibold text-midnightNavy">{pos.businessUnit}</span></td>
+                                                                <td className="p-3 text-solarOrange font-bold">{pos.maxSalary}</td>
+                                                                <td className="p-3 text-center font-bold text-warningAmber">{calculateAgeing(pos.createdDate)} d</td>
+                                                                <td className="p-3 text-center">
+                                                                    <select
+                                                                        value={pos.status || 'Open'}
+                                                                        onChange={(e) => handlePositionStatusChange(pos, e.target.value)}
+                                                                        className="px-2 py-1 rounded-lg app-input text-[11px] font-bold outline-none cursor-pointer"
+                                                                    >
+                                                                        <option value="Open">🟢 Open</option>
+                                                                        <option value="Closed">🔵 Closed</option>
+                                                                        <option value="Hold">🟡 Hold</option>
+                                                                    </select>
+                                                                </td>
+                                                                <td className="p-3 text-center">
+                                                                    <button onClick={() => openEditPosition(pos)} className="px-2.5 py-1 app-btn-secondary text-[11px] font-bold hover:text-solarOrange">✏️ Edit</button>
+                                                                </td>
+                                                            </tr>
+                                                        ))
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </MotionCard>
+                                </div>
+                            )}
+
+                            {/* SOURCED DIRECTORY PAGE */}
+                            {activeTab === 'profiles' && (
+                                <div key="profiles-view" className="reveal-enter">
+                                    <MotionCard className="p-4 rounded-2xl space-y-3">
+                                        <div className="flex items-center justify-between">
+                                            <h2 className="font-heading font-bold text-sm text-midnightNavy">Sourced Candidates List ({filteredProfiles.length})</h2>
+                                            <span className="text-[10px] text-navyMuted">Click candidate name for full details</span>
+                                        </div>
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-left border-collapse">
+                                                <thead>
+                                                    <tr className="border-b border-slate-200 text-[11px] text-navyMuted font-bold uppercase tracking-wider">
+                                                        <th className="p-3">Candidate Name</th>
+                                                        <th className="p-3">Role / BU</th>
+                                                        <th className="p-3">Exp & CTC</th>
+                                                        <th className="p-3">Location</th>
+                                                        <th className="p-3">Source</th>
+                                                        <th className="p-3 text-center">Action</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="text-xs">
+                                                    {filteredProfiles.length === 0 ? (
+                                                        <tr><td colSpan="6" className="text-center p-6 text-navyMuted font-medium">No candidate records match your search.</td></tr>
+                                                    ) : (
+                                                        filteredProfiles.map((p, idx) => (
+                                                            <tr key={idx} className="border-b border-slate-100 hover:bg-orange-50/30 transition-colors">
+                                                                <td className="p-3">
+                                                                    <button onClick={() => setSelectedCandidate(p)} className="font-bold text-solarOrange hover:underline text-left">
+                                                                        {p.candidateName}
+                                                                    </button>
+                                                                    <p className="text-[10px] text-navyMuted">{p.contactNumber}</p>
+                                                                </td>
+                                                                <td className="p-3">
+                                                                    <p className="font-semibold text-midnightNavy">{p.role}</p>
+                                                                    <p className="text-[10px] text-navyMuted">{p.businessUnit}</p>
+                                                                </td>
+                                                                <td className="p-3">
+                                                                    <p className="font-medium text-midnightNavy">{p.totalExp}</p>
+                                                                    <p className="text-[10px] text-navyMuted">C: {p.currentCtc} → E: {p.expectedCtc}</p>
+                                                                </td>
+                                                                <td className="p-3 text-navyMuted">{p.location}</td>
+                                                                <td className="p-3">
+                                                                    <span className="px-2 py-0.5 rounded-md bg-orange-50 text-solarOrange text-[10px] font-bold">{p.source}</span>
+                                                                </td>
+                                                                <td className="p-3 text-center">
+                                                                    <button onClick={() => handleMarkJoined(p)} className="px-3 py-1 app-btn-primary text-[11px] font-bold whitespace-nowrap">Mark Joined</button>
+                                                                </td>
+                                                            </tr>
+                                                        ))
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </MotionCard>
+                                </div>
+                            )}
+
+                            {/* JOINERS DIRECTORY PAGE */}
+                            {activeTab === 'joiners' && (
+                                <div key="joiners-view" className="space-y-4 reveal-stagger">
+                                    <MotionCard className="p-4 rounded-2xl bg-gradient-to-r from-orange-50 via-amber-50/50 to-emerald-50/40 border-orange-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                        <div className="flex items-center gap-3">
+                                            <span className="px-3 py-1.5 rounded-xl bg-solarOrange text-white font-heading font-extrabold text-xs shadow-xs">
+                                                🔥 {currentMonthInfo.shortMonth} Spotlight
+                                            </span>
+                                            <div>
+                                                <h3 className="font-heading font-extrabold text-sm text-midnightNavy">
+                                                    {currentMonthInfo.shortMonth}: {currentMonthJoinerCount} {currentMonthJoinerCount === 1 ? 'joiner' : 'joiners'} so far, Way to go!
+                                                </h3>
+                                                <p className="text-[11px] text-navyMuted">Synced live with your Joiners sheet tab • Click any month below for Name & Designation</p>
+                                            </div>
+                                        </div>
+                                        <button onClick={openAddJoinerModal} className="px-3.5 py-2 app-btn-primary text-xs font-bold whitespace-nowrap">
+                                            ➕ Add Joiner
+                                        </button>
+                                    </MotionCard>
+
+                                    <MotionCard className="p-4 rounded-2xl space-y-3">
+                                        <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                                            <h2 className="font-heading font-bold text-sm text-midnightNavy">📊 Month-Wise Joiners Report</h2>
+                                            <span className="text-[11px] text-navyMuted">Click a month to view Name & Designation</span>
+                                        </div>
+
+                                        {monthlyJoinerGroups.length === 0 ? (
+                                            <p className="text-xs text-navyMuted italic py-3">No monthly joiner records available yet.</p>
+                                        ) : (
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
+                                                {monthlyJoinerGroups.map(grp => {
+                                                    const isCurrent = grp.key === currentMonthInfo.key;
+                                                    const isSelected = activeMonthGroup && activeMonthGroup.key === grp.key;
+                                                    return (
+                                                        <button
+                                                            key={grp.key}
+                                                            type="button"
+                                                            onClick={() => setSelectedMonthKey(grp.key)}
+                                                            className={`p-3 rounded-xl text-left border transition-all ${
+                                                                isSelected
+                                                                    ? 'bg-orange-50 border-solarOrange shadow-xs'
+                                                                    : isCurrent
+                                                                        ? 'bg-amber-50/70 border-amber-300 hover:border-solarOrange'
+                                                                        : 'bg-slate-50/70 border-slate-200 hover:border-slate-300'
+                                                            }`}
+                                                        >
+                                                            <div className="flex items-center justify-between gap-1">
+                                                                <span className="font-heading font-extrabold text-xs text-midnightNavy">{grp.label}</span>
+                                                                {isCurrent && (
+                                                                    <span className="px-1.5 py-0.5 rounded bg-solarOrange text-white text-[9px] font-bold">Current</span>
+                                                                )}
+                                                            </div>
+                                                            <p className="text-xs font-bold text-solarOrange mt-1">
+                                                                {grp.items.length} {grp.items.length === 1 ? 'Joiner' : 'Joiners'}
+                                                            </p>
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+
+                                        {activeMonthGroup && (
+                                            <div className="p-3.5 rounded-xl bg-porcelain border border-slate-200 space-y-2 reveal-enter">
+                                                <div className="flex items-center justify-between">
+                                                    <h4 className="font-heading font-extrabold text-xs text-midnightNavy">
+                                                        {activeMonthGroup.label} Joiners ({activeMonthGroup.items.length})
+                                                    </h4>
+                                                    <span className="text-[10px] font-bold text-solarOrange uppercase">Name & Designation</span>
+                                                </div>
+                                                <div className="divide-y divide-slate-200/70">
+                                                    {activeMonthGroup.items.map((item, i) => (
+                                                        <div key={item.docId || i} className="py-2 flex items-center justify-between text-xs">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setSelectedCandidate(item)}
+                                                                className="font-bold text-midnightNavy hover:text-solarOrange text-left"
+                                                            >
+                                                                {item.candidateName}
+                                                            </button>
+                                                            <span className="px-2.5 py-0.5 rounded-lg bg-white border border-slate-200 font-semibold text-navyMuted text-[11px]">
+                                                                {item.designation || item.role}
+                                                            </span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </MotionCard>
+
+                                    <MotionCard className="p-4 rounded-2xl space-y-3">
+                                        <h2 className="font-heading font-bold text-sm text-midnightNavy">Full Joiners Directory ({joiners.length})</h2>
+                                        {joiners.length === 0 ? (
+                                            <p className="text-navyMuted text-center py-6 text-xs font-medium">No candidates in offer/joined status yet. Click "+ Add Joiner" or "Mark Joined" from Sourced.</p>
+                                        ) : (
+                                            <div className="space-y-3">
+                                                {joiners.map((j, idx) => (
+                                                    <div key={j.docId || idx} className="p-3.5 rounded-2xl app-input space-y-2.5 text-xs transition-all duration-200 hover:bg-white">
+                                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/70 pb-2">
+                                                            <div>
+                                                                <button onClick={() => setSelectedCandidate(j)} className="font-heading font-extrabold text-sm text-midnightNavy hover:text-solarOrange text-left">
+                                                                    {j.candidateName}
+                                                                </button>
+                                                                <p className="text-[11px] font-semibold text-solarOrange">
+                                                                    {j.designation || j.role} • <span className="text-navyMuted">{j.department} ({j.businessUnit})</span>
+                                                                </p>
+                                                            </div>
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="px-2.5 py-1 rounded-lg bg-emerald-50 text-successMint font-extrabold text-[11px] border border-emerald-200">
+                                                                    💰 {j.joiningCtc}
+                                                                </span>
+                                                                <select value={j.status || 'Joined'} onChange={(e) => handleStatusChange(j, e.target.value)} className="px-2 py-1 rounded-lg app-input text-[11px] font-bold">
+                                                                    <option value="Joined">🟢 Joined</option>
+                                                                    <option value="OYTJ">🟠 OYTJ</option>
+                                                                    <option value="STYO">🟣 STYO</option>
+                                                                    <option value="Offer Released">🔵 Offer Released</option>
+                                                                    <option value="Revoked">🔴 Revoked</option>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
+                                                            <div><span className="text-navyMuted">Location:</span> <span className="font-semibold text-midnightNavy">{j.location}</span></div>
+                                                            <div><span className="text-navyMuted">Joining Date:</span> <span className="font-semibold text-midnightNavy">{j.joiningDate || j.screenDate || 'N/A'}</span></div>
+                                                            <div><span className="text-navyMuted">BU Head:</span> <span className="font-semibold text-midnightNavy">{j.buHead}</span></div>
+                                                            <div><span className="text-navyMuted">Source:</span> <span className="font-semibold text-midnightNavy">{j.source}</span></div>
+                                                            <div><span className="text-navyMuted">Phone:</span> <span className="font-semibold text-midnightNavy">{j.contactNumber}</span></div>
+                                                            <div><span className="text-navyMuted">Email:</span> <span className="font-semibold text-midnightNavy truncate">{j.emailId}</span></div>
+                                                            <div><span className="text-navyMuted">Exp:</span> <span className="font-semibold text-midnightNavy">{j.totalExp}</span></div>
+                                                            <div><span className="text-navyMuted">Prev Co:</span> <span className="font-semibold text-midnightNavy">{j.currentCompany}</span></div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </MotionCard>
+                                </div>
+                            )}
+
+                            {/* TASK MANAGEMENT PAGE */}
+                            {activeTab === 'todos' && (
+                                <div key="todos-view" className="space-y-4 reveal-stagger">
+                                    <MotionCard className="p-4 rounded-2xl space-y-3">
+                                        <h2 className="font-heading font-bold text-sm text-midnightNavy">Task Creation Console</h2>
+                                        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-center text-xs">
+                                            <input type="text" placeholder="Task description..." value={newTaskTitle} onChange={e => setNewTaskTitle(e.target.value)} className="p-2.5 rounded-xl app-input font-medium" />
+                                            <select value={newTaskHeading} onChange={e => setNewTaskHeading(e.target.value)} className="p-2.5 rounded-xl app-input font-bold cursor-pointer">
+                                                <option value="Interview schedule">Interview schedule</option>
+                                                <option value="Welcome Kit">Welcome Kit</option>
+                                                <option value="Reminders">Reminders</option>
+                                                <option value="Custom task">Custom task</option>
+                                            </select>
+                                            <input type="date" value={newTaskDate} onChange={e => setNewTaskDate(e.target.value)} className="p-2.5 rounded-xl app-input font-medium cursor-pointer" />
+                                            <button onClick={handleAddTask} disabled={isSavingTask} className="py-2.5 app-btn-primary font-bold">
+                                                {isSavingTask ? 'Saving...' : '💾 Save Task'}
+                                            </button>
+                                        </div>
+                                    </MotionCard>
+
+                                    <MotionCard className="p-4 rounded-2xl space-y-3">
+                                        <h2 className="font-heading font-bold text-sm text-midnightNavy">All Tasks ({todos.length})</h2>
+                                        <div className="space-y-2">
+                                            {todos.length === 0 ? (
+                                                <p className="text-navyMuted text-xs italic text-center py-6">No tasks added yet.</p>
+                                            ) : (
+                                                todos.map(t => (
+                                                    <div key={t.id} className="p-3 rounded-xl app-input flex items-center justify-between text-xs transition-all duration-200 hover:translate-x-0.5">
+                                                        <div>
+                                                            <span className="px-2 py-0.5 rounded bg-orange-100 text-solarOrange text-[9px] font-bold">{t.heading}</span>
+                                                            <p className={`font-bold mt-1 ${t.completed ? 'line-through text-navyMuted' : 'text-midnightNavy'}`}>{t.title}</p>
+                                                            <span className="text-[10px] text-navyMuted">Date: {t.date}</span>
+                                                        </div>
+                                                        <div className="flex items-center space-x-2">
+                                                            <button onClick={() => toggleTaskStatus(t)} className={`px-3 py-1 rounded-lg text-[11px] font-bold active:scale-95 transition ${t.completed ? 'bg-amber-50 text-warningAmber border border-amber-200' : 'bg-emerald-50 text-successMint border border-emerald-200'}`}>
+                                                                {t.completed ? 'Mark Pending' : 'Mark Done'}
+                                                            </button>
+                                                            <button onClick={() => deleteTask(t)} className="text-solarOrange text-[11px] font-bold hover:underline">Delete</button>
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            )}
+                                        </div>
+                                    </MotionCard>
+                                </div>
+                            )}
+
+                            {/* CALCULATORS PAGE */}
+                            {activeTab === 'calculators' && (
+                                <div key="calculators-view" className="grid grid-cols-1 lg:grid-cols-2 gap-4 reveal-stagger">
+                                    <MotionCard className="p-5 rounded-2xl space-y-4">
+                                        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                                            <div>
+                                                <h2 className="font-heading font-extrabold text-sm text-midnightNavy">🎂 Candidate Age Calculator</h2>
+                                                <p className="text-[11px] text-navyMuted">Type Date of Birth (e.g. 09-02-1995)</p>
+                                            </div>
+                                            {dobInput && (
+                                                <button onClick={() => setDobInput('')} className="text-[11px] font-bold text-solarOrange hover:underline">Clear</button>
+                                            )}
+                                        </div>
+
+                                        <div className="space-y-1.5 text-xs">
+                                            <label className="block font-bold text-navyMuted">Enter DOB (DD-MM-YYYY)</label>
+                                            <input
+                                                type="text"
+                                                placeholder="e.g. 09-02-1995"
+                                                value={dobInput}
+                                                onChange={(e) => setDobInput(e.target.value)}
+                                                className="w-full p-3 rounded-xl app-input font-bold text-sm text-midnightNavy tracking-wide"
+                                            />
+                                        </div>
+
+                                        {ageResult ? (
+                                            ageResult.invalid ? (
+                                                <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-xs text-red-600 font-semibold reveal-enter">
+                                                    Invalid date format. Please use DD-MM-YYYY (e.g., 09-02-1995).
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-3 pt-1 reveal-enter">
+                                                    <div className="p-4 rounded-2xl bg-gradient-to-br from-orange-50 to-amber-50/40 border border-orange-100 text-center">
+                                                        <p className="text-[10px] font-bold text-solarOrange uppercase tracking-wider">Exact Candidate Age</p>
+                                                        <h3 className="font-heading text-2xl md:text-3xl font-extrabold text-midnightNavy mt-1">
+                                                            {ageResult.years} <span className="text-sm font-bold text-navyMuted">Yrs</span>, {ageResult.months} <span className="text-sm font-bold text-navyMuted">Mos</span>, {ageResult.days} <span className="text-sm font-bold text-navyMuted">Days</span>
+                                                        </h3>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-2 gap-2.5 text-center text-xs">
+                                                        <div className="p-3 rounded-xl app-input">
+                                                            <p className="text-[10px] text-navyMuted font-bold uppercase">Total Months</p>
+                                                            <p className="font-heading font-extrabold text-base text-midnightNavy mt-0.5">{ageResult.totalMonths.toLocaleString()}</p>
+                                                        </div>
+                                                        <div className="p-3 rounded-xl app-input">
+                                                            <p className="text-[10px] text-navyMuted font-bold uppercase">Total Days</p>
+                                                            <p className="font-heading font-extrabold text-base text-midnightNavy mt-0.5">{ageResult.totalDays.toLocaleString()}</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )
+                                        ) : (
+                                            <div className="p-6 rounded-xl app-input text-center text-xs text-navyMuted italic">
+                                                Type a date above (e.g. 09-02-1995) to instantly calculate age.
+                                            </div>
+                                        )}
+                                    </MotionCard>
+
+                                    <MotionCard className="p-5 rounded-2xl space-y-5">
+                                        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                                            <div>
+                                                <h2 className="font-heading font-extrabold text-sm text-midnightNavy">💰 Salary Hike Calculator</h2>
+                                                <p className="text-[11px] text-navyMuted">Works for LPA (e.g. 6.5) or exact numbers (e.g. 50000)</p>
+                                            </div>
+                                            {(currentSalInput || hikePercentInput || oldSalCompare || newSalCompare) && (
+                                                <button
+                                                    onClick={() => { setCurrentSalInput(''); setHikePercentInput(''); setOldSalCompare(''); setNewSalCompare(''); }}
+                                                    className="text-[11px] font-bold text-solarOrange hover:underline"
+                                                >
+                                                    Clear All
+                                                </button>
+                                            )}
+                                        </div>
+
+                                        <div className="space-y-2.5">
+                                            <h3 className="font-heading font-bold text-xs text-midnightNavy flex items-center gap-1.5">
+                                                <span className="w-5 h-5 rounded-md bg-orange-100 text-solarOrange flex items-center justify-center text-[10px] font-extrabold">1</span>
+                                                Calculate New Salary by Hike %
+                                            </h3>
+                                            <div className="grid grid-cols-2 gap-2.5 text-xs">
+                                                <div>
+                                                    <label className="block font-bold text-navyMuted mb-1">Current Salary</label>
+                                                    <input type="number" step="any" placeholder="e.g. 6.5" value={currentSalInput} onChange={(e) => setCurrentSalInput(e.target.value)} className="w-full p-2.5 rounded-xl app-input font-semibold" />
+                                                </div>
+                                                <div>
+                                                    <label className="block font-bold text-navyMuted mb-1">Hike Percentage (%)</label>
+                                                    <input type="number" step="any" placeholder="e.g. 30" value={hikePercentInput} onChange={(e) => setHikePercentInput(e.target.value)} className="w-full p-2.5 rounded-xl app-input font-semibold" />
+                                                </div>
+                                            </div>
+                                            {hikeByPercentResult && (
+                                                <div className="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200 flex items-center justify-between text-xs reveal-enter">
+                                                    <div>
+                                                        <p className="text-[10px] font-bold text-navyMuted uppercase">Hike Value (+{hikePercentInput}%)</p>
+                                                        <p className="font-heading font-extrabold text-sm text-successMint">+{hikeByPercentResult.hikeAmount}</p>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <p className="text-[10px] font-bold text-navyMuted uppercase">New Expected Salary</p>
+                                                        <p className="font-heading font-extrabold text-base text-midnightNavy">{hikeByPercentResult.newSalary}</p>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <hr className="border-slate-100" />
+
+                                        <div className="space-y-2.5">
+                                            <h3 className="font-heading font-bold text-xs text-midnightNavy flex items-center gap-1.5">
+                                                <span className="w-5 h-5 rounded-md bg-orange-100 text-solarOrange flex items-center justify-center text-[10px] font-extrabold">2</span>
+                                                Calculate Exact Hike % (Old vs. New Salary)
+                                            </h3>
+                                            <div className="grid grid-cols-2 gap-2.5 text-xs">
+                                                <div>
+                                                    <label className="block font-bold text-navyMuted mb-1">Old / Current Salary</label>
+                                                    <input type="number" step="any" placeholder="e.g. 5.0" value={oldSalCompare} onChange={(e) => setOldSalCompare(e.target.value)} className="w-full p-2.5 rounded-xl app-input font-semibold" />
+                                                </div>
+                                                <div>
+                                                    <label className="block font-bold text-navyMuted mb-1">New / Offered Salary</label>
+                                                    <input type="number" step="any" placeholder="e.g. 6.8" value={newSalCompare} onChange={(e) => setNewSalCompare(e.target.value)} className="w-full p-2.5 rounded-xl app-input font-semibold" />
+                                                </div>
+                                            </div>
+                                            {hikeBySalaryResult && (
+                                                <div className={`p-3 rounded-xl border flex items-center justify-between text-xs reveal-enter ${hikeBySalaryResult.isPositive ? 'bg-orange-50/70 border-orange-200' : 'bg-red-50/70 border-red-200'}`}>
+                                                    <div>
+                                                        <p className="text-[10px] font-bold text-navyMuted uppercase">Exact Hike Value</p>
+                                                        <p className={`font-heading font-extrabold text-sm ${hikeBySalaryResult.isPositive ? 'text-midnightNavy' : 'text-red-600'}`}>
+                                                            {hikeBySalaryResult.isPositive ? `+${hikeBySalaryResult.diffAmount}` : hikeBySalaryResult.diffAmount}
+                                                        </p>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <p className="text-[10px] font-bold text-navyMuted uppercase">Exact Hike %</p>
+                                                        <p className={`font-heading font-extrabold text-base ${hikeBySalaryResult.isPositive ? 'text-solarOrange' : 'text-red-600'}`}>
+                                                            {hikeBySalaryResult.isPositive ? `+${hikeBySalaryResult.percentChange}%` : `${hikeBySalaryResult.percentChange}%`}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </MotionCard>
+                                </div>
+                            )}
+
+                        </div>
+                    </main>
+
+                    {/* Floating Mobile Bottom Nav Bar */}
+                    <nav className="fixed bottom-3 left-2 right-2 z-40 bg-midnightNavy/95 backdrop-blur-md rounded-2xl shadow-xl border border-slate-800 flex items-center justify-around py-2 px-1 md:hidden">
+                        {navItems.map(tab => {
+                            const IconComp = tab.icon;
+                            const isActive = activeTab === tab.id;
+                            return (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setActiveTab(tab.id)}
+                                    className={`relative flex flex-col items-center justify-center py-1 px-1.5 rounded-xl transition-all duration-200 active:scale-90 ${
+                                        isActive ? 'text-solarOrange font-bold -translate-y-0.5' : 'text-slate-400 hover:text-white'
+                                    }`}
+                                >
+                                    <IconComp />
+                                    <span className="text-[8px] mt-0.5">{tab.label}</span>
+                                    {isActive && <span className="absolute -bottom-1 w-1.5 h-1.5 rounded-full bg-solarOrange"></span>}
+                                </button>
+                            );
+                        })}
+                    </nav>
+
+                    {/* ADD / MARK JOINED MODAL */}
+                    {isAddJoinerOpen && (
+                        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 reveal-enter">
+                            <form onSubmit={handleSaveJoiner} className="app-card p-5 rounded-2xl max-w-xl w-full max-h-[90vh] overflow-y-auto space-y-4 bg-white">
+                                <div className="flex justify-between items-start border-b border-slate-200 pb-3">
+                                    <div>
+                                        <h3 className="font-heading font-extrabold text-base text-midnightNavy">
+                                            {joinerModalMode === 'mark_joined' ? '🎉 Confirm Joining & Final Salary' : '➕ Add Joiner Record'}
+                                        </h3>
+                                        <p className="text-[11px] text-navyMuted">
+                                            {joinerModalMode === 'mark_joined'
+                                                ? 'Enter final joining salary (required) and complete any missing details before moving to Joiners.'
+                                                : 'Saves directly to Joiners list and syncs to the Joiners tab in Google Sheet.'}
+                                        </p>
+                                    </div>
+                                    <button type="button" onClick={() => setIsAddJoinerOpen(false)} className="w-7 h-7 rounded-lg app-btn-secondary flex items-center justify-center font-bold text-xs">✕</button>
+                                </div>
+
+                                {missingFieldsList.length > 0 && (
+                                    <div className="p-3 rounded-xl bg-amber-50 border border-amber-300 text-xs space-y-1">
+                                        <p className="font-extrabold text-amber-800">⚠️ Missing details found from sourced record:</p>
+                                        <p className="text-[11px] text-midnightNavy">{missingFieldsList.join(' • ')}</p>
+                                    </div>
+                                )}
+
+                                <div className="space-y-3 text-xs">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="block font-bold text-navyMuted mb-1">Candidate Name <span className="text-solarOrange">*</span></label>
+                                            <input type="text" required value={joinerForm.candidateName} onChange={e => setJoinerForm({ ...joinerForm, candidateName: e.target.value })} className="w-full p-2.5 rounded-xl app-input font-semibold" />
+                                        </div>
+                                        <div>
+                                            <label className="block font-bold text-solarOrange mb-1">Final Joining Salary (LPA) <span className="text-solarOrange">*</span></label>
+                                            <input type="text" required placeholder="e.g. 9.5 or 9.5 LPA" value={joinerForm.joiningCtc} onChange={e => setJoinerForm({ ...joinerForm, joiningCtc: e.target.value })} className="w-full p-2.5 rounded-xl app-input font-bold border-orange-300 bg-orange-50/30" />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="block font-bold text-navyMuted mb-1">Designation <span className="text-solarOrange">*</span></label>
+                                            <input type="text" required list="designation-suggestions" placeholder="e.g. Senior Sales Manager" value={joinerForm.designation} onChange={e => setJoinerForm({ ...joinerForm, designation: e.target.value })} className="w-full p-2.5 rounded-xl app-input font-medium" />
+                                        </div>
+                                        <div>
+                                            <label className="block font-bold text-navyMuted mb-1">Joining Date <span className="text-solarOrange">*</span></label>
+                                            <input type="date" required value={joinerForm.joiningDate} onChange={e => setJoinerForm({ ...joinerForm, joiningDate: e.target.value })} className="w-full p-2.5 rounded-xl app-input font-medium" />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                        <div>
+                                            <label className="block font-bold text-navyMuted mb-1">Department</label>
+                                            <input type="text" list="dept-suggestions" value={joinerForm.department} onChange={e => setJoinerForm({ ...joinerForm, department: e.target.value })} className="w-full p-2.5 rounded-xl app-input font-medium" />
+                                        </div>
+                                        <div>
+                                            <label className="block font-bold text-navyMuted mb-1">Business Unit</label>
+                                            <input type="text" list="bu-suggestions" value={joinerForm.businessUnit} onChange={e => setJoinerForm({ ...joinerForm, businessUnit: e.target.value })} className="w-full p-2.5 rounded-xl app-input font-medium" />
+                                        </div>
+                                        <div>
+                                            <label className="block font-bold text-navyMuted mb-1">BU Head</label>
+                                            <input type="text" list="bu-head-suggestions" value={joinerForm.buHead} onChange={e => setJoinerForm({ ...joinerForm, buHead: e.target.value })} className="w-full p-2.5 rounded-xl app-input font-medium" />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                        <div>
+                                            <label className="block font-bold text-navyMuted mb-1">Location</label>
+                                            <input type="text" list="location-suggestions" value={joinerForm.location} onChange={e => setJoinerForm({ ...joinerForm, location: e.target.value })} className="w-full p-2.5 rounded-xl app-input font-medium" />
+                                        </div>
+                                        <div>
+                                            <label className="block font-bold text-navyMuted mb-1">Contact Number</label>
+                                            <input type="text" value={joinerForm.contactNumber} onChange={e => setJoinerForm({ ...joinerForm, contactNumber: e.target.value })} className="w-full p-2.5 rounded-xl app-input font-medium" />
+                                        </div>
+                                        <div>
+                                            <label className="block font-bold text-navyMuted mb-1">Email ID</label>
+                                            <input type="email" value={joinerForm.email} onChange={e => setJoinerForm({ ...joinerForm, email: e.target.value })} className="w-full p-2.5 rounded-xl app-input font-medium" />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                        <div>
+                                            <label className="block font-bold text-navyMuted mb-1">Current Company</label>
+                                            <input type="text" list="company-suggestions" value={joinerForm.currentCompany} onChange={e => setJoinerForm({ ...joinerForm, currentCompany: e.target.value })} className="w-full p-2.5 rounded-xl app-input font-medium" />
+                                        </div>
+                                        <div>
+                                            <label className="block font-bold text-navyMuted mb-1">Overall Experience</label>
+                                            <input type="text" list="exp-suggestions" value={joinerForm.totalExp} onChange={e => setJoinerForm({ ...joinerForm, totalExp: e.target.value })} className="w-full p-2.5 rounded-xl app-input font-medium" />
+                                        </div>
+                                        <div>
+                                            <label className="block font-bold text-navyMuted mb-1">Source / Vendor</label>
+                                            <input type="text" list="cv-source-suggestions" value={joinerForm.source} onChange={e => setJoinerForm({ ...joinerForm, source: e.target.value })} className="w-full p-2.5 rounded-xl app-input font-medium" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-end space-x-2 pt-3 border-t border-slate-200">
+                                    <button type="button" onClick={() => setIsAddJoinerOpen(false)} className="px-4 py-2 app-btn-secondary text-xs font-bold text-navyMuted">Cancel</button>
+                                    <button type="submit" disabled={isSavingJoiner} className="px-5 py-2 app-btn-primary text-xs font-bold">
+                                        {isSavingJoiner ? 'Saving Joiner...' : '✅ Confirm & Save Joiner'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    )}
+
+                    {/* ADD / EDIT POSITION MODAL */}
+                    {isAddPosOpen && (
+                        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 reveal-enter">
+                            <div className="app-card p-5 rounded-2xl max-w-lg w-full space-y-4 bg-white">
+                                <div className="flex justify-between items-center border-b border-slate-200 pb-3">
+                                    <h3 className="font-heading font-extrabold text-base text-midnightNavy">
+                                        {editingPosId ? '✏️ Edit Position' : '➕ Add Open Position'}
+                                    </h3>
+                                    <button onClick={resetPosModal} className="w-7 h-7 rounded-lg app-btn-secondary flex items-center justify-center font-bold text-xs">✕</button>
+                                </div>
+
+                                <div className="space-y-3 text-xs">
+                                    <div>
+                                        <label className="block font-bold text-navyMuted mb-1">Position Name</label>
+                                        <input type="text" placeholder="e.g. Sales Manager" value={newPosTitle} onChange={e => setNewPosTitle(e.target.value)} className="w-full p-2.5 rounded-xl app-input" />
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="block font-bold text-navyMuted mb-1">Exp Required</label>
+                                            <input type="text" placeholder="e.g. 3-5 Years" value={newPosExp} onChange={e => setNewPosExp(e.target.value)} className="w-full p-2.5 rounded-xl app-input" />
+                                        </div>
+                                        <div>
+                                            <label className="block font-bold text-navyMuted mb-1">Max Salary (LPA)</label>
+                                            <input type="text" placeholder="e.g. 12 (or 12 LPA)" value={newPosSalary} onChange={e => setNewPosSalary(e.target.value)} className="w-full p-2.5 rounded-xl app-input" />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="block font-bold text-navyMuted mb-1">Department</label>
+                                            <input type="text" placeholder="e.g. Sales" value={newPosDept} onChange={e => setNewPosDept(e.target.value)} className="w-full p-2.5 rounded-xl app-input" />
+                                        </div>
+                                        <div>
+                                            <label className="block font-bold text-navyMuted mb-1">Business Unit</label>
+                                            <input type="text" placeholder="e.g. AWPs" value={newPosBU} onChange={e => setNewPosBU(e.target.value)} className="w-full p-2.5 rounded-xl app-input" />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block font-bold text-navyMuted mb-1">Reporting To</label>
+                                        <input type="text" placeholder="e.g. VP Sales" value={newPosReporting} onChange={e => setNewPosReporting(e.target.value)} className="w-full p-2.5 rounded-xl app-input" />
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-end space-x-2 pt-3 border-t border-slate-200">
+                                    <button onClick={resetPosModal} className="px-4 py-2 app-btn-secondary text-xs font-bold text-navyMuted">Cancel</button>
+                                    <button onClick={handleSavePosition} className="px-4 py-2 app-btn-primary text-xs font-bold">
+                                        {editingPosId ? 'Update Position' : 'Save Position'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* CANDIDATE / JOINER DETAIL MODAL */}
+                    {selectedCandidate && (
+                        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 reveal-enter">
+                            <div className="app-card p-5 rounded-2xl max-w-lg w-full max-h-[85vh] overflow-y-auto space-y-4 bg-white">
+                                <div className="flex justify-between items-start border-b border-slate-200 pb-3">
+                                    <div>
+                                        <h3 className="font-heading font-extrabold text-xl text-midnightNavy">{selectedCandidate.candidateName}</h3>
+                                        <p className="text-xs font-bold text-solarOrange">{selectedCandidate.designation || selectedCandidate.role} • {selectedCandidate.department} ({selectedCandidate.businessUnit})</p>
+                                    </div>
+                                    <button onClick={() => setSelectedCandidate(null)} className="w-7 h-7 rounded-lg app-btn-secondary flex items-center justify-center font-bold text-xs">✕</button>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-2 text-xs">
+                                    <div className="p-2.5 rounded-xl app-input"><p className="text-[10px] text-navyMuted font-bold uppercase">Source</p><p className="font-bold text-midnightNavy mt-0.5">{selectedCandidate.source}</p></div>
+                                    <div className="p-2.5 rounded-xl app-input"><p className="text-[10px] text-navyMuted font-bold uppercase">Joining / Screen Date</p><p className="font-bold text-midnightNavy mt-0.5">{selectedCandidate.joiningDate || selectedCandidate.screenDate}</p></div>
+                                    <div className="p-2.5 rounded-xl app-input"><p className="text-[10px] text-navyMuted font-bold uppercase">Contact</p><p className="font-bold text-midnightNavy mt-0.5">{selectedCandidate.contactNumber}</p></div>
+                                    <div className="p-2.5 rounded-xl app-input"><p className="text-[10px] text-navyMuted font-bold uppercase">Email</p><p className="font-bold text-midnightNavy mt-0.5 truncate">{selectedCandidate.emailId}</p></div>
+                                    <div className="p-2.5 rounded-xl app-input"><p className="text-[10px] text-navyMuted font-bold uppercase">Current Company</p><p className="font-bold text-midnightNavy mt-0.5">{selectedCandidate.currentCompany}</p></div>
+                                    <div className="p-2.5 rounded-xl app-input"><p className="text-[10px] text-navyMuted font-bold uppercase">Designation</p><p className="font-bold text-midnightNavy mt-0.5">{selectedCandidate.designation}</p></div>
+                                    <div className="p-2.5 rounded-xl app-input"><p className="text-[10px] text-navyMuted font-bold uppercase">Location</p><p className="font-bold text-midnightNavy mt-0.5">{selectedCandidate.location}</p></div>
+                                    <div className="p-2.5 rounded-xl app-input"><p className="text-[10px] text-navyMuted font-bold uppercase">Experience</p><p className="font-bold text-midnightNavy mt-0.5">{selectedCandidate.totalExp}</p></div>
+                                    <div className="p-2.5 rounded-xl app-input"><p className="text-[10px] text-navyMuted font-bold uppercase">Current CTC</p><p className="font-bold text-midnightNavy mt-0.5">{selectedCandidate.currentCtc}</p></div>
+                                    <div className="p-2.5 rounded-xl app-input"><p className="text-[10px] text-navyMuted font-bold uppercase">Joining / Expected CTC</p><p className="font-bold text-solarOrange mt-0.5">{selectedCandidate.joiningCtc || selectedCandidate.expectedCtc}</p></div>
+                                    <div className="p-2.5 rounded-xl app-input"><p className="text-[10px] text-navyMuted font-bold uppercase">Notice Period</p><p className="font-bold text-midnightNavy mt-0.5">{selectedCandidate.noticePeriod}</p></div>
+                                    <div className="p-2.5 rounded-xl app-input"><p className="text-[10px] text-navyMuted font-bold uppercase">BU Head</p><p className="font-bold text-midnightNavy mt-0.5">{selectedCandidate.buHead}</p></div>
+                                </div>
+
+                                <div className="flex justify-end pt-2 border-t border-slate-200">
+                                    <button onClick={() => setSelectedCandidate(null)} className="px-4 py-1.5 app-btn-secondary text-xs font-bold text-navyMuted">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
-              </div>
-            )}
+            );
+        }
 
-            {/* TASKS TAB */}
-            {activeTab === "tasks" && (
-              <div className="space-y-4">
-                <form onSubmit={handleAddTask} className="bg-white rounded-xl p-4 border border-slate-200 flex flex-wrap gap-3">
-                  <input
-                    type="text"
-                    required
-                    placeholder="New task or follow-up..."
-                    value={taskTitle}
-                    onChange={(e) => setTaskTitle(e.target.value)}
-                    className="flex-1 min-w-[200px] px-3 py-2 rounded-lg border border-slate-300 text-sm"
-                  />
-                  <input
-                    type="text"
-                    value={taskCategory}
-                    onChange={(e) => setTaskCategory(e.target.value)}
-                    placeholder="Category"
-                    className="px-3 py-2 rounded-lg border border-slate-300 text-sm"
-                  />
-                  <input
-                    type="date"
-                    value={taskDate}
-                    onChange={(e) => setTaskDate(e.target.value)}
-                    className="px-3 py-2 rounded-lg border border-slate-300 text-sm"
-                  />
-                  <button
-                    type="submit"
-                    className="bg-solar hover:bg-orange-600 text-white rounded-lg text-sm font-medium px-4 py-2 cursor-pointer"
-                  >
-                    Add Task
-                  </button>
-                </form>
-
-                <div className="bg-white rounded-xl border border-slate-200 divide-y divide-slate-100">
-                  {tasks.map((t) => (
-                    <div key={t.id} className="p-3.5 flex items-center justify-between gap-3">
-                      <label className="flex items-center gap-3 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={!!t.completed}
-                          onChange={() => handleToggleTask(t)}
-                          className="w-4 h-4 accent-solar"
-                        />
-                        <span className={t.completed ? "line-through text-slate-400 text-sm" : "text-navy text-sm font-medium"}>
-                          {t.title}
-                        </span>
-                      </label>
-                      <span className="text-xs text-slate-500">
-                        {t.heading || "Task"} • {t.date || ""}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </main>
-
-          {/* ADD / MARK JOINED MODAL */}
-          {showJoinerModal && (
-            <div className="fixed inset-0 z-40 bg-black/50 flex items-center justify-center p-4">
-              <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-slate-200">
-                <h2 className="text-lg font-bold text-navy mb-4">
-                  {convertingCandidate ? `Mark Joined: ${convertingCandidate.name}` : "Add New Joiner"}
-                </h2>
-
-                <form onSubmit={handleSaveJoiner} className="space-y-3 text-sm">
-                  <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Candidate Name *</label>
-                    <input
-                      type="text"
-                      required
-                      value={joinerForm.candidateName}
-                      onChange={(e) => setJoinerForm({ ...joinerForm, candidateName: e.target.value })}
-                      className="w-full px-3 py-2 rounded-lg border border-slate-300"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">Date of Joining</label>
-                      <input
-                        type="date"
-                        value={joinerForm.joiningDate}
-                        onChange={(e) => setJoinerForm({ ...joinerForm, joiningDate: e.target.value })}
-                        className="w-full px-3 py-2 rounded-lg border border-slate-300"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">Status</label>
-                      <select
-                        value={joinerForm.status}
-                        onChange={(e) => setJoinerForm({ ...joinerForm, status: e.target.value })}
-                        className="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white"
-                      >
-                        {JOINER_STATUSES.map((st) => (
-                          <option key={st} value={st}>{st}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">Business Unit</label>
-                      <input
-                        type="text"
-                        placeholder="e.g., MRL, SMS, MRO"
-                        value={joinerForm.businessUnit}
-                        onChange={(e) => setJoinerForm({ ...joinerForm, businessUnit: e.target.value })}
-                        className="w-full px-3 py-2 rounded-lg border border-slate-300"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">Reporting</label>
-                      <input
-                        type="text"
-                        placeholder="Reporting manager / BU head"
-                        value={joinerForm.reporting}
-                        onChange={(e) => setJoinerForm({ ...joinerForm, reporting: e.target.value })}
-                        className="w-full px-3 py-2 rounded-lg border border-slate-300"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">Role</label>
-                      <input
-                        type="text"
-                        value={joinerForm.role}
-                        onChange={(e) => setJoinerForm({ ...joinerForm, role: e.target.value })}
-                        className="w-full px-3 py-2 rounded-lg border border-slate-300"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">Salary / CTC</label>
-                      <input
-                        type="text"
-                        placeholder="e.g., 5.5 LPA or 45000"
-                        value={joinerForm.salaryCtc}
-                        onChange={(e) => setJoinerForm({ ...joinerForm, salaryCtc: e.target.value })}
-                        className="w-full px-3 py-2 rounded-lg border border-slate-300"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">Contact Number</label>
-                      <input
-                        type="text"
-                        value={joinerForm.contactNumber}
-                        onChange={(e) => setJoinerForm({ ...joinerForm, contactNumber: e.target.value })}
-                        className="w-full px-3 py-2 rounded-lg border border-slate-300"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">Location</label>
-                      <input
-                        type="text"
-                        value={joinerForm.location}
-                        onChange={(e) => setJoinerForm({ ...joinerForm, location: e.target.value })}
-                        className="w-full px-3 py-2 rounded-lg border border-slate-300"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end gap-2 pt-3">
-                    <button
-                      type="button"
-                      onClick={() => setShowJoinerModal(false)}
-                      className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 cursor-pointer"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="px-4 py-2 rounded-lg bg-solar hover:bg-orange-600 text-white font-medium cursor-pointer"
-                    >
-                      Save to Joiners data
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
-  </script>
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
 </body>
 </html>
